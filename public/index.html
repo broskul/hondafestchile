@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Honda Fest Chile | Japon Fest Chile</title>
+    <meta
+      name="description"
+      content="Honda Fest Chile y Japon Fest Chile: eventos, comunidad automotriz, ticketera, registro con RUT y experiencias de pista."
+    />
+    <link rel="preload" href="/assets/hero-motorsport.png" as="image" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <a class="brand" href="#top" aria-label="Honda Fest Chile">
+        <span class="brand-mark">HFC</span>
+        <span>
+          <strong>Honda Fest Chile</strong>
+          <small>Japon Fest Chile</small>
+        </span>
+      </a>
+      <nav class="main-nav" aria-label="Principal">
+        <a href="#eventos">Eventos</a>
+        <a href="#experiencia">Experiencia</a>
+        <a href="#ticketera">Ticketera</a>
+        <a href="#comunidad">Comunidad</a>
+      </nav>
+      <a class="nav-cta" href="#ticketera">Comprar</a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <img class="hero-media" src="/assets/hero-motorsport.png" alt="Festival automotriz en circuito al atardecer" />
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="eyebrow">Temporada automotriz 2026</p>
+          <h1 id="hero-title">Honda Fest Chile</h1>
+          <p class="hero-copy">
+            La comunidad que transforma la pasion por los motores japoneses en pista, exhibicion, cultura y encuentro.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#ticketera">Reservar entrada</a>
+            <a class="button ghost" href="#eventos">Ver eventos</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section intro-band" aria-label="Resumen">
+        <div class="intro-grid">
+          <div>
+            <p class="section-kicker">Japon Fest Chile + Honda Fest Chile</p>
+            <h2>Dos fechas para vivir el automovilismo desde adentro.</h2>
+          </div>
+          <p>
+            Creamos un punto de encuentro para pilotos, clubes, preparadores, familias y fanaticos: entradas digitales,
+            enrolamiento con RUT, confirmacion de correo y un flujo de compra listo para integrar pago y boleta
+            electronica.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="eventos" aria-labelledby="events-title">
+        <div class="section-heading">
+          <p class="section-kicker">Calendario</p>
+          <h2 id="events-title">Eventos del año</h2>
+        </div>
+        <div class="event-grid" id="eventGrid" aria-live="polite"></div>
+      </section>
+
+      <section class="section experience" id="experiencia" aria-labelledby="experience-title">
+        <div class="section-heading">
+          <p class="section-kicker">Experiencia</p>
+          <h2 id="experience-title">Pista, comunidad y cultura japonesa</h2>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="feature-number">01</span>
+            <h3>Carreras y track day</h3>
+            <p>Mangas organizadas, briefing de pilotos y un ambiente pensado para disfrutar la velocidad con orden.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">02</span>
+            <h3>Clubes y proyectos</h3>
+            <p>Espacios para exhibir autos, conectar preparadores y mostrar historias de construccion reales.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">03</span>
+            <h3>Festival familiar</h3>
+            <p>Food trucks, stands, musica, cultura japonesa y zonas para vivir el evento mas alla de la pista.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section ticket-section" id="ticketera" aria-labelledby="ticket-title">
+        <div class="ticket-copy">
+          <p class="section-kicker">Ticketera</p>
+          <h2 id="ticket-title">Enrolate con RUT y asegura tu cupo.</h2>
+          <p>
+            Completa el registro, confirma tu correo y compra tu entrada. Al aprobarse el pago se generan los tickets y
+            la boleta electronica queda asociada a la orden.
+          </p>
+          <div class="steps" aria-label="Pasos de compra">
+            <span>Registro</span>
+            <span>Correo</span>
+            <span>Pago</span>
+            <span>Ticket</span>
+          </div>
+        </div>
+
+        <div class="ticket-panel">
+          <div class="tabs" role="tablist" aria-label="Ticketera">
+            <button class="tab active" type="button" data-tab="register" role="tab" aria-selected="true">Registro</button>
+            <button class="tab" type="button" data-tab="buy" role="tab" aria-selected="false">Compra</button>
+          </div>
+
+          <div class="panel-view active" id="registerPanel" role="tabpanel">
+            <form id="registerForm" class="form-grid">
+              <label>
+                Nombre completo
+                <input name="name" autocomplete="name" required placeholder="Nombre y apellido" />
+              </label>
+              <label>
+                RUT
+                <input name="rut" required placeholder="12.345.678-9" />
+              </label>
+              <label>
+                Correo
+                <input name="email" type="email" autocomplete="email" required placeholder="tu@correo.cl" />
+              </label>
+              <label>
+                Telefono
+                <input name="phone" autocomplete="tel" required placeholder="+56 9 1234 5678" />
+              </label>
+              <label>
+                Vehiculo
+                <input name="vehicle" placeholder="Civic EG, Integra, S2000..." />
+              </label>
+              <label>
+                Club o equipo
+                <input name="club" placeholder="Club, team o independiente" />
+              </label>
+              <label class="full">
+                Password
+                <input name="password" type="password" autocomplete="new-password" required placeholder="Minimo 8 caracteres" />
+              </label>
+              <fieldset class="full interest-set">
+                <legend>Intereses</legend>
+                <label><input type="checkbox" name="interests" value="track-day" /> Track day</label>
+                <label><input type="checkbox" name="interests" value="show-shine" /> Show & shine</label>
+                <label><input type="checkbox" name="interests" value="stands" /> Stands</label>
+              </fieldset>
+              <button class="button primary full" type="submit">Crear registro</button>
+            </form>
+            <div class="status-box" id="registerStatus" hidden></div>
+          </div>
+
+          <div class="panel-view" id="buyPanel" role="tabpanel">
+            <form id="orderForm" class="form-grid">
+              <label class="full">
+                Evento
+                <select name="eventId" id="eventSelect" required></select>
+              </label>
+              <label class="full">
+                Tipo de entrada
+                <select name="ticketTypeId" id="ticketSelect" required></select>
+              </label>
+              <label>
+                Cantidad
+                <input name="quantity" id="quantityInput" type="number" min="1" value="1" required />
+              </label>
+              <label>
+                Total
+                <output id="totalOutput">$0</output>
+              </label>
+              <label>
+                Correo registrado
+                <input name="email" type="email" required placeholder="tu@correo.cl" />
+              </label>
+              <label>
+                RUT registrado
+                <input name="rut" required placeholder="12.345.678-9" />
+              </label>
+              <button class="button primary full" type="submit">Ir al pago</button>
+            </form>
+            <div class="status-box" id="orderStatus" hidden></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section community" id="comunidad" aria-labelledby="community-title">
+        <div class="community-content">
+          <p class="section-kicker">Comunidad</p>
+          <h2 id="community-title">Trae tu proyecto, tu club o tus ganas de mirar de cerca.</h2>
+          <p>
+            El evento crece cuando cada asistente participa: pilotos que salen a pista, clubes que levantan su zona,
+            emprendimientos que muestran piezas y familias que hacen del motorsport una experiencia compartida.
+          </p>
+          <a class="button secondary" href="#ticketera">Participar</a>
+        </div>
+        <div class="community-stat">
+          <strong>100%</strong>
+          <span>pasion por los motores japoneses</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Honda Fest Chile · Japon Fest Chile</p>
+      <a href="#top">Volver arriba</a>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
