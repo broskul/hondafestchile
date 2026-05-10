@@ -7,12 +7,14 @@
   "scripts": {
     "dev": "node server/index.js",
     "start": "node server/index.js",
-    "check": "node --check server/index.js && node --check server/config/catalog.js && node --check server/lib/mailer.js && node --check server/lib/mercadopago.js && node --check server/lib/openfactura.js && node --check server/lib/rut.js && node --check server/lib/storage.js && node --check public/app.js"
+    "check": "node --check server/index.js && node --check server/config/catalog.js && node --check server/lib/mailer.js && node --check server/lib/mercadopago.js && node --check server/lib/openfactura.js && node --check server/lib/rut.js && node --check server/lib/storage.js && node --check public/app.js && node --check public/shared.js && node --check public/ticketera.js && node --check public/carrito.js && node --check public/mis-compras.js && node --check public/validar.js && node --check public/backoffice.js && node --check scripts/check-supabase.js",
+    "supabase:check": "node scripts/check-supabase.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "nodemailer": "^8.0.7"
+    "nodemailer": "^8.0.7",
+    "qrcode": "^1.5.4"
   },
   "engines": {
     "node": ">=20"

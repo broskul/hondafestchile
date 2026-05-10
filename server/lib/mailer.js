@@ -57,6 +57,24 @@ async function sendVerificationEmail({ user, verificationUrl }) {
 }
 
 async function sendTicketEmail({ user, order, event, ticketType, tickets, invoice }) {
+  const items = order.items?.length
+    ? order.items
+    : [
+        {
+          eventName: event.name,
+          ticketTypeName: ticketType.name,
+          quantity: order.quantity,
+          total: order.total
+        }
+      ];
+  const eventName = items.length === 1 ? items[0].eventName : "Honda Fest Chile";
+  const ticketName = items.length === 1 ? items[0].ticketTypeName : "Compra multiproducto";
+  const itemLines = items
+    .map((item) => `${item.quantity} x ${item.ticketTypeName} - ${item.eventName}`)
+    .join("\n");
+  const itemHtml = items
+    .map((item) => `<li>${item.quantity} x <strong>${item.ticketTypeName}</strong> - ${item.eventName}</li>`)
+    .join("");
   const ticketLines = tickets.map((ticket) => `Ticket ${ticket.code}`).join("\n");
   const invoiceLine = invoice?.pdfUrl
     ? `Boleta: ${invoice.pdfUrl}`
@@ -64,21 +82,23 @@ async function sendTicketEmail({ user, order, event, ticketType, tickets, invoic
 
   return sendMail({
     to: user.email,
-    subject: `Tus entradas para ${event.name}`,
+    subject: `Tus entradas para ${eventName}`,
     text: [
       `Hola ${user.name}.`,
-      `Tu compra para ${event.name} fue confirmada.`,
-      `Entrada: ${ticketType.name}`,
+      `Tu compra fue confirmada.`,
+      `Entrada: ${ticketName}`,
       `Orden: ${order.id}`,
+      itemLines,
       ticketLines,
       invoiceLine
     ].join("\n"),
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212">
         <h1>Entradas confirmadas</h1>
-        <p>Hola ${user.name}, tu compra para <strong>${event.name}</strong> fue confirmada.</p>
+        <p>Hola ${user.name}, tu compra fue confirmada.</p>
         <p><strong>Orden:</strong> ${order.id}</p>
-        <p><strong>Entrada:</strong> ${ticketType.name}</p>
+        <p><strong>Entradas:</strong></p>
+        <ul>${itemHtml}</ul>
         <ul>
           ${tickets.map((ticket) => `<li><strong>${ticket.code}</strong></li>`).join("")}
         </ul>

@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env.local
 data/app-state.json
 npm-debug.log*
 *.local

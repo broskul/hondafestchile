@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validar entrada | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/shared.js"></script>
+    <script defer src="/validar.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Validacion</small></span></a>
+      <nav class="main-nav" aria-label="Validacion">
+        <a href="/ticketera">Ticketera</a>
+        <a href="/mis-compras">Mis compras</a>
+        <a href="/carrito">Carrito</a>
+      </nav>
+      <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Control de acceso</p>
+          <h1>Corrobora una entrada por QR.</h1>
+          <p>Escanea el QR del ticket o ingresa manualmente el codigo para revisar su estado.</p>
+        </div>
+      </section>
+
+      <section class="section split-section">
+        <div class="ticket-panel page-panel">
+          <div class="scanner-box">
+            <video id="qrVideo" playsinline muted></video>
+            <div class="scanner-actions">
+              <button class="button secondary" type="button" id="startScanner">Usar camara</button>
+              <button class="button ghost-light" type="button" id="stopScanner">Detener</button>
+            </div>
+          </div>
+          <form id="validateForm" class="form-grid stacked-form manual-code-form">
+            <label>Codigo de ticket <input name="code" required placeholder="HFC-2026-XXXX-1" /></label>
+            <button class="button primary full" type="submit">Consultar entrada</button>
+          </form>
+        </div>
+        <aside class="ticket-panel validation-result">
+          <p class="section-kicker">Resultado</p>
+          <div id="validationResult" class="empty-state">Sin ticket consultado.</div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

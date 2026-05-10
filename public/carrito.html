@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carrito | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/shared.js"></script>
+    <script defer src="/carrito.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Carrito</small></span></a>
+      <nav class="main-nav" aria-label="Carrito">
+        <a href="/ticketera">Ticketera</a>
+        <a href="/mis-compras">Mis compras</a>
+        <a href="/validar">Validar</a>
+      </nav>
+      <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Carrito</p>
+          <h1>Revisa tu seleccion y finaliza la compra.</h1>
+        </div>
+      </section>
+      <section class="section split-section">
+        <div class="ticket-panel page-panel">
+          <div data-cart-list="full"></div>
+          <div class="status-actions">
+            <a class="button secondary" href="/ticketera">Seguir comprando</a>
+            <button class="button ghost-light" type="button" id="clearCartButton">Vaciar carrito</button>
+          </div>
+        </div>
+        <aside class="ticket-panel checkout-page">
+          <p class="section-kicker">Comprador</p>
+          <h2>Datos registrados</h2>
+          <form class="form-grid stacked-form" id="checkoutForm" data-checkout-form>
+            <label>Correo registrado <input name="email" type="email" required placeholder="tu@correo.cl" /></label>
+            <label>RUT registrado <input name="rut" required placeholder="12.345.678-5" /></label>
+            <button class="button primary full" type="submit">Finalizar compra</button>
+          </form>
+          <div class="status-box" id="checkoutStatus" hidden></div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

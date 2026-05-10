@@ -24,10 +24,11 @@
       <nav class="main-nav" aria-label="Principal">
         <a href="#eventos">Eventos</a>
         <a href="#experiencia">Experiencia</a>
-        <a href="#ticketera">Ticketera</a>
+        <a href="/ticketera">Ticketera</a>
+        <a href="/mis-compras">Mis compras</a>
         <a href="#comunidad">Comunidad</a>
       </nav>
-      <a class="nav-cta" href="#ticketera">Comprar</a>
+      <a class="nav-cta" href="/ticketera">Comprar</a>
     </header>
 
     <main>
@@ -41,7 +42,7 @@
             La comunidad que transforma la pasion por los motores japoneses en pista, exhibicion, cultura y encuentro.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#ticketera">Reservar entrada</a>
+            <a class="button primary" href="/ticketera">Reservar entrada</a>
             <a class="button ghost" href="#eventos">Ver eventos</a>
           </div>
         </div>
@@ -109,82 +110,16 @@
           </div>
         </div>
 
-        <div class="ticket-panel">
-          <div class="tabs" role="tablist" aria-label="Ticketera">
-            <button class="tab active" type="button" data-tab="register" role="tab" aria-selected="true">Registro</button>
-            <button class="tab" type="button" data-tab="buy" role="tab" aria-selected="false">Compra</button>
-          </div>
-
-          <div class="panel-view active" id="registerPanel" role="tabpanel">
-            <form id="registerForm" class="form-grid">
-              <label>
-                Nombre completo
-                <input name="name" autocomplete="name" required placeholder="Nombre y apellido" />
-              </label>
-              <label>
-                RUT
-                <input name="rut" required placeholder="12.345.678-9" />
-              </label>
-              <label>
-                Correo
-                <input name="email" type="email" autocomplete="email" required placeholder="tu@correo.cl" />
-              </label>
-              <label>
-                Telefono
-                <input name="phone" autocomplete="tel" required placeholder="+56 9 1234 5678" />
-              </label>
-              <label>
-                Vehiculo
-                <input name="vehicle" placeholder="Civic EG, Integra, S2000..." />
-              </label>
-              <label>
-                Club o equipo
-                <input name="club" placeholder="Club, team o independiente" />
-              </label>
-              <label class="full">
-                Password
-                <input name="password" type="password" autocomplete="new-password" required placeholder="Minimo 8 caracteres" />
-              </label>
-              <fieldset class="full interest-set">
-                <legend>Intereses</legend>
-                <label><input type="checkbox" name="interests" value="track-day" /> Track day</label>
-                <label><input type="checkbox" name="interests" value="show-shine" /> Show & shine</label>
-                <label><input type="checkbox" name="interests" value="stands" /> Stands</label>
-              </fieldset>
-              <button class="button primary full" type="submit">Crear registro</button>
-            </form>
-            <div class="status-box" id="registerStatus" hidden></div>
-          </div>
-
-          <div class="panel-view" id="buyPanel" role="tabpanel">
-            <form id="orderForm" class="form-grid">
-              <label class="full">
-                Evento
-                <select name="eventId" id="eventSelect" required></select>
-              </label>
-              <label class="full">
-                Tipo de entrada
-                <select name="ticketTypeId" id="ticketSelect" required></select>
-              </label>
-              <label>
-                Cantidad
-                <input name="quantity" id="quantityInput" type="number" min="1" value="1" required />
-              </label>
-              <label>
-                Total
-                <output id="totalOutput">$0</output>
-              </label>
-              <label>
-                Correo registrado
-                <input name="email" type="email" required placeholder="tu@correo.cl" />
-              </label>
-              <label>
-                RUT registrado
-                <input name="rut" required placeholder="12.345.678-9" />
-              </label>
-              <button class="button primary full" type="submit">Ir al pago</button>
-            </form>
-            <div class="status-box" id="orderStatus" hidden></div>
+        <div class="ticket-panel action-panel">
+          <p class="section-kicker">Venta online</p>
+          <h3>Ticketera independiente</h3>
+          <p>
+            Elige entradas por evento, agrega productos al carrito lateral y finaliza en la pagina completa del carrito
+            cuando quieras revisar todo con calma.
+          </p>
+          <div class="status-actions">
+            <a class="button primary" href="/ticketera">Abrir ticketera</a>
+            <a class="button secondary" href="/carrito">Ver carrito</a>
           </div>
         </div>
       </section>
@@ -197,7 +132,7 @@
             El evento crece cuando cada asistente participa: pilotos que salen a pista, clubes que levantan su zona,
             emprendimientos que muestran piezas y familias que hacen del motorsport una experiencia compartida.
           </p>
-          <a class="button secondary" href="#ticketera">Participar</a>
+          <a class="button secondary" href="/ticketera">Participar</a>
         </div>
         <div class="community-stat">
           <strong>100%</strong>

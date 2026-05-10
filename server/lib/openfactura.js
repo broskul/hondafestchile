@@ -2,7 +2,20 @@ function openFacturaConfigured() {
   return Boolean(process.env.OPENFACTURA_API_KEY && process.env.OPENFACTURA_ENDPOINT);
 }
 
-function buildOpenFacturaPayload({ order, user, event, ticketType, tickets }) {
+function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, items = [] }) {
+  const detailItems = items.length
+    ? items
+    : [
+        {
+          ticketTypeName: ticketType.name,
+          eventName: event.name,
+          description: ticketType.description,
+          quantity: order.quantity,
+          unitPrice: ticketType.price,
+          total: order.total
+        }
+      ];
+
   return {
     documento: {
       tipoDTE: Number(process.env.OPENFACTURA_DTE_TYPE || 39),
@@ -16,15 +29,16 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets }) {
         razonSocial: user.name,
         email: user.email
       },
-      detalle: [
-        {
-          nombre: `${ticketType.name} - ${event.name}`,
-          descripcion: `Orden ${order.id}. Tickets: ${tickets.map((ticket) => ticket.code).join(", ")}`,
-          cantidad: order.quantity,
-          precioUnitario: ticketType.price,
-          montoItem: order.total
-        }
-      ],
+      detalle: detailItems.map((item) => ({
+        nombre: `${item.ticketTypeName} - ${item.eventName}`,
+        descripcion: `Orden ${order.id}. Tickets: ${tickets
+          .filter((ticket) => !item.id || ticket.lineItemId === item.id)
+          .map((ticket) => ticket.code)
+          .join(", ")}`,
+        cantidad: item.quantity,
+        precioUnitario: item.unitPrice,
+        montoItem: item.total
+      })),
       totales: {
         montoTotal: order.total
       }
@@ -33,8 +47,8 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets }) {
   };
 }
 
-async function issueBoleta({ order, user, event, ticketType, tickets }) {
-  const payload = buildOpenFacturaPayload({ order, user, event, ticketType, tickets });
+async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
+  const payload = buildOpenFacturaPayload({ order, user, event, ticketType, tickets, items });
 
   if (!openFacturaConfigured()) {
     return {

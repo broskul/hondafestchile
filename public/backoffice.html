@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Backoffice | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/shared.js"></script>
+    <script defer src="/backoffice.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Backoffice</small></span></a>
+      <nav class="main-nav" aria-label="Backoffice">
+        <a href="/ticketera">Ticketera</a>
+        <a href="/validar">Validar</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Backoffice oculto</p>
+          <h1>Ventas, entradas y enrolados.</h1>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="backoffice-auth ticket-panel">
+          <form id="adminForm" class="form-grid">
+            <label class="full">Token backoffice <input name="token" type="password" placeholder="Token administrativo" /></label>
+            <button class="button primary" type="submit">Entrar</button>
+          </form>
+          <div class="status-box" id="adminStatus" hidden></div>
+        </div>
+        <div id="adminContent" class="admin-content" hidden></div>
+      </section>
+    </main>
+  </body>
+</html>

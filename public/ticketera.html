@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ticketera | Honda Fest Chile</title>
+    <meta name="description" content="Ticketera de Honda Fest Chile y Japon Fest Chile." />
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/shared.js"></script>
+    <script defer src="/ticketera.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/">
+        <span class="brand-mark">HFC</span>
+        <span><strong>Honda Fest Chile</strong><small>Ticketera</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Ticketera">
+        <a href="/">Inicio</a>
+        <a href="/carrito">Carrito</a>
+        <a href="/mis-compras">Mis compras</a>
+        <a href="/validar">Validar</a>
+      </nav>
+      <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Ticketera oficial</p>
+          <h1>Elige tu evento y arma tu carrito.</h1>
+          <p>Compra entradas para Japon Fest Chile y Honda Fest Chile con enrolamiento, RUT y correo confirmado.</p>
+        </div>
+      </section>
+
+      <section class="section split-section">
+        <div>
+          <div class="section-heading inline-heading">
+            <p class="section-kicker">Entradas</p>
+            <h2>Productos disponibles</h2>
+          </div>
+          <div class="product-grid" id="productGrid" aria-live="polite"></div>
+        </div>
+
+        <aside class="ticket-panel register-card">
+          <p class="section-kicker">Enrolamiento</p>
+          <h2>Registro de asistente</h2>
+          <form id="registerForm" class="form-grid stacked-form">
+            <label>Nombre completo <input name="name" autocomplete="name" required placeholder="Nombre y apellido" /></label>
+            <label>RUT <input name="rut" required placeholder="12.345.678-5" /></label>
+            <label>Correo <input name="email" type="email" autocomplete="email" required placeholder="tu@correo.cl" /></label>
+            <label>Telefono <input name="phone" autocomplete="tel" required placeholder="+56 9 1234 5678" /></label>
+            <label>Vehiculo <input name="vehicle" placeholder="Civic, Integra, S2000..." /></label>
+            <label>Club o equipo <input name="club" placeholder="Club, team o independiente" /></label>
+            <label>Password <input name="password" type="password" autocomplete="new-password" required placeholder="Minimo 8 caracteres" /></label>
+            <fieldset class="interest-set full">
+              <legend>Intereses</legend>
+              <label><input type="checkbox" name="interests" value="track-day" /> Track day</label>
+              <label><input type="checkbox" name="interests" value="show-shine" /> Show & shine</label>
+              <label><input type="checkbox" name="interests" value="stands" /> Stands</label>
+            </fieldset>
+            <button class="button primary full" type="submit">Crear registro</button>
+          </form>
+          <div class="status-box" id="registerStatus" hidden></div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Honda Fest Chile · Ticketera</p>
+      <a href="/carrito">Ver carrito</a>
+    </footer>
+  </body>
+</html>

@@ -49,6 +49,7 @@ async function api(path, options = {}) {
 
 function renderEvents() {
   const grid = $("#eventGrid");
+  if (!grid) return;
   grid.innerHTML = state.events
     .map(
       (event) => `
@@ -74,16 +75,18 @@ function renderEvents() {
 function populateSelects() {
   const eventSelect = $("#eventSelect");
   const ticketSelect = $("#ticketSelect");
+  if (!eventSelect || !ticketSelect) return;
 
   eventSelect.innerHTML = state.events.map((event) => `<option value="${event.id}">${event.name}</option>`).join("");
   ticketSelect.innerHTML = state.ticketTypes
-    .map((ticket) => `<option value="${ticket.id}">${ticket.name} · ${formatCurrency(ticket.price)}</option>`)
+    .map((ticket) => `<option value="${ticket.id}">${ticket.name} - ${formatCurrency(ticket.price)}</option>`)
     .join("");
 
   updateTotal();
 }
 
 function updateTotal() {
+  if (!$("#ticketSelect") || !$("#quantityInput") || !$("#totalOutput")) return;
   const ticket = state.ticketTypes.find((item) => item.id === $("#ticketSelect").value);
   const quantityInput = $("#quantityInput");
   const quantity = Math.max(1, Number(quantityInput.value || 1));
@@ -106,8 +109,8 @@ function switchTab(tabName) {
     button.setAttribute("aria-selected", String(active));
   });
 
-  $("#registerPanel").classList.toggle("active", tabName === "register");
-  $("#buyPanel").classList.toggle("active", tabName === "buy");
+  $("#registerPanel")?.classList.toggle("active", tabName === "register");
+  $("#buyPanel")?.classList.toggle("active", tabName === "buy");
 }
 
 function formToJson(form) {
@@ -132,6 +135,7 @@ function loadRememberedUser() {
 function prefillOrderForm(user) {
   if (!user) return;
   const form = $("#orderForm");
+  if (!form) return;
   form.email.value = user.email || "";
   form.rut.value = user.rut || "";
 }
@@ -253,7 +257,7 @@ async function inspectReturnParams() {
 
   if (verified === "1") {
     toast("Correo confirmado. Ya puedes comprar entradas.");
-    switchTab("buy");
+    if ($("#buyPanel")) switchTab("buy");
     const remembered = loadRememberedUser();
     if (remembered) {
       remembered.emailVerified = true;
@@ -263,8 +267,9 @@ async function inspectReturnParams() {
   }
 
   if (payment && orderId) {
-    switchTab("buy");
+    if ($("#buyPanel")) switchTab("buy");
     const status = $("#orderStatus");
+    if (!status) return;
     setStatus(status, "Consultando estado de la orden...");
 
     try {
@@ -285,17 +290,19 @@ async function init() {
   state.events = catalog.events;
   state.ticketTypes = catalog.ticketTypes;
   renderEvents();
-  populateSelects();
-  prefillOrderForm(loadRememberedUser());
+  if ($("#eventSelect")) {
+    populateSelects();
+    prefillOrderForm(loadRememberedUser());
+  }
 
   $$(".tab").forEach((button) => {
     button.addEventListener("click", () => switchTab(button.dataset.tab));
   });
 
-  $("#ticketSelect").addEventListener("change", updateTotal);
-  $("#quantityInput").addEventListener("input", updateTotal);
-  $("#registerForm").addEventListener("submit", handleRegister);
-  $("#orderForm").addEventListener("submit", handleOrder);
+  $("#ticketSelect")?.addEventListener("change", updateTotal);
+  $("#quantityInput")?.addEventListener("input", updateTotal);
+  $("#registerForm")?.addEventListener("submit", handleRegister);
+  $("#orderForm")?.addEventListener("submit", handleOrder);
 
   inspectReturnParams();
 }

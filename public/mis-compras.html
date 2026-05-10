@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mis compras | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/shared.js"></script>
+    <script defer src="/mis-compras.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Mis compras</small></span></a>
+      <nav class="main-nav" aria-label="Mis compras">
+        <a href="/ticketera">Ticketera</a>
+        <a href="/carrito">Carrito</a>
+        <a href="/validar">Validar QR</a>
+      </nav>
+      <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Mis compras</p>
+          <h1>Tus ordenes y entradas digitales.</h1>
+          <p>Ingresa el correo y RUT usados en el enrolamiento para recuperar tus tickets con QR.</p>
+        </div>
+      </section>
+
+      <section class="section split-section">
+        <aside class="ticket-panel checkout-page">
+          <p class="section-kicker">Buscar</p>
+          <h2>Datos del asistente</h2>
+          <form id="purchasesForm" class="form-grid stacked-form" data-checkout-form>
+            <label>Correo <input name="email" type="email" required placeholder="tu@correo.cl" /></label>
+            <label>RUT <input name="rut" required placeholder="12.345.678-5" /></label>
+            <button class="button primary full" type="submit">Ver mis compras</button>
+          </form>
+          <div class="status-box" id="purchasesStatus" hidden></div>
+        </aside>
+        <div class="purchase-list" id="purchaseList" aria-live="polite"></div>
+      </section>
+    </main>
+  </body>
+</html>

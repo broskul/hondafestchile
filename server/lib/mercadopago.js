@@ -20,17 +20,28 @@ async function createPreference({ req, order, user, event, ticketType }) {
   }
 
   const baseUrl = getBaseUrl(req);
-  const body = {
-    items: [
-      {
-        id: ticketType.id,
-        title: `${ticketType.name} - ${event.name}`,
-        description: ticketType.description,
-        quantity: order.quantity,
-        unit_price: ticketType.price,
+  const items = order.items?.length
+    ? order.items.map((item) => ({
+        id: item.ticketTypeId,
+        title: `${item.ticketTypeName} - ${item.eventName}`,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
         currency_id: "CLP"
-      }
-    ],
+      }))
+    : [
+        {
+          id: ticketType.id,
+          title: `${ticketType.name} - ${event.name}`,
+          description: ticketType.description,
+          quantity: order.quantity,
+          unit_price: ticketType.price,
+          currency_id: "CLP"
+        }
+      ];
+
+  const body = {
+    items,
     payer: {
       name: user.name,
       email: user.email
@@ -44,8 +55,8 @@ async function createPreference({ req, order, user, event, ticketType }) {
     notification_url: `${baseUrl}/api/webhooks/mercadopago`,
     auto_return: "approved",
     metadata: {
-      event_id: event.id,
-      ticket_type_id: ticketType.id,
+      event_id: event?.id || order.items?.[0]?.eventId,
+      ticket_type_id: ticketType?.id || order.items?.[0]?.ticketTypeId,
       user_id: user.id
     }
   };
