@@ -1,0 +1,17 @@
+Titulo: Auto Honda en pista - IMG_3118
+Descripcion: Fotografia de auto Honda en accion sobre el circuito durante Honda Fest Chile, util para galeria deportiva, cobertura del evento y archivo historico de pista. Coleccion original: seleccion Honda Fest 2025.
+Categoria: Autos en pista
+Etiquetas: hfc, honda fest chile, honda, autos, circuito, pista, motorsport, track day, honda-fest-2025-seleccion
+Evento/Coleccion: honda-fest-2025-seleccion
+Clave R2 sugerida: honda-fest-2025-seleccion/image/pista-autos-en-pista/224-img-3118.jpg
+Tipo: image
+Archivo original: IMG_3118.jpg
+Ruta original: wetransfer_img_0769-jpg_2026-05-17_0109/IMG_3118.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1704741 bytes (1.63 MB)
+Fecha captura EXIF: 2026:05:16 20:37:45
+Fecha modificacion: 2026-05-19T10:09:10
+Camara: Canon Canon EOS 6D
+SHA256: 73e52ef80bc8cb390d5bbb20f2bb53be25a52159985e2bbb0f2065cfc26c8457
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

@@ -1,0 +1,17 @@
+Titulo: Comunidad Honda Fest Chile - IMG_8914
+Descripcion: Fotografia de asistentes, pilotos, organizadores o comunidad compartiendo dentro del evento Honda Fest Chile.
+Categoria: Publico y comunidad
+Etiquetas: hfc, honda fest chile, comunidad, publico, asistentes, pilotos, organizacion, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/publico-publico-y-comunidad/065-img-8914.jpg
+Tipo: image
+Archivo original: IMG_8914.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_8914.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1896166 bytes (1.81 MB)
+Fecha captura EXIF: 2025:11:27 19:32:15
+Fecha modificacion: 2026-05-19T10:09:05
+Camara: Canon Canon EOS 6D
+SHA256: d686bff55e4165fabb2bdbacc95650a35deeae7d7d47b1d319a6c7a2b802c95e
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

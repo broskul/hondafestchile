@@ -1,0 +1,17 @@
+Titulo: Moto y movilidad en evento - IMG_8926
+Descripcion: Registro de moto o movilidad de apoyo dentro del entorno del evento Honda Fest Chile.
+Categoria: Motos y movilidad
+Etiquetas: hfc, honda fest chile, moto, movilidad, evento, comunidad, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/moto-motos-y-movilidad/066-img-8926.jpg
+Tipo: image
+Archivo original: IMG_8926.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_8926.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2053983 bytes (1.96 MB)
+Fecha captura EXIF: 2025:11:27 19:15:30
+Fecha modificacion: 2026-05-19T10:08:19
+Camara: Canon Canon EOS 6D
+SHA256: 30cd5d2d7d52c3cf38786d82a3be49ded04642af02e0fab1539fdbddb92e9870
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

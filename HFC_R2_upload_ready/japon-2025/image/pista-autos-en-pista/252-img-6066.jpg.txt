@@ -1,0 +1,17 @@
+Titulo: Auto Honda en pista - IMG_6066
+Descripcion: Fotografia de auto Honda en accion sobre el circuito durante Honda Fest Chile, util para galeria deportiva, cobertura del evento y archivo historico de pista. Coleccion original: Japon 2025.
+Categoria: Autos en pista
+Etiquetas: hfc, honda fest chile, honda, autos, circuito, pista, motorsport, track day, japon-2025
+Evento/Coleccion: japon-2025
+Clave R2 sugerida: japon-2025/image/pista-autos-en-pista/252-img-6066.jpg
+Tipo: image
+Archivo original: IMG_6066.jpg
+Ruta original: wetransfer_japon-2025_2026-05-18_2304/IMG_6066.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1509910 bytes (1.44 MB)
+Fecha captura EXIF: 2025:02:26 20:12:51
+Fecha modificacion: 2026-05-19T10:10:01
+Camara: Canon Canon EOS 6D
+SHA256: c37f938a2f55836900b9a04805a03179cf86adf331b948d912ad1f2fc7471fde
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

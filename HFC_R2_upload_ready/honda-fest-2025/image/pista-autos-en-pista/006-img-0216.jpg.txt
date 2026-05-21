@@ -1,0 +1,17 @@
+Titulo: Auto Honda en pista - IMG_0216
+Descripcion: Fotografia de auto Honda en accion sobre el circuito durante Honda Fest Chile, util para galeria deportiva, cobertura del evento y archivo historico de pista.
+Categoria: Autos en pista
+Etiquetas: hfc, honda fest chile, honda, autos, circuito, pista, motorsport, track day, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/pista-autos-en-pista/006-img-0216.jpg
+Tipo: image
+Archivo original: IMG_0216.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_0216.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1764782 bytes (1.68 MB)
+Fecha captura EXIF: 2025:11:30 12:20:37
+Fecha modificacion: 2026-05-19T10:08:16
+Camara: Canon Canon EOS 6D
+SHA256: a8d921b041868aeefc0c12224fe6bd2fdee62de83ef43f36e517bd47682267a7
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

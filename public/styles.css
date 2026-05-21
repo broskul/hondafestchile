@@ -140,35 +140,177 @@ select {
 
 .hero {
   position: relative;
-  display: grid;
-  align-items: end;
-  min-height: clamp(560px, 86vh, 780px);
-  overflow: hidden;
   color: #fff;
 }
 
+.hero-drive {
+  min-height: clamp(1120px, 185vh, 1540px);
+  overflow: visible;
+  background: #090b0f;
+  --content-opacity: 1;
+  --content-y: 0px;
+  --media-scale: 1.04;
+  --media-x: 0px;
+  --media-y: 0px;
+  --car-scroll-x: 0px;
+  --car-scroll-y: 0px;
+  --car-scroll-scale: 1;
+  --plate-opacity: 1;
+  --plate-scale: 1;
+  --menu-opacity: 0;
+  --menu-y: 105%;
+  --menu-scale-x: 0.08;
+  --menu-scale-y: 0.16;
+  --menu-radius: 8px;
+}
+
+.hero-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-items: end;
+  min-height: 620px;
+  height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
 .hero-media,
-.hero-overlay {
+.hero-overlay,
+.hero-track {
   position: absolute;
   inset: 0;
 }
 
 .hero-media {
+  z-index: -3;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: translate3d(var(--media-x), var(--media-y), 0) scale(var(--media-scale));
+  filter: saturate(1.1) contrast(1.04) brightness(0.88);
+  transform-origin: 55% 52%;
+  will-change: transform;
 }
 
 .hero-overlay {
+  z-index: -2;
   background:
-    linear-gradient(90deg, rgba(7, 8, 12, 0.82), rgba(7, 8, 12, 0.34) 54%, rgba(7, 8, 12, 0.18)),
-    linear-gradient(0deg, rgba(7, 8, 12, 0.72), transparent 45%);
+    radial-gradient(circle at 58% 56%, rgba(255, 255, 255, 0.18), transparent 18%),
+    linear-gradient(90deg, rgba(7, 8, 12, 0.86), rgba(7, 8, 12, 0.38) 50%, rgba(7, 8, 12, 0.16)),
+    linear-gradient(0deg, rgba(7, 8, 12, 0.84), transparent 55%),
+    linear-gradient(180deg, rgba(7, 8, 12, 0.42), transparent 34%);
+}
+
+.hero-track {
+  z-index: -1;
+  pointer-events: none;
+  perspective: 900px;
+}
+
+.track-haze {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -22%;
+  height: 56%;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.22), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(245, 246, 244, 0.2));
+  filter: blur(10px);
+  opacity: 0.72;
+}
+
+.track-apex {
+  position: absolute;
+  left: -12vw;
+  bottom: -20vh;
+  width: 124vw;
+  height: 70vh;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: rgba(255, 255, 255, 0.58);
+  border-right-color: rgba(215, 25, 32, 0.58);
+  border-radius: 52% 48% 0 0;
+  transform: rotateX(64deg) rotateZ(-8deg);
+  transform-origin: center bottom;
+  box-shadow:
+    inset 0 18px 30px rgba(255, 255, 255, 0.1),
+    0 -16px 60px rgba(215, 25, 32, 0.1);
+}
+
+.track-racing-line {
+  position: absolute;
+  left: 8%;
+  bottom: 7%;
+  width: 64%;
+  height: 12px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.92) 0 42px,
+    rgba(215, 25, 32, 0.92) 42px 84px
+  );
+  filter: blur(0.4px) drop-shadow(0 0 12px rgba(255, 255, 255, 0.2));
+  opacity: 0.72;
+  transform: perspective(720px) rotateX(68deg) rotateZ(-16deg) translateX(var(--media-x));
+  transform-origin: left center;
+  animation: racingLineRush 1.35s linear infinite;
+}
+
+.track-racing-line--late {
+  left: auto;
+  right: -4%;
+  bottom: 19%;
+  width: 54%;
+  opacity: 0.35;
+  transform: perspective(720px) rotateX(66deg) rotateZ(10deg);
+  animation-duration: 1.75s;
+}
+
+.hero-quick-menu {
+  position: absolute;
+  top: clamp(82px, 9vh, 112px);
+  right: clamp(16px, 5vw, 64px);
+  z-index: 8;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  max-width: min(720px, calc(100% - 32px));
+}
+
+.hero-quick-menu a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  font-weight: 950;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.16);
+}
+
+.hero-quick-menu a:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .hero-content {
   position: relative;
+  z-index: 6;
   width: min(760px, 100%);
   padding: 0 clamp(18px, 5vw, 72px) clamp(72px, 12vh, 128px);
+  opacity: var(--content-opacity);
+  transform: translate3d(0, var(--content-y), 0);
+  will-change: opacity, transform;
+}
+
+.hero-drive[data-content-hidden="true"] .hero-content {
+  pointer-events: none;
 }
 
 .eyebrow,
@@ -201,6 +343,450 @@ select {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 28px;
+}
+
+.hero-car-path {
+  position: absolute;
+  left: min(74%, calc(100% - 286px));
+  bottom: clamp(28px, 6vh, 78px);
+  z-index: 5;
+  width: min(49vw, 560px);
+  min-width: 400px;
+  transform-origin: 50% 78%;
+  will-change: transform, filter, opacity;
+  animation: carIntro 2600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-car-scroll {
+  transform: translate3d(var(--car-scroll-x), var(--car-scroll-y), 0) scale(var(--car-scroll-scale));
+  transform-origin: 50% 80%;
+  will-change: transform;
+}
+
+.hero-car {
+  position: relative;
+  aspect-ratio: 2.22 / 1;
+  transform: perspective(900px) rotateX(3deg);
+  filter: drop-shadow(0 34px 42px rgba(0, 0, 0, 0.5));
+}
+
+.hero-car--photo {
+  aspect-ratio: 1.68 / 1;
+  transform: perspective(900px) rotateX(1.5deg) rotateZ(-1deg);
+}
+
+.hero-car--photo::before,
+.hero-car--photo::after {
+  display: none;
+}
+
+.hero-car-image {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    contrast(1.05)
+    saturate(1.04)
+    drop-shadow(0 24px 32px rgba(0, 0, 0, 0.46));
+}
+
+.hero-car span {
+  position: absolute;
+  display: block;
+}
+
+.car-shadow {
+  left: 10%;
+  right: 10%;
+  bottom: 0;
+  height: 24%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.62), transparent 68%);
+  filter: blur(8px);
+  transform: translateY(42%);
+}
+
+.hero-car::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  top: 27%;
+  width: 84%;
+  height: 54%;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.36), transparent 18% 82%, rgba(255, 255, 255, 0.22)),
+    linear-gradient(180deg, #fff 0%, #e9edf0 42%, #c3cbd0 70%, #737f88 100%);
+  border-radius: 46% 46% 20% 20% / 34% 34% 28% 28%;
+  clip-path: polygon(18% 0, 82% 0, 98% 45%, 92% 84%, 78% 96%, 22% 96%, 8% 84%, 2% 45%);
+  box-shadow:
+    inset 0 16px 24px rgba(255, 255, 255, 0.86),
+    inset 0 -24px 34px rgba(0, 0, 0, 0.28),
+    0 16px 32px rgba(0, 0, 0, 0.32);
+}
+
+.hero-car::after {
+  content: "";
+  position: absolute;
+  left: 19%;
+  bottom: 13%;
+  width: 62%;
+  height: 15%;
+  background:
+    linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.38) 18% 82%, transparent),
+    linear-gradient(180deg, #171c22, #050607);
+  border-radius: 10px 10px 28px 28px;
+  clip-path: polygon(5% 0, 95% 0, 88% 100%, 12% 100%);
+}
+
+.car-spoiler {
+  left: 22%;
+  top: 16%;
+  width: 56%;
+  height: 8%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1d2228, #060708);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.36);
+}
+
+.car-roof {
+  left: 28%;
+  top: 7%;
+  width: 44%;
+  height: 38%;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 42% 58%, rgba(255, 255, 255, 0.14)),
+    linear-gradient(180deg, #f8f9f7, #cbd2d6 72%, #919aa2);
+  border-radius: 48% 48% 24% 24% / 52% 52% 28% 28%;
+  clip-path: polygon(24% 0, 76% 0, 94% 100%, 6% 100%);
+}
+
+.car-windshield {
+  left: 32%;
+  top: 14%;
+  width: 36%;
+  height: 29%;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.55), transparent 28%),
+    radial-gradient(circle at 72% 20%, rgba(255, 255, 255, 0.42), transparent 22%),
+    linear-gradient(180deg, #151c27, #050709);
+  border: 4px solid rgba(255, 255, 255, 0.48);
+  border-bottom: 0;
+  border-radius: 16px 16px 8px 8px;
+  clip-path: polygon(11% 0, 89% 0, 100% 100%, 0 100%);
+}
+
+.car-hood {
+  left: 24%;
+  top: 37%;
+  width: 52%;
+  height: 31%;
+  background:
+    linear-gradient(90deg, transparent 0 22%, rgba(215, 25, 32, 0.82) 22% 27%, transparent 27% 73%, rgba(215, 25, 32, 0.82) 73% 78%, transparent 78%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(211, 218, 222, 0.9));
+  border-radius: 0 0 38% 38%;
+  clip-path: polygon(16% 0, 84% 0, 100% 100%, 0 100%);
+}
+
+.car-hood-vent {
+  top: 46%;
+  width: 13%;
+  height: 7%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #12161b, #010203);
+  box-shadow: inset 0 3px 7px rgba(255, 255, 255, 0.14);
+}
+
+.car-hood-vent--left {
+  left: 34%;
+  transform: skewX(-16deg);
+}
+
+.car-hood-vent--right {
+  right: 34%;
+  transform: skewX(16deg);
+}
+
+.car-headlight {
+  top: 56%;
+  width: 18%;
+  height: 11%;
+  background:
+    radial-gradient(circle at 22% 38%, rgba(255, 255, 255, 0.95), transparent 24%),
+    linear-gradient(90deg, #fff8da, #f0a94a 50%, #1b2026 86%);
+  border: 2px solid rgba(28, 31, 36, 0.58);
+  box-shadow:
+    0 0 18px rgba(255, 215, 139, 0.48),
+    inset 0 2px 6px rgba(255, 255, 255, 0.8);
+}
+
+.car-headlight--left {
+  left: 17%;
+  border-radius: 50% 24% 42% 48%;
+  transform: rotate(3deg);
+}
+
+.car-headlight--right {
+  right: 17%;
+  border-radius: 24% 50% 48% 42%;
+  transform: rotate(-3deg) scaleX(-1);
+}
+
+.car-bumper {
+  left: 14%;
+  bottom: 12%;
+  width: 72%;
+  height: 23%;
+  background:
+    linear-gradient(90deg, rgba(215, 25, 32, 0.78), transparent 15% 85%, rgba(215, 25, 32, 0.78)),
+    linear-gradient(180deg, #eef1f2, #8c969f);
+  border-radius: 26% 26% 40% 40%;
+  clip-path: polygon(6% 0, 94% 0, 100% 46%, 88% 100%, 12% 100%, 0 46%);
+}
+
+.car-grille {
+  left: 30%;
+  bottom: 18%;
+  z-index: 2;
+  width: 40%;
+  height: 12%;
+  background:
+    repeating-linear-gradient(90deg, #08090b 0 8px, #20262d 8px 12px),
+    linear-gradient(180deg, #11161d, #050607);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px 12px 24px 24px;
+}
+
+.car-splitter {
+  left: 10%;
+  bottom: 8%;
+  z-index: 3;
+  width: 80%;
+  height: 7%;
+  background:
+    linear-gradient(90deg, rgba(215, 25, 32, 0.72), transparent 16% 84%, rgba(215, 25, 32, 0.72)),
+    linear-gradient(180deg, #1b2025, #020304);
+  border-radius: 100% 100% 10px 10px;
+}
+
+.car-fender {
+  bottom: 13%;
+  width: 19%;
+  height: 28%;
+  background: linear-gradient(180deg, #f8faf9, #8b949b);
+  border-radius: 48% 48% 30% 30%;
+  box-shadow: inset 0 -12px 18px rgba(0, 0, 0, 0.2);
+}
+
+.car-fender--left {
+  left: 5%;
+  transform: rotate(-9deg);
+}
+
+.car-fender--right {
+  right: 5%;
+  transform: rotate(9deg);
+}
+
+.car-wheel {
+  bottom: 4%;
+  z-index: 4;
+  width: 17%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #e8ecec 0 9%, #15191e 10% 20%, transparent 21%),
+    conic-gradient(from 12deg, #f1f2f0 0 8deg, #0b0d10 8deg 22deg, #aeb5b8 22deg 32deg, #0b0d10 32deg 48deg),
+    radial-gradient(circle at center, #090a0c 0 52%, #2a3037 53% 66%, #050607 67%);
+  box-shadow:
+    inset 0 0 0 8px #050607,
+    inset 0 0 0 12px rgba(255, 255, 255, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.car-wheel--left {
+  left: 9%;
+  transform: rotate(var(--wheel-rotation, 0deg)) skewY(-2deg);
+}
+
+.car-wheel--right {
+  right: 9%;
+  transform: rotate(var(--wheel-rotation, 0deg)) skewY(2deg);
+}
+
+.car-mirror {
+  top: 34%;
+  width: 9%;
+  height: 8%;
+  background: linear-gradient(180deg, #f5f6f4, #6f7882);
+  border-radius: 999px 999px 40% 40%;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.34);
+}
+
+.car-mirror--left {
+  left: 13%;
+  transform: rotate(-16deg);
+}
+
+.car-mirror--right {
+  right: 13%;
+  transform: rotate(16deg);
+}
+
+.car-plate {
+  left: 50%;
+  bottom: 27%;
+  z-index: 5;
+  min-width: 128px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0 12px;
+  color: #101419;
+  background:
+    linear-gradient(180deg, #fff, #e9edf0);
+  border: 2px solid rgba(12, 15, 19, 0.68);
+  border-radius: 6px;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
+  font-size: clamp(0.92rem, 2vw, 1.2rem);
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  opacity: var(--plate-opacity);
+  transform: translateX(-50%) scale(var(--plate-scale));
+  will-change: opacity, transform;
+}
+
+.hero-car--photo .car-shadow {
+  left: 6%;
+  right: 3%;
+  bottom: -2%;
+  height: 20%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.48), transparent 70%);
+  transform: translateY(12%);
+}
+
+.hero-car--photo .car-plate {
+  left: 61%;
+  bottom: 18%;
+  min-width: clamp(92px, 12vw, 132px);
+  height: clamp(26px, 3vw, 36px);
+  border-color: rgba(30, 34, 38, 0.72);
+  font-size: clamp(0.75rem, 1.35vw, 1.08rem);
+  transform: translateX(-50%) perspective(220px) rotateX(4deg) rotateZ(-1deg) scale(var(--plate-scale));
+}
+
+.hero-plate-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(18px, 5vw, 64px);
+  min-height: clamp(172px, 24vh, 246px);
+  padding: clamp(24px, 5vw, 56px) clamp(18px, 5vw, 72px);
+  color: var(--ink);
+  background: #fff;
+  border-radius: var(--menu-radius) var(--menu-radius) 0 0;
+  box-shadow: 0 -22px 68px rgba(0, 0, 0, 0.22);
+  opacity: var(--menu-opacity);
+  pointer-events: none;
+  transform: translate3d(0, var(--menu-y), 0) scaleX(var(--menu-scale-x)) scaleY(var(--menu-scale-y));
+  transform-origin: 50% 72%;
+  will-change: opacity, transform, border-radius;
+}
+
+.hero-drive[data-menu-ready="true"] .hero-plate-menu {
+  pointer-events: auto;
+}
+
+.hero-plate-menu .section-kicker {
+  margin-bottom: 8px;
+  color: var(--red);
+}
+
+.hero-plate-menu h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 3.8rem);
+  line-height: 0.95;
+}
+
+.hero-plate-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: 12px;
+  width: min(620px, 100%);
+}
+
+.hero-plate-links a {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  padding: 0 18px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  background: var(--ink);
+  border-radius: 8px;
+  font-weight: 950;
+  box-shadow: 0 14px 34px rgba(18, 20, 24, 0.14);
+}
+
+.hero-plate-links a:nth-child(1) {
+  background: var(--red);
+}
+
+.hero-plate-links a:nth-child(2) {
+  background: var(--forest);
+}
+
+.hero-plate-links a:nth-child(3) {
+  background: #111317;
+}
+
+.hero-plate-links a:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes carIntro {
+  0% {
+    opacity: 0;
+    filter: blur(5px) saturate(0.8);
+    transform: translate(-112vw, -22vh) scale(0.3) rotate(-18deg);
+  }
+
+  38% {
+    opacity: 1;
+    filter: blur(2px) saturate(1.1);
+    transform: translate(-78vw, -16vh) scale(0.46) rotate(-12deg);
+  }
+
+  72% {
+    filter: blur(0.8px) saturate(1.12);
+    transform: translate(-58vw, -4vh) scale(0.78) rotate(-4deg);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0) saturate(1.08);
+    transform: translate(-50%, 0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes racingLineRush {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 168px 0;
+  }
 }
 
 .section {
@@ -355,6 +941,60 @@ select {
   color: var(--red);
   font-size: 0.85rem;
   font-weight: 950;
+}
+
+.merch-section {
+  background: #f7f7f4;
+}
+
+.merch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.merch-grid article {
+  display: grid;
+  gap: 18px;
+  min-height: 260px;
+  padding: clamp(22px, 4vw, 34px);
+  color: #fff;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 46%),
+    #15171d;
+  box-shadow: 0 14px 40px rgba(18, 20, 24, 0.1);
+}
+
+.merch-grid article:nth-child(2) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 46%),
+    var(--forest);
+}
+
+.merch-grid article:nth-child(3) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 46%),
+    var(--red-dark);
+}
+
+.merch-grid span {
+  color: var(--gold);
+  font-weight: 950;
+}
+
+.merch-grid h3 {
+  margin: auto 0 0;
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+  line-height: 1;
+}
+
+.merch-grid p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.55;
 }
 
 .ticket-section {
@@ -989,6 +1629,7 @@ a:focus-visible {
   .intro-grid,
   .event-grid,
   .feature-grid,
+  .merch-grid,
   .ticket-section,
   .community,
   .split-section,
@@ -1004,8 +1645,41 @@ a:focus-visible {
     position: static;
   }
 
-  .hero {
-    min-height: 680px;
+  .hero-drive {
+    min-height: clamp(1040px, 178vh, 1320px);
+  }
+
+  .hero-stage {
+    min-height: 660px;
+  }
+
+  .hero-quick-menu {
+    left: 16px;
+    right: 16px;
+    justify-content: center;
+  }
+
+  .hero-car-path {
+    left: 56%;
+    bottom: 132px;
+    width: 76vw;
+    min-width: 360px;
+  }
+
+  .hero-plate-menu {
+    display: grid;
+    align-content: center;
+    gap: 18px;
+    min-height: 260px;
+  }
+
+  .hero-plate-links {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .hero-plate-links a {
+    min-height: 54px;
   }
 }
 
@@ -1017,6 +1691,42 @@ a:focus-visible {
 
   .hero-content {
     padding-bottom: 58px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.35rem, 8.9vw, 2.95rem);
+  }
+
+  .hero-drive {
+    min-height: 1160px;
+  }
+
+  .hero-stage {
+    min-height: 720px;
+  }
+
+  .hero-quick-menu {
+    top: 78px;
+    gap: 8px;
+  }
+
+  .hero-quick-menu a {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 0.82rem;
+  }
+
+  .hero-car-path {
+    left: 76%;
+    bottom: 390px;
+    width: 78vw;
+    min-width: 280px;
+  }
+
+  .car-plate {
+    min-width: 104px;
+    height: 28px;
+    font-size: 0.82rem;
   }
 
   .form-grid,
@@ -1040,5 +1750,29 @@ a:focus-visible {
 
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .hero-car-path,
+  .track-racing-line {
+    animation: none;
+  }
+
+  .hero-drive {
+    --content-opacity: 1;
+    --content-y: 0px;
+    --car-scroll-x: 0px;
+    --car-scroll-y: 0px;
+    --car-scroll-scale: 0.95;
+    --plate-opacity: 1;
+  }
+
+  .hero-car-path {
+    transform: translate(-50%, 0) scale(0.9);
   }
 }

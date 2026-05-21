@@ -1,0 +1,17 @@
+Titulo: Premiacion Honda Fest Chile - IMG_7560
+Descripcion: Registro de premiacion y reconocimientos del evento, con participantes, trofeos, podio y activaciones de marca. Coleccion original: Japon 2025.
+Categoria: Premiacion
+Etiquetas: hfc, honda fest chile, premiacion, podio, trofeos, ganadores, comunidad, japon-2025
+Evento/Coleccion: japon-2025
+Clave R2 sugerida: japon-2025/image/premiacion-premiacion/330-img-7560.jpg
+Tipo: image
+Archivo original: IMG_7560.jpg
+Ruta original: wetransfer_japon-2025_2026-05-18_2304/IMG_7560.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1948941 bytes (1.86 MB)
+Fecha captura EXIF: 2025:03:02 18:23:44
+Fecha modificacion: 2026-05-19T10:10:48
+Camara: Canon Canon EOS 6D
+SHA256: 749d58f45bbd085db788259b7942b8153c8a2643aaa3d97414376b2e70d59fe0
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

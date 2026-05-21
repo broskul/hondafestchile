@@ -1,0 +1,17 @@
+Titulo: Auto Honda en pista - IMG_7355
+Descripcion: Fotografia de auto Honda en accion sobre el circuito durante Honda Fest Chile, util para galeria deportiva, cobertura del evento y archivo historico de pista. Coleccion original: Japon 2025.
+Categoria: Autos en pista
+Etiquetas: hfc, honda fest chile, honda, autos, circuito, pista, motorsport, track day, japon-2025
+Evento/Coleccion: japon-2025
+Clave R2 sugerida: japon-2025/image/pista-autos-en-pista/306-img-7355.jpg
+Tipo: image
+Archivo original: IMG_7355.jpg
+Ruta original: wetransfer_japon-2025_2026-05-18_2304/IMG_7355.jpg
+Dimensiones: 2048x1444px
+Orientacion: horizontal
+Tamano: 1468633 bytes (1.40 MB)
+Fecha captura EXIF: 2025:03:01 19:22:49
+Fecha modificacion: 2026-05-19T10:09:59
+Camara: Canon Canon EOS 6D
+SHA256: 87b466c015108a63ef51062e7d2543b3018989a8a53632810e857cbc151c2c44
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

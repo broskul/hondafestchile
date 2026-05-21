@@ -1,0 +1,17 @@
+Titulo: Presentacion del evento - IMG_1342
+Descripcion: Registro de presentadores, animacion o momento de comunicacion publica dentro de Honda Fest Chile.
+Categoria: Presentacion y animacion
+Etiquetas: hfc, honda fest chile, presentacion, animacion, escenario, publico, evento, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/presentacion-presentacion-y-animacion/043-img-1342.jpg
+Tipo: image
+Archivo original: IMG_1342.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_1342.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1681773 bytes (1.60 MB)
+Fecha captura EXIF: 2025:11:30 20:42:48
+Fecha modificacion: 2026-05-19T10:08:32
+Camara: Canon Canon EOS 6D
+SHA256: 4946a4c74baf4e01f86e1dcdba4cbcdfd3276b617c6e46a866b95d68d0540cf4
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

@@ -7,6 +7,19 @@ const state = {
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
+function clamp(value, min = 0, max = 1) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function easeOutCubic(value) {
+  return 1 - Math.pow(1 - clamp(value), 3);
+}
+
+function easeInOutCubic(value) {
+  const safe = clamp(value);
+  return safe < 0.5 ? 4 * safe * safe * safe : 1 - Math.pow(-2 * safe + 2, 3) / 2;
+}
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
@@ -285,7 +298,72 @@ async function inspectReturnParams() {
   }
 }
 
+function initHeroDrive() {
+  const hero = $(".hero-drive");
+  if (!hero) return;
+
+  const menuNode = $("#heroPlateMenu");
+  const menuLinks = menuNode ? Array.from(menuNode.querySelectorAll("a")) : [];
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let ticking = false;
+
+  function setMenuFocus(enabled) {
+    menuLinks.forEach((link) => {
+      link.tabIndex = enabled ? 0 : -1;
+    });
+  }
+
+  function render() {
+    ticking = false;
+
+    const rect = hero.getBoundingClientRect();
+    const scrollable = Math.max(1, hero.offsetHeight - window.innerHeight);
+    const progress = clamp(-rect.top / scrollable);
+    const reduced = reduceMotion.matches;
+    const drive = reduced ? 0.5 : easeInOutCubic(progress);
+    const close = reduced ? 0 : easeOutCubic((progress - 0.08) / 0.88);
+    const menuProgress = easeOutCubic((progress - 0.42) / 0.28);
+    const contentOpacity = reduced ? 1 - menuProgress : 1 - easeOutCubic((progress - 0.08) / 0.32);
+    const compact = window.innerWidth < 700;
+
+    hero.style.setProperty("--content-opacity", contentOpacity.toFixed(3));
+    hero.style.setProperty("--content-y", `${(1 - contentOpacity) * -34}px`);
+    hero.style.setProperty("--media-scale", (1.04 + progress * 0.11).toFixed(3));
+    hero.style.setProperty("--media-x", `${progress * (compact ? -8 : -22)}px`);
+    hero.style.setProperty("--media-y", `${progress * -12}px`);
+    hero.style.setProperty("--car-scroll-x", `${(drive - 0.5) * (compact ? 18 : 34)}px`);
+    hero.style.setProperty("--car-scroll-y", `${close * (compact ? 48 : 74)}px`);
+    hero.style.setProperty("--car-scroll-scale", (1 + close * (compact ? 0.82 : 1.14)).toFixed(3));
+    hero.style.setProperty("--wheel-rotation", `${Math.round(progress * 820)}deg`);
+    hero.style.setProperty("--plate-opacity", (1 - menuProgress).toFixed(3));
+    hero.style.setProperty("--plate-scale", (1 + menuProgress * 3.2).toFixed(3));
+    hero.style.setProperty("--menu-opacity", menuProgress.toFixed(3));
+    hero.style.setProperty("--menu-y", `${(1 - menuProgress) * 105}%`);
+    hero.style.setProperty("--menu-scale-x", (0.08 + menuProgress * 0.92).toFixed(3));
+    hero.style.setProperty("--menu-scale-y", (0.16 + menuProgress * 0.84).toFixed(3));
+    hero.style.setProperty("--menu-radius", `${Math.round((1 - menuProgress) * 8)}px`);
+
+    const menuReady = menuProgress > 0.82;
+    hero.dataset.menuReady = String(menuReady);
+    hero.dataset.contentHidden = String(contentOpacity < 0.08);
+    setMenuFocus(menuReady);
+  }
+
+  function queueRender() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(render);
+  }
+
+  window.addEventListener("scroll", queueRender, { passive: true });
+  window.addEventListener("resize", queueRender);
+  reduceMotion.addEventListener?.("change", queueRender);
+  render();
+}
+
 async function init() {
+  initHeroDrive();
+
   const catalog = await api("/api/catalog");
   state.events = catalog.events;
   state.ticketTypes = catalog.ticketTypes;

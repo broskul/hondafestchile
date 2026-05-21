@@ -1,0 +1,17 @@
+Titulo: Exhibicion de autos Honda - IMG_0347
+Descripcion: Registro de autos Honda en zona de paddock, estacionamiento tecnico o exhibicion, con foco en preparaciones, lineup, boxes y comunidad automotriz.
+Categoria: Exhibicion y paddock
+Etiquetas: hfc, honda fest chile, exhibicion, paddock, autos, comunidad, tuning, lineup, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/exhibicion-exhibicion-y-paddock/016-img-0347.jpg
+Tipo: image
+Archivo original: IMG_0347.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_0347.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2960637 bytes (2.82 MB)
+Fecha captura EXIF: 2025:11:30 12:50:11
+Fecha modificacion: 2026-05-19T10:09:04
+Camara: Canon Canon EOS 6D
+SHA256: 3e992f1fd5ff91ddc77bfee00cc576d93829f4a8ab8c71f8d1bcda752fbbbba0
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

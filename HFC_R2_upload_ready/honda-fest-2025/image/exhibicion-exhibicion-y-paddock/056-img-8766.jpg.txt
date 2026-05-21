@@ -1,0 +1,17 @@
+Titulo: Exhibicion de autos Honda - IMG_8766
+Descripcion: Registro de autos Honda en zona de paddock, estacionamiento tecnico o exhibicion, con foco en preparaciones, lineup, boxes y comunidad automotriz.
+Categoria: Exhibicion y paddock
+Etiquetas: hfc, honda fest chile, exhibicion, paddock, autos, comunidad, tuning, lineup, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/exhibicion-exhibicion-y-paddock/056-img-8766.jpg
+Tipo: image
+Archivo original: IMG_8766.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_8766.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2013407 bytes (1.92 MB)
+Fecha captura EXIF: 2025:11:27 19:19:44
+Fecha modificacion: 2026-05-19T10:08:40
+Camara: Canon Canon EOS 6D
+SHA256: 5ba64b5caea58c65e8d25f033f1509d13b405ceb94598e5d07fa714422c8f7be
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

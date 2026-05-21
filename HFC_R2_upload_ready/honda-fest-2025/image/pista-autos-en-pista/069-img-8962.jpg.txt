@@ -1,0 +1,17 @@
+Titulo: Auto Honda en pista - IMG_8962
+Descripcion: Fotografia de auto Honda en accion sobre el circuito durante Honda Fest Chile, util para galeria deportiva, cobertura del evento y archivo historico de pista.
+Categoria: Autos en pista
+Etiquetas: hfc, honda fest chile, honda, autos, circuito, pista, motorsport, track day, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/pista-autos-en-pista/069-img-8962.jpg
+Tipo: image
+Archivo original: IMG_8962.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_8962.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1537432 bytes (1.47 MB)
+Fecha captura EXIF: 2025:11:25 22:07:30
+Fecha modificacion: 2026-05-19T10:08:55
+Camara: Canon Canon EOS 6D
+SHA256: 1fe0a1f53069a11b45403e12bc13d9646482eca6aa8fa605fa67a9516bc95989
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

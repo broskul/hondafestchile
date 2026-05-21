@@ -1,0 +1,17 @@
+Titulo: Auto Honda en pista - IMG_1070
+Descripcion: Fotografia de auto Honda en accion sobre el circuito durante Honda Fest Chile, util para galeria deportiva, cobertura del evento y archivo historico de pista. Coleccion original: seleccion Honda Fest 2025.
+Categoria: Autos en pista
+Etiquetas: hfc, honda fest chile, honda, autos, circuito, pista, motorsport, track day, honda-fest-2025-seleccion
+Evento/Coleccion: honda-fest-2025-seleccion
+Clave R2 sugerida: honda-fest-2025-seleccion/image/pista-autos-en-pista/149-img-1070.jpg
+Tipo: image
+Archivo original: IMG_1070.jpg
+Ruta original: wetransfer_img_0769-jpg_2026-05-17_0109/IMG_1070.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2341447 bytes (2.23 MB)
+Fecha captura EXIF: 2026:05:14 19:09:20
+Fecha modificacion: 2026-05-19T10:09:52
+Camara: Canon Canon EOS 6D
+SHA256: 5f28e99766e758e720e36b5d227e884e0017bc494dfe8b5662b1730f3a256330
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

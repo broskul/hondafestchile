@@ -1,0 +1,17 @@
+Titulo: Presentacion del evento - IMG_7691
+Descripcion: Registro de presentadores, animacion o momento de comunicacion publica dentro de Honda Fest Chile. Coleccion original: Japon 2025.
+Categoria: Presentacion y animacion
+Etiquetas: hfc, honda fest chile, presentacion, animacion, escenario, publico, evento, japon-2025
+Evento/Coleccion: japon-2025
+Clave R2 sugerida: japon-2025/image/presentacion-presentacion-y-animacion/338-img-7691.jpg
+Tipo: image
+Archivo original: IMG_7691.jpg
+Ruta original: wetransfer_japon-2025_2026-05-18_2304/IMG_7691.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1615286 bytes (1.54 MB)
+Fecha captura EXIF: 2025:03:02 18:38:43
+Fecha modificacion: 2026-05-19T10:10:06
+Camara: Canon Canon EOS 6D
+SHA256: 9e414e586a6222efd21980a3c5898f045fe95d2fb5dc1955720f07f38edcace9
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

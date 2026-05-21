@@ -1,0 +1,17 @@
+Titulo: Ambiente general del evento - IMG_5926
+Descripcion: Vista de acceso, arco, grilla, flujo de asistentes o ambiente general del recinto durante Honda Fest Chile. Coleccion original: Japon 2025.
+Categoria: Acceso y ambiente
+Etiquetas: hfc, honda fest chile, ambiente, acceso, arco, recinto, evento, red bull, japon-2025
+Evento/Coleccion: japon-2025
+Clave R2 sugerida: japon-2025/image/acceso-acceso-y-ambiente/240-img-5926.jpg
+Tipo: image
+Archivo original: IMG_5926.jpg
+Ruta original: wetransfer_japon-2025_2026-05-18_2304/IMG_5926.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2306698 bytes (2.20 MB)
+Fecha captura EXIF: 2025:02:26 17:58:23
+Fecha modificacion: 2026-05-19T10:10:21
+Camara: Canon Canon EOS 6D
+SHA256: 04ebc63e7ea3a6ebdea8c5f4b99012cc2c5ff7825a31b57b3845ce0347a022e2
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

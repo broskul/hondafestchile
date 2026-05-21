@@ -1,0 +1,17 @@
+Titulo: Premiacion Honda Fest Chile - IMG_1647
+Descripcion: Registro de premiacion y reconocimientos del evento, con participantes, trofeos, podio y activaciones de marca.
+Categoria: Premiacion
+Etiquetas: hfc, honda fest chile, premiacion, podio, trofeos, ganadores, comunidad, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/premiacion-premiacion/052-img-1647.jpg
+Tipo: image
+Archivo original: IMG_1647.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_1647.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1916164 bytes (1.83 MB)
+Fecha captura EXIF: 2025:11:30 20:56:32
+Fecha modificacion: 2026-05-19T10:08:17
+Camara: Canon Canon EOS 6D
+SHA256: b759f0b69cfc78ab80f5c9ca7478619fb4d1ccf2218f2ac0abc03ffff240cead
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

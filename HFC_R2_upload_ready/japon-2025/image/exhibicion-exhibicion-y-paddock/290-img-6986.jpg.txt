@@ -1,0 +1,17 @@
+Titulo: Exhibicion de autos Honda - IMG_6986
+Descripcion: Registro de autos Honda en zona de paddock, estacionamiento tecnico o exhibicion, con foco en preparaciones, lineup, boxes y comunidad automotriz. Coleccion original: Japon 2025.
+Categoria: Exhibicion y paddock
+Etiquetas: hfc, honda fest chile, exhibicion, paddock, autos, comunidad, tuning, lineup, japon-2025
+Evento/Coleccion: japon-2025
+Clave R2 sugerida: japon-2025/image/exhibicion-exhibicion-y-paddock/290-img-6986.jpg
+Tipo: image
+Archivo original: IMG_6986.jpg
+Ruta original: wetransfer_japon-2025_2026-05-18_2304/IMG_6986.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 1841213 bytes (1.76 MB)
+Fecha captura EXIF: 2025:02:28 21:28:43
+Fecha modificacion: 2026-05-19T10:10:10
+Camara: Canon Canon EOS 6D
+SHA256: 13f2f28fce322a916e39735b187acd69f224d8b9a6958aa769c47599288d6ef8
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

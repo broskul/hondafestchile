@@ -1,0 +1,17 @@
+Titulo: Comunidad Honda Fest Chile - IMG_1586
+Descripcion: Fotografia de asistentes, pilotos, organizadores o comunidad compartiendo dentro del evento Honda Fest Chile.
+Categoria: Publico y comunidad
+Etiquetas: hfc, honda fest chile, comunidad, publico, asistentes, pilotos, organizacion, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/publico-publico-y-comunidad/050-img-1586.jpg
+Tipo: image
+Archivo original: IMG_1586.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_1586.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2368402 bytes (2.26 MB)
+Fecha captura EXIF: 2025:11:30 20:53:42
+Fecha modificacion: 2026-05-19T10:08:34
+Camara: Canon Canon EOS 6D
+SHA256: cf75ec75914ae377175fbc43689692abefbc81c17674dc25500c0aff775d32ca
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.

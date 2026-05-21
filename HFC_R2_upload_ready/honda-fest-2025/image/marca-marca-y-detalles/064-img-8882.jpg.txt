@@ -1,0 +1,17 @@
+Titulo: Detalle de marca Honda Fest Chile - IMG_8882
+Descripcion: Detalle visual de marca, grafica, insignia, preparacion o elemento distintivo asociado al evento y sus autos.
+Categoria: Marca y detalles
+Etiquetas: hfc, honda fest chile, detalle, marca, honda, grafica, logo, preparacion, honda-fest-2025
+Evento/Coleccion: honda-fest-2025
+Clave R2 sugerida: honda-fest-2025/image/marca-marca-y-detalles/064-img-8882.jpg
+Tipo: image
+Archivo original: IMG_8882.jpg
+Ruta original: wetransfer_honda-fest-2025_2026-05-18_2306/IMG_8882.jpg
+Dimensiones: 2048x1365px
+Orientacion: horizontal
+Tamano: 2336159 bytes (2.23 MB)
+Fecha captura EXIF: 2025:11:27 19:30:53
+Fecha modificacion: 2026-05-19T10:08:28
+Camara: Canon Canon EOS 6D
+SHA256: 218c514c0f5ffe219939cb304efefe4d5f1758eb588b4273f867519f287cd564
+Uso sugerido: galeria web, archivo historico, redes sociales y material de difusion HFC.
