@@ -1,0 +1,833 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.8.2
+2 info using node@v20.20.1
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.npmrc
+5 silly config load:file:C:\Users\Usuario\.npmrc
+6 silly config load:file:C:\Users\Usuario\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm exec wrangler@4.86.0 --version
+8 verbose argv "exec" "--yes" "--" "wrangler@4.86.0" "--version"
+9 verbose logfile logs-max:10 dir:C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_logs\2026-05-22T14_20_18_706Z-
+10 verbose logfile C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_logs\2026-05-22T14_20_18_706Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 http fetch GET 200 https://registry.npmjs.org/wrangler 208ms (cache revalidated)
+14 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+15 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+16 silly idealTree buildDeps
+17 silly fetch manifest wrangler@4.86.0
+18 silly packumentCache full:https://registry.npmjs.org/wrangler cache-miss
+19 http fetch GET 200 https://registry.npmjs.org/wrangler 84ms (cache hit)
+20 silly packumentCache full:https://registry.npmjs.org/wrangler set size:29387960 disposed:false
+21 silly fetch manifest @cloudflare/workers-types@^4.20260426.1
+22 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkers-types cache-miss
+23 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fworkers-types 19ms (cache hit)
+24 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkers-types set size:1626940 disposed:false
+25 silly placeDep ROOT wrangler@4.86.0 OK for:  want: 4.86.0
+26 silly fetch manifest unenv@2.0.0-rc.24
+27 silly packumentCache full:https://registry.npmjs.org/unenv cache-miss
+28 silly fetch manifest esbuild@0.27.3
+29 silly packumentCache full:https://registry.npmjs.org/esbuild cache-miss
+30 silly fetch manifest workerd@1.20260426.1
+31 silly packumentCache full:https://registry.npmjs.org/workerd cache-miss
+32 silly fetch manifest miniflare@4.20260426.0
+33 silly packumentCache full:https://registry.npmjs.org/miniflare cache-miss
+34 silly fetch manifest blake3-wasm@2.1.5
+35 silly packumentCache full:https://registry.npmjs.org/blake3-wasm cache-miss
+36 silly fetch manifest path-to-regexp@6.3.0
+37 silly packumentCache full:https://registry.npmjs.org/path-to-regexp cache-miss
+38 silly fetch manifest @cloudflare/unenv-preset@2.16.1
+39 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2funenv-preset cache-miss
+40 silly fetch manifest @cloudflare/kv-asset-handler@0.4.2
+41 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fkv-asset-handler cache-miss
+42 silly fetch manifest fsevents@~2.3.2
+43 silly packumentCache full:https://registry.npmjs.org/fsevents cache-miss
+44 http fetch GET 200 https://registry.npmjs.org/workerd 40ms (cache hit)
+45 silly packumentCache full:https://registry.npmjs.org/workerd set size:809328 disposed:false
+46 http fetch GET 200 https://registry.npmjs.org/path-to-regexp 50ms (cache hit)
+47 silly packumentCache full:https://registry.npmjs.org/path-to-regexp set size:216334 disposed:false
+48 http fetch GET 200 https://registry.npmjs.org/blake3-wasm 54ms (cache hit)
+49 silly packumentCache full:https://registry.npmjs.org/blake3-wasm set size:6797 disposed:false
+50 http fetch GET 200 https://registry.npmjs.org/unenv 59ms (cache hit)
+51 silly packumentCache full:https://registry.npmjs.org/unenv set size:236480 disposed:false
+52 http fetch GET 200 https://registry.npmjs.org/esbuild 65ms (cache hit)
+53 silly packumentCache full:https://registry.npmjs.org/esbuild set size:1254708 disposed:false
+54 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2funenv-preset 77ms (cache hit)
+55 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2funenv-preset set size:3362208 disposed:false
+56 http fetch GET 200 https://registry.npmjs.org/miniflare 120ms (cache hit)
+57 silly packumentCache full:https://registry.npmjs.org/miniflare set size:6565346 disposed:false
+58 http fetch GET 200 https://registry.npmjs.org/fsevents 182ms (cache hit)
+59 silly packumentCache full:https://registry.npmjs.org/fsevents set size:182472 disposed:false
+60 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fkv-asset-handler 186ms (cache hit)
+61 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fkv-asset-handler set size:83933 disposed:false
+62 silly placeDep ROOT @cloudflare/kv-asset-handler@0.4.2 OK for: wrangler@4.86.0 want: 0.4.2
+63 silly placeDep ROOT @cloudflare/unenv-preset@2.16.1 OK for: wrangler@4.86.0 want: 2.16.1
+64 silly placeDep ROOT unenv@2.0.0-rc.24 OK for: @cloudflare/unenv-preset@2.16.1 want: 2.0.0-rc.24
+65 silly placeDep ROOT blake3-wasm@2.1.5 OK for: wrangler@4.86.0 want: 2.1.5
+66 silly placeDep ROOT esbuild@0.27.3 OK for: wrangler@4.86.0 want: 0.27.3
+67 silly placeDep ROOT fsevents@2.3.3 OK for: wrangler@4.86.0 want: ~2.3.2
+68 silly placeDep ROOT miniflare@4.20260426.0 OK for: wrangler@4.86.0 want: 4.20260426.0
+69 silly placeDep ROOT path-to-regexp@6.3.0 OK for: wrangler@4.86.0 want: 6.3.0
+70 silly placeDep ROOT workerd@1.20260426.1 OK for: wrangler@4.86.0 want: 1.20260426.1
+71 silly fetch manifest pathe@^2.0.3
+72 silly packumentCache full:https://registry.npmjs.org/pathe cache-miss
+73 silly fetch manifest @esbuild/aix-ppc64@0.27.3
+74 silly packumentCache full:https://registry.npmjs.org/@esbuild%2faix-ppc64 cache-miss
+75 silly fetch manifest @esbuild/linux-arm@0.27.3
+76 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-arm cache-miss
+77 silly fetch manifest @esbuild/linux-x64@0.27.3
+78 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-x64 cache-miss
+79 silly fetch manifest @esbuild/sunos-x64@0.27.3
+80 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fsunos-x64 cache-miss
+81 silly fetch manifest @esbuild/win32-x64@0.27.3
+82 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fwin32-x64 cache-miss
+83 silly fetch manifest @esbuild/darwin-x64@0.27.3
+84 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fdarwin-x64 cache-miss
+85 silly fetch manifest @esbuild/linux-ia32@0.27.3
+86 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-ia32 cache-miss
+87 silly fetch manifest @esbuild/netbsd-x64@0.27.3
+88 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fnetbsd-x64 cache-miss
+89 silly fetch manifest @esbuild/win32-ia32@0.27.3
+90 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fwin32-ia32 cache-miss
+91 silly fetch manifest @esbuild/android-arm@0.27.3
+92 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fandroid-arm cache-miss
+93 silly fetch manifest @esbuild/android-x64@0.27.3
+94 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fandroid-x64 cache-miss
+95 silly fetch manifest @esbuild/freebsd-x64@0.27.3
+96 silly packumentCache full:https://registry.npmjs.org/@esbuild%2ffreebsd-x64 cache-miss
+97 silly fetch manifest @esbuild/linux-arm64@0.27.3
+98 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-arm64 cache-miss
+99 silly fetch manifest @esbuild/linux-ppc64@0.27.3
+100 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-ppc64 cache-miss
+101 silly fetch manifest @esbuild/linux-s390x@0.27.3
+102 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-s390x cache-miss
+103 silly fetch manifest @esbuild/openbsd-x64@0.27.3
+104 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fopenbsd-x64 cache-miss
+105 silly fetch manifest @esbuild/win32-arm64@0.27.3
+106 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fwin32-arm64 cache-miss
+107 silly fetch manifest @esbuild/darwin-arm64@0.27.3
+108 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fdarwin-arm64 cache-miss
+109 silly fetch manifest @esbuild/netbsd-arm64@0.27.3
+110 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fnetbsd-arm64 cache-miss
+111 silly fetch manifest @esbuild/android-arm64@0.27.3
+112 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fandroid-arm64 cache-miss
+113 silly fetch manifest @esbuild/freebsd-arm64@0.27.3
+114 silly packumentCache full:https://registry.npmjs.org/@esbuild%2ffreebsd-arm64 cache-miss
+115 silly fetch manifest @esbuild/linux-loong64@0.27.3
+116 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-loong64 cache-miss
+117 silly fetch manifest @esbuild/linux-riscv64@0.27.3
+118 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-riscv64 cache-miss
+119 silly fetch manifest @esbuild/openbsd-arm64@0.27.3
+120 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fopenbsd-arm64 cache-miss
+121 silly fetch manifest @esbuild/linux-mips64el@0.27.3
+122 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-mips64el cache-miss
+123 silly fetch manifest @esbuild/openharmony-arm64@0.27.3
+124 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fopenharmony-arm64 cache-miss
+125 silly fetch manifest ws@8.18.0
+126 silly packumentCache full:https://registry.npmjs.org/ws cache-miss
+127 silly fetch manifest sharp@^0.34.5
+128 silly packumentCache full:https://registry.npmjs.org/sharp cache-miss
+129 silly fetch manifest youch@4.1.0-beta.10
+130 silly packumentCache full:https://registry.npmjs.org/youch cache-miss
+131 silly fetch manifest undici@7.24.8
+132 silly packumentCache full:https://registry.npmjs.org/undici cache-miss
+133 http fetch GET 200 https://registry.npmjs.org/@esbuild%2faix-ppc64 129ms (cache hit)
+134 silly packumentCache full:https://registry.npmjs.org/@esbuild%2faix-ppc64 set size:64314 disposed:false
+135 silly fetch manifest @cspotcode/source-map-support@0.8.1
+136 silly packumentCache full:https://registry.npmjs.org/@cspotcode%2fsource-map-support cache-miss
+137 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-x64 132ms (cache hit)
+138 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-x64 set size:195479 disposed:false
+139 silly fetch manifest @cloudflare/workerd-linux-64@1.20260426.1
+140 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-linux-64 cache-miss
+141 http fetch GET 200 https://registry.npmjs.org/pathe 137ms (cache hit)
+142 silly packumentCache full:https://registry.npmjs.org/pathe set size:68788 disposed:false
+143 silly fetch manifest @cloudflare/workerd-darwin-64@1.20260426.1
+144 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-darwin-64 cache-miss
+145 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-arm 139ms (cache hit)
+146 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-arm set size:195140 disposed:false
+147 silly fetch manifest @cloudflare/workerd-windows-64@1.20260426.1
+148 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-windows-64 cache-miss
+149 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-ia32 141ms (cache hit)
+150 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-ia32 set size:196150 disposed:false
+151 silly fetch manifest @cloudflare/workerd-linux-arm64@1.20260426.1
+152 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-linux-arm64 cache-miss
+153 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fwin32-x64 146ms (cache hit)
+154 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fwin32-x64 set size:194073 disposed:false
+155 silly fetch manifest @cloudflare/workerd-darwin-arm64@1.20260426.1
+156 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-darwin-arm64 cache-miss
+157 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fandroid-x64 145ms (cache hit)
+158 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fandroid-x64 set size:195551 disposed:false
+159 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fdarwin-x64 153ms (cache hit)
+160 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fdarwin-x64 set size:196195 disposed:false
+161 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fsunos-x64 156ms (cache hit)
+162 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fsunos-x64 set size:195721 disposed:false
+163 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-arm64 154ms (cache hit)
+164 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-arm64 set size:197274 disposed:false
+165 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fwin32-ia32 159ms (cache hit)
+166 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fwin32-ia32 set size:196374 disposed:false
+167 http fetch GET 200 https://registry.npmjs.org/@esbuild%2ffreebsd-x64 159ms (cache hit)
+168 silly packumentCache full:https://registry.npmjs.org/@esbuild%2ffreebsd-x64 set size:197070 disposed:false
+169 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-s390x 158ms (cache hit)
+170 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-s390x set size:198784 disposed:false
+171 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-ppc64 161ms (cache hit)
+172 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-ppc64 set size:199310 disposed:false
+173 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fnetbsd-arm64 158ms (cache hit)
+174 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fnetbsd-arm64 set size:40794 disposed:false
+175 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fandroid-arm64 154ms (cache hit)
+176 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fandroid-arm64 set size:200684 disposed:false
+177 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fwin32-arm64 163ms (cache hit)
+178 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fwin32-arm64 set size:197504 disposed:false
+179 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fnetbsd-x64 172ms (cache hit)
+180 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fnetbsd-x64 set size:193883 disposed:false
+181 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fandroid-arm 172ms (cache hit)
+182 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fandroid-arm set size:221749 disposed:false
+183 http fetch GET 200 https://registry.npmjs.org/@esbuild%2ffreebsd-arm64 166ms (cache hit)
+184 silly packumentCache full:https://registry.npmjs.org/@esbuild%2ffreebsd-arm64 set size:198853 disposed:false
+185 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-riscv64 168ms (cache hit)
+186 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-riscv64 set size:198981 disposed:false
+187 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fdarwin-arm64 178ms (cache hit)
+188 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fdarwin-arm64 set size:197958 disposed:false
+189 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fopenbsd-x64 182ms (cache hit)
+190 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fopenbsd-x64 set size:197080 disposed:false
+191 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-loong64 175ms (cache hit)
+192 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-loong64 set size:252211 disposed:false
+193 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fopenbsd-arm64 175ms (cache hit)
+194 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fopenbsd-arm64 set size:46111 disposed:false
+195 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-mips64el 175ms (cache hit)
+196 silly packumentCache full:https://registry.npmjs.org/@esbuild%2flinux-mips64el set size:201062 disposed:false
+197 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fopenharmony-arm64 177ms (cache hit)
+198 silly packumentCache full:https://registry.npmjs.org/@esbuild%2fopenharmony-arm64 set size:29494 disposed:false
+199 http fetch GET 200 https://registry.npmjs.org/sharp 178ms (cache hit)
+200 silly packumentCache full:https://registry.npmjs.org/sharp set size:1072564 disposed:false
+201 http fetch GET 200 https://registry.npmjs.org/ws 197ms (cache hit)
+202 silly packumentCache full:https://registry.npmjs.org/ws set size:418167 disposed:false
+203 http fetch GET 200 https://registry.npmjs.org/youch 209ms (cache hit)
+204 silly packumentCache full:https://registry.npmjs.org/youch set size:154842 disposed:false
+205 http fetch GET 200 https://registry.npmjs.org/undici 216ms (cache hit)
+206 silly packumentCache full:https://registry.npmjs.org/undici set size:1412963 disposed:false
+207 http fetch GET 200 https://registry.npmjs.org/@cspotcode%2fsource-map-support 146ms (cache hit)
+208 silly packumentCache full:https://registry.npmjs.org/@cspotcode%2fsource-map-support set size:30214 disposed:false
+209 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fworkerd-linux-arm64 138ms (cache hit)
+210 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-linux-arm64 set size:1630640 disposed:false
+211 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fworkerd-darwin-64 177ms (cache hit)
+212 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-darwin-64 set size:1640162 disposed:false
+213 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fworkerd-linux-64 199ms (cache hit)
+214 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-linux-64 set size:1638339 disposed:false
+215 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fworkerd-windows-64 220ms (cache hit)
+216 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-windows-64 set size:1547749 disposed:false
+217 http fetch GET 200 https://registry.npmjs.org/@cloudflare%2fworkerd-darwin-arm64 232ms (cache hit)
+218 silly packumentCache full:https://registry.npmjs.org/@cloudflare%2fworkerd-darwin-arm64 set size:1639844 disposed:false
+219 silly placeDep ROOT @esbuild/aix-ppc64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+220 silly placeDep ROOT @esbuild/android-arm@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+221 silly placeDep ROOT @esbuild/android-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+222 silly placeDep ROOT @esbuild/android-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+223 silly placeDep ROOT @esbuild/darwin-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+224 silly placeDep ROOT @esbuild/darwin-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+225 silly placeDep ROOT @esbuild/freebsd-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+226 silly placeDep ROOT @esbuild/freebsd-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+227 silly placeDep ROOT @esbuild/linux-arm@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+228 silly placeDep ROOT @esbuild/linux-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+229 silly placeDep ROOT @esbuild/linux-ia32@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+230 silly placeDep ROOT @esbuild/linux-loong64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+231 silly placeDep ROOT @esbuild/linux-mips64el@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+232 silly placeDep ROOT @esbuild/linux-ppc64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+233 silly placeDep ROOT @esbuild/linux-riscv64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+234 silly placeDep ROOT @esbuild/linux-s390x@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+235 silly placeDep ROOT @esbuild/linux-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+236 silly placeDep ROOT @esbuild/netbsd-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+237 silly placeDep ROOT @esbuild/netbsd-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+238 silly placeDep ROOT @esbuild/openbsd-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+239 silly placeDep ROOT @esbuild/openbsd-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+240 silly placeDep ROOT @esbuild/openharmony-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+241 silly placeDep ROOT @esbuild/sunos-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+242 silly placeDep ROOT @esbuild/win32-arm64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+243 silly placeDep ROOT @esbuild/win32-ia32@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+244 silly placeDep ROOT @esbuild/win32-x64@0.27.3 OK for: esbuild@0.27.3 want: 0.27.3
+245 silly fetch manifest bufferutil@^4.0.1
+246 silly packumentCache full:https://registry.npmjs.org/bufferutil cache-miss
+247 http fetch GET 200 https://registry.npmjs.org/bufferutil 11ms (cache hit)
+248 silly packumentCache full:https://registry.npmjs.org/bufferutil set size:52763 disposed:false
+249 silly fetch manifest utf-8-validate@>=5.0.2
+250 silly packumentCache full:https://registry.npmjs.org/utf-8-validate cache-miss
+251 http fetch GET 200 https://registry.npmjs.org/utf-8-validate 13ms (cache hit)
+252 silly packumentCache full:https://registry.npmjs.org/utf-8-validate set size:77148 disposed:false
+253 silly placeDep ROOT @cspotcode/source-map-support@0.8.1 OK for: miniflare@4.20260426.0 want: 0.8.1
+254 silly placeDep ROOT sharp@0.34.5 OK for: miniflare@4.20260426.0 want: ^0.34.5
+255 silly placeDep ROOT undici@7.24.8 OK for: miniflare@4.20260426.0 want: 7.24.8
+256 silly placeDep ROOT ws@8.18.0 OK for: miniflare@4.20260426.0 want: 8.18.0
+257 silly placeDep ROOT youch@4.1.0-beta.10 OK for: miniflare@4.20260426.0 want: 4.1.0-beta.10
+258 silly fetch manifest @jridgewell/trace-mapping@0.3.9
+259 silly packumentCache full:https://registry.npmjs.org/@jridgewell%2ftrace-mapping cache-miss
+260 silly fetch manifest semver@^7.7.3
+261 silly packumentCache full:https://registry.npmjs.org/semver cache-miss
+262 silly fetch manifest @img/colour@^1.0.0
+263 silly packumentCache full:https://registry.npmjs.org/@img%2fcolour cache-miss
+264 silly fetch manifest detect-libc@^2.1.2
+265 silly packumentCache full:https://registry.npmjs.org/detect-libc cache-miss
+266 silly fetch manifest @img/sharp-wasm32@0.34.5
+267 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-wasm32 cache-miss
+268 silly fetch manifest @img/sharp-linux-arm@0.34.5
+269 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-arm cache-miss
+270 silly fetch manifest @img/sharp-linux-x64@0.34.5
+271 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-x64 cache-miss
+272 silly fetch manifest @img/sharp-win32-x64@0.34.5
+273 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-win32-x64 cache-miss
+274 silly fetch manifest @img/sharp-darwin-x64@0.34.5
+275 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-darwin-x64 cache-miss
+276 silly fetch manifest @img/sharp-win32-ia32@0.34.5
+277 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-win32-ia32 cache-miss
+278 silly fetch manifest @img/sharp-linux-arm64@0.34.5
+279 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-arm64 cache-miss
+280 silly fetch manifest @img/sharp-linux-ppc64@0.34.5
+281 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-ppc64 cache-miss
+282 silly fetch manifest @img/sharp-linux-s390x@0.34.5
+283 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-s390x cache-miss
+284 silly fetch manifest @img/sharp-win32-arm64@0.34.5
+285 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-win32-arm64 cache-miss
+286 silly fetch manifest @img/sharp-darwin-arm64@0.34.5
+287 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-darwin-arm64 cache-miss
+288 silly fetch manifest @img/sharp-linux-riscv64@0.34.5
+289 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-riscv64 cache-miss
+290 silly fetch manifest @img/sharp-linuxmusl-x64@0.34.5
+291 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linuxmusl-x64 cache-miss
+292 silly fetch manifest @img/sharp-linuxmusl-arm64@0.34.5
+293 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linuxmusl-arm64 cache-miss
+294 silly fetch manifest @img/sharp-libvips-linux-arm@1.2.4
+295 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-arm cache-miss
+296 silly fetch manifest @img/sharp-libvips-linux-x64@1.2.4
+297 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-x64 cache-miss
+298 silly fetch manifest @img/sharp-libvips-darwin-x64@1.2.4
+299 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-darwin-x64 cache-miss
+300 silly fetch manifest @img/sharp-libvips-linux-arm64@1.2.4
+301 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-arm64 cache-miss
+302 silly fetch manifest @img/sharp-libvips-linux-ppc64@1.2.4
+303 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-ppc64 cache-miss
+304 silly fetch manifest @img/sharp-libvips-linux-s390x@1.2.4
+305 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-s390x cache-miss
+306 silly fetch manifest @img/sharp-libvips-darwin-arm64@1.2.4
+307 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-darwin-arm64 cache-miss
+308 silly fetch manifest @img/sharp-libvips-linux-riscv64@1.2.4
+309 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-riscv64 cache-miss
+310 silly fetch manifest @img/sharp-libvips-linuxmusl-x64@1.2.4
+311 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linuxmusl-x64 cache-miss
+312 silly fetch manifest @img/sharp-libvips-linuxmusl-arm64@1.2.4
+313 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linuxmusl-arm64 cache-miss
+314 silly fetch manifest cookie@^1.0.2
+315 silly packumentCache full:https://registry.npmjs.org/cookie cache-miss
+316 silly fetch manifest youch-core@^0.3.3
+317 silly packumentCache full:https://registry.npmjs.org/youch-core cache-miss
+318 silly fetch manifest @poppinss/colors@^4.1.5
+319 silly packumentCache full:https://registry.npmjs.org/@poppinss%2fcolors cache-miss
+320 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-win32-ia32 139ms (cache hit)
+321 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-win32-ia32 set size:73172 disposed:false
+322 silly fetch manifest @poppinss/dumper@^0.6.4
+323 silly packumentCache full:https://registry.npmjs.org/@poppinss%2fdumper cache-miss
+324 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linux-arm 145ms (cache hit)
+325 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-arm set size:75025 disposed:false
+326 silly fetch manifest @speed-highlight/core@^1.2.7
+327 silly packumentCache full:https://registry.npmjs.org/@speed-highlight%2fcore cache-miss
+328 http fetch GET 200 https://registry.npmjs.org/detect-libc 148ms (cache hit)
+329 silly packumentCache full:https://registry.npmjs.org/detect-libc set size:47861 disposed:false
+330 http fetch GET 200 https://registry.npmjs.org/semver 151ms (cache hit)
+331 silly packumentCache full:https://registry.npmjs.org/semver set size:235672 disposed:false
+332 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-wasm32 152ms (cache hit)
+333 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-wasm32 set size:69437 disposed:false
+334 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-win32-x64 151ms (cache hit)
+335 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-win32-x64 set size:72477 disposed:false
+336 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-darwin-x64 152ms (cache hit)
+337 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-darwin-x64 set size:75437 disposed:false
+338 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linux-x64 147ms (cache hit)
+339 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-x64 set size:67222 disposed:false
+340 http fetch GET 200 https://registry.npmjs.org/@img%2fcolour 159ms (cache hit)
+341 silly packumentCache full:https://registry.npmjs.org/@img%2fcolour set size:9701 disposed:false
+342 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linux-x64 158ms (cache hit)
+343 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-x64 set size:74659 disposed:false
+344 http fetch GET 200 https://registry.npmjs.org/@jridgewell%2ftrace-mapping 163ms (cache hit)
+345 silly packumentCache full:https://registry.npmjs.org/@jridgewell%2ftrace-mapping set size:170909 disposed:false
+346 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-win32-arm64 157ms (cache hit)
+347 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-win32-arm64 set size:32122 disposed:false
+348 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linux-riscv64 157ms (cache hit)
+349 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-riscv64 set size:17504 disposed:false
+350 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linuxmusl-x64 156ms (cache hit)
+351 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linuxmusl-x64 set size:75867 disposed:false
+352 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-darwin-arm64 158ms (cache hit)
+353 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-darwin-arm64 set size:76460 disposed:false
+354 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linux-arm64 162ms (cache hit)
+355 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-arm64 set size:75657 disposed:false
+356 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linux-ppc64 156ms (cache hit)
+357 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-ppc64 set size:53353 disposed:false
+358 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linuxmusl-arm64 159ms (cache hit)
+359 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linuxmusl-arm64 set size:76866 disposed:false
+360 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-darwin-x64 159ms (cache hit)
+361 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-darwin-x64 set size:62245 disposed:false
+362 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linux-riscv64 156ms (cache hit)
+363 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-riscv64 set size:39389 disposed:false
+364 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linux-arm 162ms (cache hit)
+365 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-arm set size:69203 disposed:false
+366 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linux-s390x 166ms (cache hit)
+367 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-s390x set size:73603 disposed:false
+368 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-linux-ppc64 168ms (cache hit)
+369 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-linux-ppc64 set size:40341 disposed:false
+370 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linux-s390x 162ms (cache hit)
+371 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-s390x set size:62330 disposed:false
+372 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linux-arm64 164ms (cache hit)
+373 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linux-arm64 set size:66148 disposed:false
+374 http fetch GET 200 https://registry.npmjs.org/youch-core 160ms (cache hit)
+375 silly packumentCache full:https://registry.npmjs.org/youch-core set size:45040 disposed:false
+376 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linuxmusl-x64 163ms (cache hit)
+377 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linuxmusl-x64 set size:64360 disposed:false
+378 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-linuxmusl-arm64 163ms (cache hit)
+379 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-linuxmusl-arm64 set size:65104 disposed:false
+380 http fetch GET 200 https://registry.npmjs.org/cookie 163ms (cache hit)
+381 silly packumentCache full:https://registry.npmjs.org/cookie set size:72891 disposed:false
+382 http fetch GET 200 https://registry.npmjs.org/@poppinss%2fcolors 164ms (cache hit)
+383 silly packumentCache full:https://registry.npmjs.org/@poppinss%2fcolors set size:139208 disposed:false
+384 http fetch GET 200 https://registry.npmjs.org/@img%2fsharp-libvips-darwin-arm64 174ms (cache hit)
+385 silly packumentCache full:https://registry.npmjs.org/@img%2fsharp-libvips-darwin-arm64 set size:62951 disposed:false
+386 http fetch GET 200 https://registry.npmjs.org/@poppinss%2fdumper 56ms (cache hit)
+387 silly packumentCache full:https://registry.npmjs.org/@poppinss%2fdumper set size:90076 disposed:false
+388 http fetch GET 200 https://registry.npmjs.org/@speed-highlight%2fcore 59ms (cache hit)
+389 silly packumentCache full:https://registry.npmjs.org/@speed-highlight%2fcore set size:75220 disposed:false
+390 silly placeDep ROOT @jridgewell/trace-mapping@0.3.9 OK for: @cspotcode/source-map-support@0.8.1 want: 0.3.9
+391 silly fetch manifest @jridgewell/resolve-uri@^3.0.3
+392 silly packumentCache full:https://registry.npmjs.org/@jridgewell%2fresolve-uri cache-miss
+393 silly fetch manifest @jridgewell/sourcemap-codec@^1.4.10
+394 silly packumentCache full:https://registry.npmjs.org/@jridgewell%2fsourcemap-codec cache-miss
+395 http fetch GET 200 https://registry.npmjs.org/@jridgewell%2fresolve-uri 11ms (cache hit)
+396 silly packumentCache full:https://registry.npmjs.org/@jridgewell%2fresolve-uri set size:57361 disposed:false
+397 http fetch GET 200 https://registry.npmjs.org/@jridgewell%2fsourcemap-codec 12ms (cache hit)
+398 silly packumentCache full:https://registry.npmjs.org/@jridgewell%2fsourcemap-codec set size:51856 disposed:false
+399 silly placeDep ROOT @jridgewell/resolve-uri@3.1.2 OK for: @jridgewell/trace-mapping@0.3.9 want: ^3.0.3
+400 silly placeDep ROOT @jridgewell/sourcemap-codec@1.5.5 OK for: @jridgewell/trace-mapping@0.3.9 want: ^1.4.10
+401 silly placeDep ROOT @img/colour@1.1.0 OK for: sharp@0.34.5 want: ^1.0.0
+402 silly placeDep ROOT @img/sharp-darwin-arm64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+403 silly placeDep ROOT @img/sharp-darwin-x64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+404 silly placeDep ROOT @img/sharp-libvips-darwin-arm64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+405 silly placeDep ROOT @img/sharp-libvips-darwin-x64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+406 silly placeDep ROOT @img/sharp-libvips-linux-arm@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+407 silly placeDep ROOT @img/sharp-libvips-linux-arm64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+408 silly placeDep ROOT @img/sharp-libvips-linux-ppc64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+409 silly placeDep ROOT @img/sharp-libvips-linux-riscv64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+410 silly placeDep ROOT @img/sharp-libvips-linux-s390x@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+411 silly placeDep ROOT @img/sharp-libvips-linux-x64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+412 silly placeDep ROOT @img/sharp-libvips-linuxmusl-arm64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+413 silly placeDep ROOT @img/sharp-libvips-linuxmusl-x64@1.2.4 OK for: sharp@0.34.5 want: 1.2.4
+414 silly placeDep ROOT @img/sharp-linux-arm@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+415 silly placeDep ROOT @img/sharp-linux-arm64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+416 silly placeDep ROOT @img/sharp-linux-ppc64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+417 silly placeDep ROOT @img/sharp-linux-riscv64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+418 silly placeDep ROOT @img/sharp-linux-s390x@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+419 silly placeDep ROOT @img/sharp-linux-x64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+420 silly placeDep ROOT @img/sharp-linuxmusl-arm64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+421 silly placeDep ROOT @img/sharp-linuxmusl-x64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+422 silly placeDep ROOT @img/sharp-wasm32@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+423 silly placeDep ROOT @img/sharp-win32-arm64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+424 silly placeDep ROOT @img/sharp-win32-ia32@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+425 silly placeDep ROOT @img/sharp-win32-x64@0.34.5 OK for: sharp@0.34.5 want: 0.34.5
+426 silly placeDep ROOT detect-libc@2.1.2 OK for: sharp@0.34.5 want: ^2.1.2
+427 silly placeDep ROOT semver@7.8.1 OK for: sharp@0.34.5 want: ^7.7.3
+428 silly fetch manifest @emnapi/runtime@^1.7.0
+429 silly packumentCache full:https://registry.npmjs.org/@emnapi%2fruntime cache-miss
+430 http fetch GET 200 https://registry.npmjs.org/@emnapi%2fruntime 19ms (cache hit)
+431 silly packumentCache full:https://registry.npmjs.org/@emnapi%2fruntime set size:109985 disposed:false
+432 silly placeDep ROOT @emnapi/runtime@1.10.0 OK for: @img/sharp-wasm32@0.34.5 want: ^1.7.0
+433 silly fetch manifest tslib@^2.4.0
+434 silly packumentCache full:https://registry.npmjs.org/tslib cache-miss
+435 http fetch GET 200 https://registry.npmjs.org/tslib 12ms (cache hit)
+436 silly packumentCache full:https://registry.npmjs.org/tslib set size:108760 disposed:false
+437 silly placeDep ROOT tslib@2.8.1 OK for: @emnapi/runtime@1.10.0 want: ^2.4.0
+438 silly placeDep ROOT pathe@2.0.3 OK for: unenv@2.0.0-rc.24 want: ^2.0.3
+439 silly placeDep ROOT @cloudflare/workerd-darwin-64@1.20260426.1 OK for: workerd@1.20260426.1 want: 1.20260426.1
+440 silly placeDep ROOT @cloudflare/workerd-darwin-arm64@1.20260426.1 OK for: workerd@1.20260426.1 want: 1.20260426.1
+441 silly placeDep ROOT @cloudflare/workerd-linux-64@1.20260426.1 OK for: workerd@1.20260426.1 want: 1.20260426.1
+442 silly placeDep ROOT @cloudflare/workerd-linux-arm64@1.20260426.1 OK for: workerd@1.20260426.1 want: 1.20260426.1
+443 silly placeDep ROOT @cloudflare/workerd-windows-64@1.20260426.1 OK for: workerd@1.20260426.1 want: 1.20260426.1
+444 silly placeDep ROOT @poppinss/colors@4.1.6 OK for: youch@4.1.0-beta.10 want: ^4.1.5
+445 silly placeDep ROOT @poppinss/dumper@0.6.5 OK for: youch@4.1.0-beta.10 want: ^0.6.4
+446 silly placeDep ROOT @speed-highlight/core@1.2.15 OK for: youch@4.1.0-beta.10 want: ^1.2.7
+447 silly placeDep ROOT cookie@1.1.1 OK for: youch@4.1.0-beta.10 want: ^1.0.2
+448 silly placeDep ROOT youch-core@0.3.3 OK for: youch@4.1.0-beta.10 want: ^0.3.3
+449 silly fetch manifest kleur@^4.1.5
+450 silly packumentCache full:https://registry.npmjs.org/kleur cache-miss
+451 silly fetch manifest supports-color@^10.0.0
+452 silly packumentCache full:https://registry.npmjs.org/supports-color cache-miss
+453 silly fetch manifest @sindresorhus/is@^7.0.2
+454 silly packumentCache full:https://registry.npmjs.org/@sindresorhus%2fis cache-miss
+455 silly fetch manifest @poppinss/exception@^1.2.2
+456 silly packumentCache full:https://registry.npmjs.org/@poppinss%2fexception cache-miss
+457 silly fetch manifest error-stack-parser-es@^1.0.5
+458 silly packumentCache full:https://registry.npmjs.org/error-stack-parser-es cache-miss
+459 http fetch GET 200 https://registry.npmjs.org/error-stack-parser-es 23ms (cache hit)
+460 silly packumentCache full:https://registry.npmjs.org/error-stack-parser-es set size:21097 disposed:false
+461 http fetch GET 200 https://registry.npmjs.org/@poppinss%2fexception 25ms (cache hit)
+462 silly packumentCache full:https://registry.npmjs.org/@poppinss%2fexception set size:19704 disposed:false
+463 http fetch GET 200 https://registry.npmjs.org/supports-color 28ms (cache hit)
+464 silly packumentCache full:https://registry.npmjs.org/supports-color set size:118680 disposed:false
+465 http fetch GET 200 https://registry.npmjs.org/kleur 30ms (cache hit)
+466 silly packumentCache full:https://registry.npmjs.org/kleur set size:61853 disposed:false
+467 http fetch GET 200 https://registry.npmjs.org/@sindresorhus%2fis 30ms (cache hit)
+468 silly packumentCache full:https://registry.npmjs.org/@sindresorhus%2fis set size:202184 disposed:false
+469 silly placeDep ROOT kleur@4.1.5 OK for: @poppinss/colors@4.1.6 want: ^4.1.5
+470 silly placeDep ROOT @sindresorhus/is@7.2.0 OK for: @poppinss/dumper@0.6.5 want: ^7.0.2
+471 silly placeDep ROOT supports-color@10.2.2 OK for: @poppinss/dumper@0.6.5 want: ^10.0.0
+472 silly placeDep ROOT @poppinss/exception@1.2.3 OK for: youch-core@0.3.3 want: ^1.2.2
+473 silly placeDep ROOT error-stack-parser-es@1.0.5 OK for: youch-core@0.3.3 want: ^1.0.5
+474 silly reify moves {}
+475 silly audit bulk request {
+475 silly audit   wrangler: [ '4.86.0' ],
+475 silly audit   '@cloudflare/kv-asset-handler': [ '0.4.2' ],
+475 silly audit   '@cloudflare/unenv-preset': [ '2.16.1' ],
+475 silly audit   unenv: [ '2.0.0-rc.24' ],
+475 silly audit   'blake3-wasm': [ '2.1.5' ],
+475 silly audit   esbuild: [ '0.27.3' ],
+475 silly audit   fsevents: [ '2.3.3' ],
+475 silly audit   miniflare: [ '4.20260426.0' ],
+475 silly audit   'path-to-regexp': [ '6.3.0' ],
+475 silly audit   workerd: [ '1.20260426.1' ],
+475 silly audit   '@esbuild/aix-ppc64': [ '0.27.3' ],
+475 silly audit   '@esbuild/android-arm': [ '0.27.3' ],
+475 silly audit   '@esbuild/android-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/android-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/darwin-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/darwin-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/freebsd-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/freebsd-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-arm': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-ia32': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-loong64': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-mips64el': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-ppc64': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-riscv64': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-s390x': [ '0.27.3' ],
+475 silly audit   '@esbuild/linux-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/netbsd-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/netbsd-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/openbsd-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/openbsd-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/openharmony-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/sunos-x64': [ '0.27.3' ],
+475 silly audit   '@esbuild/win32-arm64': [ '0.27.3' ],
+475 silly audit   '@esbuild/win32-ia32': [ '0.27.3' ],
+475 silly audit   '@esbuild/win32-x64': [ '0.27.3' ],
+475 silly audit   '@cspotcode/source-map-support': [ '0.8.1' ],
+475 silly audit   sharp: [ '0.34.5' ],
+475 silly audit   undici: [ '7.24.8' ],
+475 silly audit   ws: [ '8.18.0' ],
+475 silly audit   youch: [ '4.1.0-beta.10' ],
+475 silly audit   '@jridgewell/trace-mapping': [ '0.3.9' ],
+475 silly audit   '@jridgewell/resolve-uri': [ '3.1.2' ],
+475 silly audit   '@jridgewell/sourcemap-codec': [ '1.5.5' ],
+475 silly audit   '@img/colour': [ '1.1.0' ],
+475 silly audit   '@img/sharp-darwin-arm64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-darwin-x64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-libvips-darwin-arm64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-darwin-x64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linux-arm': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linux-arm64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linux-ppc64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linux-riscv64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linux-s390x': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linux-x64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linuxmusl-arm64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-libvips-linuxmusl-x64': [ '1.2.4' ],
+475 silly audit   '@img/sharp-linux-arm': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linux-arm64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linux-ppc64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linux-riscv64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linux-s390x': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linux-x64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linuxmusl-arm64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-linuxmusl-x64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-wasm32': [ '0.34.5' ],
+475 silly audit   '@img/sharp-win32-arm64': [ '0.34.5' ],
+475 silly audit   '@img/sharp-win32-ia32': [ '0.34.5' ],
+475 silly audit   '@img/sharp-win32-x64': [ '0.34.5' ],
+475 silly audit   'detect-libc': [ '2.1.2' ],
+475 silly audit   semver: [ '7.8.1' ],
+475 silly audit   '@emnapi/runtime': [ '1.10.0' ],
+475 silly audit   tslib: [ '2.8.1' ],
+475 silly audit   pathe: [ '2.0.3' ],
+475 silly audit   '@cloudflare/workerd-darwin-64': [ '1.20260426.1' ],
+475 silly audit   '@cloudflare/workerd-darwin-arm64': [ '1.20260426.1' ],
+475 silly audit   '@cloudflare/workerd-linux-64': [ '1.20260426.1' ],
+475 silly audit   '@cloudflare/workerd-linux-arm64': [ '1.20260426.1' ],
+475 silly audit   '@cloudflare/workerd-windows-64': [ '1.20260426.1' ],
+475 silly audit   '@poppinss/colors': [ '4.1.6' ],
+475 silly audit   '@poppinss/dumper': [ '0.6.5' ],
+475 silly audit   '@speed-highlight/core': [ '1.2.15' ],
+475 silly audit   cookie: [ '1.1.1' ],
+475 silly audit   'youch-core': [ '0.3.3' ],
+475 silly audit   kleur: [ '4.1.5' ],
+475 silly audit   '@sindresorhus/is': [ '7.2.0' ],
+475 silly audit   'supports-color': [ '10.2.2' ],
+475 silly audit   '@poppinss/exception': [ '1.2.3' ],
+475 silly audit   'error-stack-parser-es': [ '1.0.5' ]
+475 silly audit }
+476 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@cloudflare\workerd-linux-arm64
+477 silly reify mark deleted [
+477 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@cloudflare\\workerd-linux-arm64'
+477 silly reify ]
+478 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@cloudflare\workerd-linux-64
+479 silly reify mark deleted [
+479 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@cloudflare\\workerd-linux-64'
+479 silly reify ]
+480 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@cloudflare\workerd-darwin-arm64
+481 silly reify mark deleted [
+481 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@cloudflare\\workerd-darwin-arm64'
+481 silly reify ]
+482 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@cloudflare\workerd-darwin-64
+483 silly reify mark deleted [
+483 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@cloudflare\\workerd-darwin-64'
+483 silly reify ]
+484 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-win32-ia32
+485 silly reify mark deleted [
+485 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-win32-ia32'
+485 silly reify ]
+486 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-win32-arm64
+487 silly reify mark deleted [
+487 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-win32-arm64'
+487 silly reify ]
+488 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-wasm32
+489 silly reify mark deleted [
+489 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-wasm32'
+489 silly reify ]
+490 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@emnapi\runtime
+491 silly reify mark deleted [
+491 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@emnapi\\runtime'
+491 silly reify ]
+492 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\tslib
+493 silly reify mark deleted [
+493 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\tslib'
+493 silly reify ]
+494 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linuxmusl-x64
+495 silly reify mark deleted [
+495 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linuxmusl-x64'
+495 silly reify ]
+496 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linuxmusl-arm64
+497 silly reify mark deleted [
+497 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linuxmusl-arm64'
+497 silly reify ]
+498 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linux-x64
+499 silly reify mark deleted [
+499 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linux-x64'
+499 silly reify ]
+500 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linux-s390x
+501 silly reify mark deleted [
+501 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linux-s390x'
+501 silly reify ]
+502 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linux-riscv64
+503 silly reify mark deleted [
+503 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linux-riscv64'
+503 silly reify ]
+504 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linux-ppc64
+505 silly reify mark deleted [
+505 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linux-ppc64'
+505 silly reify ]
+506 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linux-arm64
+507 silly reify mark deleted [
+507 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linux-arm64'
+507 silly reify ]
+508 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-linux-arm
+509 silly reify mark deleted [
+509 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-linux-arm'
+509 silly reify ]
+510 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linuxmusl-x64
+511 silly reify mark deleted [
+511 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linuxmusl-x64'
+511 silly reify ]
+512 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linuxmusl-arm64
+513 silly reify mark deleted [
+513 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linuxmusl-arm64'
+513 silly reify ]
+514 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linux-x64
+515 silly reify mark deleted [
+515 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linux-x64'
+515 silly reify ]
+516 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linux-s390x
+517 silly reify mark deleted [
+517 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linux-s390x'
+517 silly reify ]
+518 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linux-riscv64
+519 silly reify mark deleted [
+519 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linux-riscv64'
+519 silly reify ]
+520 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linux-ppc64
+521 silly reify mark deleted [
+521 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linux-ppc64'
+521 silly reify ]
+522 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linux-arm64
+523 silly reify mark deleted [
+523 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linux-arm64'
+523 silly reify ]
+524 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-linux-arm
+525 silly reify mark deleted [
+525 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-linux-arm'
+525 silly reify ]
+526 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-darwin-x64
+527 silly reify mark deleted [
+527 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-darwin-x64'
+527 silly reify ]
+528 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-libvips-darwin-arm64
+529 silly reify mark deleted [
+529 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-libvips-darwin-arm64'
+529 silly reify ]
+530 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-darwin-x64
+531 silly reify mark deleted [
+531 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-darwin-x64'
+531 silly reify ]
+532 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@img\sharp-darwin-arm64
+533 silly reify mark deleted [
+533 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@img\\sharp-darwin-arm64'
+533 silly reify ]
+534 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\win32-ia32
+535 silly reify mark deleted [
+535 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\win32-ia32'
+535 silly reify ]
+536 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\win32-arm64
+537 silly reify mark deleted [
+537 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\win32-arm64'
+537 silly reify ]
+538 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\sunos-x64
+539 silly reify mark deleted [
+539 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\sunos-x64'
+539 silly reify ]
+540 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\openharmony-arm64
+541 silly reify mark deleted [
+541 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\openharmony-arm64'
+541 silly reify ]
+542 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\openbsd-x64
+543 silly reify mark deleted [
+543 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\openbsd-x64'
+543 silly reify ]
+544 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\openbsd-arm64
+545 silly reify mark deleted [
+545 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\openbsd-arm64'
+545 silly reify ]
+546 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\netbsd-x64
+547 silly reify mark deleted [
+547 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\netbsd-x64'
+547 silly reify ]
+548 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\netbsd-arm64
+549 silly reify mark deleted [
+549 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\netbsd-arm64'
+549 silly reify ]
+550 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-x64
+551 silly reify mark deleted [
+551 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-x64'
+551 silly reify ]
+552 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-s390x
+553 silly reify mark deleted [
+553 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-s390x'
+553 silly reify ]
+554 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-riscv64
+555 silly reify mark deleted [
+555 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-riscv64'
+555 silly reify ]
+556 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-ppc64
+557 silly reify mark deleted [
+557 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-ppc64'
+557 silly reify ]
+558 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-mips64el
+559 silly reify mark deleted [
+559 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-mips64el'
+559 silly reify ]
+560 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-loong64
+561 silly reify mark deleted [
+561 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-loong64'
+561 silly reify ]
+562 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-ia32
+563 silly reify mark deleted [
+563 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-ia32'
+563 silly reify ]
+564 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-arm64
+565 silly reify mark deleted [
+565 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-arm64'
+565 silly reify ]
+566 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\linux-arm
+567 silly reify mark deleted [
+567 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\linux-arm'
+567 silly reify ]
+568 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\freebsd-x64
+569 silly reify mark deleted [
+569 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\freebsd-x64'
+569 silly reify ]
+570 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\freebsd-arm64
+571 silly reify mark deleted [
+571 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\freebsd-arm64'
+571 silly reify ]
+572 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\darwin-x64
+573 silly reify mark deleted [
+573 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\darwin-x64'
+573 silly reify ]
+574 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\darwin-arm64
+575 silly reify mark deleted [
+575 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\darwin-arm64'
+575 silly reify ]
+576 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\android-x64
+577 silly reify mark deleted [
+577 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\android-x64'
+577 silly reify ]
+578 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\android-arm64
+579 silly reify mark deleted [
+579 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\android-arm64'
+579 silly reify ]
+580 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\android-arm
+581 silly reify mark deleted [
+581 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\android-arm'
+581 silly reify ]
+582 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\@esbuild\aix-ppc64
+583 silly reify mark deleted [
+583 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\@esbuild\\aix-ppc64'
+583 silly reify ]
+584 verbose reify failed optional dependency C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile\.codex-npm-cache-wrangler\_npx\0367877225b26254\node_modules\fsevents
+585 silly reify mark deleted [
+585 silly reify   'C:\\Users\\Usuario\\Documents\\Desarrollos\\Honda Fest Chile\\.codex-npm-cache-wrangler\\_npx\\0367877225b26254\\node_modules\\fsevents'
+585 silly reify ]
+586 silly tarball no local data for @cloudflare/workerd-windows-64@https://registry.npmjs.org/@cloudflare/workerd-windows-64/-/workerd-windows-64-1.20260426.1.tgz. Extracting by manifest.
+587 silly tarball no local data for ws@https://registry.npmjs.org/ws/-/ws-8.18.0.tgz. Extracting by manifest.
+588 silly tarball no local data for workerd@https://registry.npmjs.org/workerd/-/workerd-1.20260426.1.tgz. Extracting by manifest.
+589 silly tarball no local data for @cloudflare/kv-asset-handler@https://registry.npmjs.org/@cloudflare/kv-asset-handler/-/kv-asset-handler-0.4.2.tgz. Extracting by manifest.
+590 silly tarball no local data for miniflare@https://registry.npmjs.org/miniflare/-/miniflare-4.20260426.0.tgz. Extracting by manifest.
+591 silly tarball no local data for wrangler@https://registry.npmjs.org/wrangler/-/wrangler-4.86.0.tgz. Extracting by manifest.
+592 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 439ms
+593 silly audit report {
+593 silly audit report   ws: [
+593 silly audit report     {
+593 silly audit report       id: 1119108,
+593 silly audit report       url: 'https://github.com/advisories/GHSA-58qx-3vcg-4xpx',
+593 silly audit report       title: 'ws: Uninitialized memory disclosure',
+593 silly audit report       severity: 'moderate',
+593 silly audit report       vulnerable_versions: '>=8.0.0 <8.20.1',
+593 silly audit report       cwe: [Array],
+593 silly audit report       cvss: [Object]
+593 silly audit report     }
+593 silly audit report   ]
+593 silly audit report }
+594 silly packumentCache corgi:https://registry.npmjs.org/ws cache-miss
+595 http fetch GET 200 https://registry.npmjs.org/ws 230ms (cache miss)
+596 silly packumentCache corgi:https://registry.npmjs.org/ws set size:undefined disposed:false
+597 silly packumentCache corgi:https://registry.npmjs.org/miniflare cache-miss
+598 http fetch GET 200 https://registry.npmjs.org/@cloudflare/kv-asset-handler/-/kv-asset-handler-0.4.2.tgz 728ms (cache miss)
+599 http fetch GET 200 https://registry.npmjs.org/ws/-/ws-8.18.0.tgz 734ms (cache miss)
+600 http fetch GET 200 https://registry.npmjs.org/workerd/-/workerd-1.20260426.1.tgz 1016ms (cache miss)
+601 http fetch GET 200 https://registry.npmjs.org/miniflare 367ms (cache miss)
+602 silly packumentCache corgi:https://registry.npmjs.org/miniflare set size:undefined disposed:false
+603 silly packumentCache corgi:https://registry.npmjs.org/wrangler cache-miss
+604 http fetch GET 200 https://registry.npmjs.org/wrangler 64ms (cache hit)
+605 silly packumentCache corgi:https://registry.npmjs.org/wrangler set size:16052451 disposed:false
+606 http fetch GET 200 https://registry.npmjs.org/wrangler/-/wrangler-4.86.0.tgz 6351ms (cache miss)
+607 http fetch GET 200 https://registry.npmjs.org/miniflare/-/miniflare-4.20260426.0.tgz 7322ms (cache miss)
+608 http fetch GET 200 https://registry.npmjs.org/@cloudflare/workerd-windows-64/-/workerd-windows-64-1.20260426.1.tgz 8178ms (cache miss)
+609 info run sharp@0.34.5 install node_modules/sharp node install/check.js || npm run build
+610 info run sharp@0.34.5 install { code: 0, signal: null }
+611 info run esbuild@0.27.3 postinstall node_modules/esbuild node install.js
+612 info run workerd@1.20260426.1 postinstall node_modules/workerd node install.js
+613 info run esbuild@0.27.3 postinstall { code: 0, signal: null }
+614 info run workerd@1.20260426.1 postinstall { code: 0, signal: null }
+615 verbose cwd C:\Users\Usuario\Documents\Desarrollos\Honda Fest Chile
+616 verbose os Windows_NT 10.0.26100
+617 verbose node v20.20.1
+618 verbose npm  v10.8.2
+619 verbose exit 0
+620 info ok
