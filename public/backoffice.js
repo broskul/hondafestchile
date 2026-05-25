@@ -39,6 +39,20 @@ function readNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function makeId(prefix, value = "") {
+  const slug = String(value || prefix)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 36);
+  const uuid = globalThis.crypto?.randomUUID?.();
+  const suffix = uuid?.slice(0, 8) || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return `${prefix}-${slug || "nuevo"}-${suffix}`;
+}
+
 function optionList(items, selected) {
   return items
     .map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === selected ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
@@ -47,8 +61,77 @@ function optionList(items, selected) {
 
 function phaseBadge(phase) {
   const limit = phase.quota ? `${phase.quota} cupos` : "sin limite";
-  const end = phase.endsAt ? `hasta ${new Date(phase.endsAt).toLocaleString("es-CL")}` : "sin fecha tope";
-  return `${escapeHtml(phase.name)} - ${HFC.formatCurrency(phase.price)} - ${limit} - ${end}`;
+  return `${escapeHtml(phase.name)} - ${HFC.formatCurrency(phase.price)} - ${limit}`;
+}
+
+function defaultPhase(kind, ticket = {}) {
+  const labels = {
+    preventa: "Preventa",
+    general: "Venta general",
+    puerta: "Puerta"
+  };
+  const sortOrder = {
+    preventa: 10,
+    general: 20,
+    puerta: 30
+  };
+  return {
+    id: kind,
+    kind,
+    name: labels[kind] || kind,
+    price: Number(ticket.price || 0),
+    quota: kind === "preventa" ? 100 : null,
+    startsAt: "",
+    endsAt: "",
+    perOrderLimit: Number(ticket.maxQuantity || 1),
+    enabled: kind !== "puerta",
+    sortOrder: sortOrder[kind] || 99
+  };
+}
+
+function ensureTicketPhases(ticket) {
+  const phases = Array.isArray(ticket.phases) ? ticket.phases : [];
+  return ["preventa", "general", "puerta"].map((kind) => {
+    const existing = phases.find((phase) => (phase.kind || phase.id) === kind);
+    return existing ? { ...defaultPhase(kind, ticket), ...existing, id: kind, kind } : defaultPhase(kind, ticket);
+  });
+}
+
+function newEventDraft() {
+  return {
+    id: makeId("event", "evento"),
+    name: "Nuevo evento",
+    eyebrow: "Evento",
+    dateLabel: "",
+    eventDate: "",
+    venue: "",
+    city: "Chile",
+    summary: "",
+    highlights: [],
+    accent: "honda",
+    active: true
+  };
+}
+
+function newTicketDraft() {
+  const ticket = {
+    id: makeId("ticket", "entrada"),
+    name: "Nueva entrada",
+    description: "",
+    price: 0,
+    maxQuantity: 6,
+    eventIds: [],
+    active: true
+  };
+  ticket.phases = ensureTicketPhases(ticket);
+  return ticket;
+}
+
+function phaseRule(kind) {
+  if (kind === "preventa") return "La venta general espera a que estos cupos lleguen a 0.";
+  if (kind === "general") return "Se activa sola cuando no quedan cupos de preventa.";
+  if (kind === "puerta") return "Solo se publica el dia indicado como fecha real del evento.";
+  return "";
 }
 
 function renderKpis(data) {
@@ -101,30 +184,52 @@ function renderBi(data) {
 }
 
 function renderTicketing(data) {
+  const events = data.ticketing.events || [];
+  const ticketTypes = (data.ticketing.ticketTypes || []).map((ticket) => ({
+    ...ticket,
+    phases: ensureTicketPhases(ticket)
+  }));
   return `
     <form id="ticketingForm" class="admin-editor">
       <section class="admin-table-section">
-        <h2>Eventos</h2>
+        <div class="admin-toolbar">
+          <h2>Eventos</h2>
+          <button class="button secondary" type="button" data-add-event>Crear evento</button>
+        </div>
         <div class="admin-card-grid">
-          ${data.ticketing.events
+          ${
+            events
             .map(
               (event) => `
                 <article class="admin-card" data-event-card="${escapeHtml(event.id)}">
+                  <div class="admin-card-heading">
+                    <div>
+                      <strong>${escapeHtml(event.name)}</strong>
+                      <small>${escapeHtml(event.venue || event.dateLabel || "Evento sin fecha publicada")}</small>
+                    </div>
+                    <button class="button ghost-light" type="button" data-remove-event="${escapeHtml(event.id)}">Eliminar</button>
+                  </div>
                   <label>Nombre <input data-event-field="name" value="${escapeHtml(event.name)}" /></label>
                   <label>Fecha visible <input data-event-field="dateLabel" value="${escapeHtml(event.dateLabel || "")}" /></label>
                   <label>Fecha real <input data-event-field="eventDate" type="datetime-local" value="${dateInputValue(event.eventDate)}" /></label>
                   <label>Recinto <input data-event-field="venue" value="${escapeHtml(event.venue || "")}" /></label>
+                  <label class="full">Resumen <input data-event-field="summary" value="${escapeHtml(event.summary || "")}" /></label>
                 </article>
               `
             )
-            .join("")}
+            .join("") || `<div class="empty-state">Aun no hay eventos creados.</div>`
+          }
         </div>
       </section>
 
       <section class="admin-table-section">
-        <h2>Entradas y valores</h2>
+        <div class="admin-toolbar">
+          <h2>Entradas y valores</h2>
+          <button class="button secondary" type="button" data-add-ticket>Crear entrada</button>
+        </div>
         <div class="admin-card-grid">
-          ${data.ticketing.ticketTypes
+          ${
+            ticketTypes
             .map(
               (ticket) => `
                 <article class="admin-card admin-card--wide" data-ticket-card="${escapeHtml(ticket.id)}">
@@ -133,11 +238,24 @@ function renderTicketing(data) {
                       <strong>${escapeHtml(ticket.name)}</strong>
                       <small>${escapeHtml(ticket.description || "")}</small>
                     </div>
+                    <button class="button ghost-light" type="button" data-remove-ticket="${escapeHtml(ticket.id)}">Eliminar</button>
                   </div>
                   <div class="form-grid">
                     <label>Nombre <input data-ticket-field="name" value="${escapeHtml(ticket.name)}" /></label>
                     <label>Max. por compra <input data-ticket-field="maxQuantity" type="number" min="1" value="${ticket.maxQuantity}" /></label>
                     <label class="full">Descripcion <input data-ticket-field="description" value="${escapeHtml(ticket.description || "")}" /></label>
+                    <fieldset class="full admin-check-list">
+                      <legend>Eventos donde se vende</legend>
+                      ${
+                        events
+                          .map((event) => {
+                            const checked =
+                              !Array.isArray(ticket.eventIds) || !ticket.eventIds.length || ticket.eventIds.includes(event.id);
+                            return `<label><input data-ticket-event type="checkbox" value="${escapeHtml(event.id)}" ${checked ? "checked" : ""} /> ${escapeHtml(event.name)}</label>`;
+                          })
+                          .join("") || `<span class="muted-inline">Crea un evento para asignar esta entrada.</span>`
+                      }
+                    </fieldset>
                   </div>
                   <div class="phase-grid">
                     ${ticket.phases
@@ -150,8 +268,7 @@ function renderTicketing(data) {
                             <label>Valor <input data-phase-field="price" type="number" min="0" step="100" value="${phase.price}" /></label>
                             <label>Cupos fase <input data-phase-field="quota" type="number" min="0" placeholder="Sin limite" value="${phase.quota || ""}" /></label>
                             <label>Max. por compra <input data-phase-field="perOrderLimit" type="number" min="1" value="${phase.perOrderLimit}" /></label>
-                            <label>Desde <input data-phase-field="startsAt" type="datetime-local" value="${dateInputValue(phase.startsAt)}" /></label>
-                            <label>Hasta <input data-phase-field="endsAt" type="datetime-local" value="${dateInputValue(phase.endsAt)}" /></label>
+                            <small>${phaseRule(phase.kind || phase.id)}</small>
                           </fieldset>
                         `
                       )
@@ -160,7 +277,8 @@ function renderTicketing(data) {
                 </article>
               `
             )
-            .join("")}
+            .join("") || `<div class="empty-state">Aun no hay entradas creadas.</div>`
+          }
         </div>
       </section>
       <button class="button primary" type="submit">Guardar entradas</button>
@@ -170,46 +288,66 @@ function renderTicketing(data) {
 }
 
 function collectTicketingForm(form) {
+  const eventCards = Array.from(form.querySelectorAll("[data-event-card]"));
+  const ticketCards = Array.from(form.querySelectorAll("[data-ticket-card]"));
+  const eventIds = eventCards.map((card) => card.dataset.eventCard);
+  const events = eventCards.map((card) => ({
+    id: card.dataset.eventCard,
+    name: card.querySelector('[data-event-field="name"]').value.trim() || "Evento",
+    eyebrow: "Evento",
+    dateLabel: card.querySelector('[data-event-field="dateLabel"]').value.trim(),
+    eventDate: card.querySelector('[data-event-field="eventDate"]').value,
+    venue: card.querySelector('[data-event-field="venue"]').value.trim(),
+    city: "Chile",
+    summary: card.querySelector('[data-event-field="summary"]').value.trim(),
+    highlights: [],
+    accent: "honda",
+    active: true
+  }));
+
   const ticketing = {
-    events: backofficeData.ticketing.events.map((event) => {
-      const card = form.querySelector(`[data-event-card="${CSS.escape(event.id)}"]`);
+    events,
+    ticketTypes: ticketCards.map((card) => {
+      const maxQuantity = readNumber(card.querySelector('[data-ticket-field="maxQuantity"]').value, 1);
+      const phases = Array.from(card.querySelectorAll("[data-phase-card]")).map((phaseCard, index) => {
+        const phaseId = phaseCard.dataset.phaseCard;
+        return {
+          id: phaseId,
+          kind: phaseId,
+          enabled: phaseCard.querySelector('[data-phase-field="enabled"]').checked,
+          name: phaseCard.querySelector('[data-phase-field="name"]').value.trim(),
+          price: readNumber(phaseCard.querySelector('[data-phase-field="price"]').value, 0),
+          quota: phaseCard.querySelector('[data-phase-field="quota"]').value
+            ? readNumber(phaseCard.querySelector('[data-phase-field="quota"]').value, null)
+            : null,
+          perOrderLimit: readNumber(phaseCard.querySelector('[data-phase-field="perOrderLimit"]').value, maxQuantity),
+          startsAt: "",
+          endsAt: "",
+          sortOrder: (index + 1) * 10
+        };
+      });
+      const selectedEvents = Array.from(card.querySelectorAll("[data-ticket-event]:checked")).map((input) => input.value);
+      const general = phases.find((phase) => phase.kind === "general") || phases[0];
       return {
-        ...event,
-        name: card.querySelector('[data-event-field="name"]').value.trim(),
-        dateLabel: card.querySelector('[data-event-field="dateLabel"]').value.trim(),
-        eventDate: card.querySelector('[data-event-field="eventDate"]').value,
-        venue: card.querySelector('[data-event-field="venue"]').value.trim()
-      };
-    }),
-    ticketTypes: backofficeData.ticketing.ticketTypes.map((ticket) => {
-      const card = form.querySelector(`[data-ticket-card="${CSS.escape(ticket.id)}"]`);
-      return {
-        ...ticket,
+        id: card.dataset.ticketCard,
         name: card.querySelector('[data-ticket-field="name"]').value.trim(),
-        maxQuantity: readNumber(card.querySelector('[data-ticket-field="maxQuantity"]').value, ticket.maxQuantity),
         description: card.querySelector('[data-ticket-field="description"]').value.trim(),
-        phases: ticket.phases.map((phase) => {
-          const phaseCard = card.querySelector(`[data-phase-card="${CSS.escape(phase.id)}"]`);
-          return {
-            ...phase,
-            enabled: phaseCard.querySelector('[data-phase-field="enabled"]').checked,
-            name: phaseCard.querySelector('[data-phase-field="name"]').value.trim(),
-            price: readNumber(phaseCard.querySelector('[data-phase-field="price"]').value, phase.price),
-            quota: phaseCard.querySelector('[data-phase-field="quota"]').value
-              ? readNumber(phaseCard.querySelector('[data-phase-field="quota"]').value, phase.quota)
-              : null,
-            perOrderLimit: readNumber(
-              phaseCard.querySelector('[data-phase-field="perOrderLimit"]').value,
-              phase.perOrderLimit
-            ),
-            startsAt: phaseCard.querySelector('[data-phase-field="startsAt"]').value,
-            endsAt: phaseCard.querySelector('[data-phase-field="endsAt"]').value
-          };
-        })
+        price: general?.price || 0,
+        maxQuantity,
+        eventIds: selectedEvents.length === eventIds.length ? [] : selectedEvents,
+        active: true,
+        phases
       };
     })
   };
   return ticketing;
+}
+
+function syncTicketingDraftFromForm() {
+  const form = HFC.$("#ticketingForm");
+  if (form && backofficeData?.ticketing) {
+    backofficeData.ticketing = collectTicketingForm(form);
+  }
 }
 
 function renderGuests(data) {
@@ -449,8 +587,9 @@ function renderBackoffice(data) {
   backofficeData = data;
   const content = HFC.$("#adminContent");
   content.hidden = false;
+  const storageLabel = data.storage?.supabase ? "Supabase" : "JSON local";
   content.innerHTML = `
-    <div class="admin-provider">Correo: ${escapeHtml(data.integrations.email.provider)} - remitente ${escapeHtml(data.integrations.email.sender || "no configurado")}</div>
+    <div class="admin-provider">Datos: ${escapeHtml(storageLabel)} - Correo: ${escapeHtml(data.integrations.email.provider)} - remitente ${escapeHtml(data.integrations.email.sender || "no configurado")}</div>
     <div class="admin-tabs" role="tablist">
       ${tabButton("bi", "BI")}
       ${tabButton("ticketing", "Entradas")}
@@ -493,6 +632,40 @@ function attachBackofficeEvents() {
   HFC.$$("[data-admin-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       activeTab = button.dataset.adminTab;
+      renderBackoffice(backofficeData);
+    });
+  });
+
+  HFC.$("[data-add-event]")?.addEventListener("click", () => {
+    syncTicketingDraftFromForm();
+    backofficeData.ticketing.events.push(newEventDraft());
+    renderBackoffice(backofficeData);
+  });
+
+  HFC.$$("[data-remove-event]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncTicketingDraftFromForm();
+      const eventId = button.dataset.removeEvent;
+      backofficeData.ticketing.events = backofficeData.ticketing.events.filter((event) => event.id !== eventId);
+      backofficeData.ticketing.ticketTypes = backofficeData.ticketing.ticketTypes.map((ticket) => ({
+        ...ticket,
+        eventIds: Array.isArray(ticket.eventIds) ? ticket.eventIds.filter((id) => id !== eventId) : []
+      }));
+      renderBackoffice(backofficeData);
+    });
+  });
+
+  HFC.$("[data-add-ticket]")?.addEventListener("click", () => {
+    syncTicketingDraftFromForm();
+    backofficeData.ticketing.ticketTypes.push(newTicketDraft());
+    renderBackoffice(backofficeData);
+  });
+
+  HFC.$$("[data-remove-ticket]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncTicketingDraftFromForm();
+      const ticketId = button.dataset.removeTicket;
+      backofficeData.ticketing.ticketTypes = backofficeData.ticketing.ticketTypes.filter((ticket) => ticket.id !== ticketId);
       renderBackoffice(backofficeData);
     });
   });

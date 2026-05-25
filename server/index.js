@@ -190,9 +190,10 @@ function normalizeEvent(event = {}) {
 
 function normalizeTicketingConfig(config = {}) {
   const defaults = defaultTicketingConfig();
-  const events = Array.isArray(config.events) && config.events.length ? config.events : defaults.events;
-  const ticketTypes =
-    Array.isArray(config.ticketTypes) && config.ticketTypes.length ? config.ticketTypes : defaults.ticketTypes;
+  const hasEvents = Object.prototype.hasOwnProperty.call(config, "events");
+  const hasTicketTypes = Object.prototype.hasOwnProperty.call(config, "ticketTypes");
+  const events = hasEvents && Array.isArray(config.events) ? config.events : defaults.events;
+  const ticketTypes = hasTicketTypes && Array.isArray(config.ticketTypes) ? config.ticketTypes : defaults.ticketTypes;
 
   return {
     events: events.map(normalizeEvent).filter((event) => event.active !== false),
@@ -205,6 +206,10 @@ function ticketingConfig(state) {
     (candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing"
   );
   return normalizeTicketingConfig(record?.payload || record || defaultTicketingConfig());
+}
+
+function hasTicketingSetting(state) {
+  return (state.settings || []).some((candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing");
 }
 
 function upsertSetting(state, setting) {
@@ -224,11 +229,13 @@ function upsertSetting(state, setting) {
 }
 
 function findEvent(state, eventId) {
-  return ticketingConfig(state).events.find((event) => event.id === eventId) || findDefaultEvent(eventId);
+  const event = ticketingConfig(state).events.find((candidate) => candidate.id === eventId);
+  return event || (hasTicketingSetting(state) ? null : findDefaultEvent(eventId));
 }
 
 function findTicketType(state, ticketTypeId) {
-  return ticketingConfig(state).ticketTypes.find((ticket) => ticket.id === ticketTypeId) || findDefaultTicketType(ticketTypeId);
+  const ticket = ticketingConfig(state).ticketTypes.find((candidate) => candidate.id === ticketTypeId);
+  return ticket || (hasTicketingSetting(state) ? null : findDefaultTicketType(ticketTypeId));
 }
 
 function phaseDateActive(phase, now = new Date()) {
@@ -237,6 +244,35 @@ function phaseDateActive(phase, now = new Date()) {
   if (start && !Number.isNaN(start.getTime()) && now < start) return false;
   if (end && !Number.isNaN(end.getTime()) && now > end) return false;
   return true;
+}
+
+function chileDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  })
+    .formatToParts(date)
+    .reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function eventDateKey(event) {
+  const value = String(event?.eventDate || "").trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : "";
+}
+
+function isEventDay(event, now = new Date()) {
+  const key = eventDateKey(event);
+  return Boolean(key && key === chileDateKey(now));
+}
+
+function ticketAvailableForEvent(ticket, eventId) {
+  return !Array.isArray(ticket.eventIds) || !ticket.eventIds.length || ticket.eventIds.includes(eventId);
 }
 
 function orderCountsForPhase(state, eventId, ticketTypeId, phaseId, paidOnly = false) {
@@ -256,22 +292,57 @@ function orderCountsForPhase(state, eventId, ticketTypeId, phaseId, paidOnly = f
   }, 0);
 }
 
-function activePhaseForTicket(state, eventId, ticket, now = new Date()) {
-  const phases = (ticket.phases || [])
-    .filter((phase) => phase.enabled !== false && phaseDateActive(phase, now))
-    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
+  if (!phase || phase.enabled === false) return null;
+  const kind = String(phase.kind || phase.id || "").toLowerCase();
+  if (kind === "puerta") {
+    if (!isEventDay(event, now)) return null;
+  } else if (!phaseDateActive(phase, now)) {
+    return null;
+  }
 
-  for (const phase of phases) {
-    const reserved = orderCountsForPhase(state, eventId, ticket.id, phase.id, false);
-    const remaining = phase.quota ? Math.max(0, phase.quota - reserved) : null;
-    if (remaining === 0) continue;
-    return {
-      ...phase,
-      reserved,
-      sold: orderCountsForPhase(state, eventId, ticket.id, phase.id, true),
-      remaining,
-      maxQuantity: Math.max(1, Math.min(ticket.maxQuantity, phase.perOrderLimit, remaining || phase.perOrderLimit))
-    };
+  const reserved = orderCountsForPhase(state, event.id, ticket.id, phase.id, false);
+  const remaining = phase.quota ? Math.max(0, phase.quota - reserved) : null;
+  if (remaining === 0) return null;
+
+  return {
+    ...phase,
+    reserved,
+    sold: orderCountsForPhase(state, event.id, ticket.id, phase.id, true),
+    remaining,
+    maxQuantity: Math.max(1, Math.min(ticket.maxQuantity, phase.perOrderLimit, remaining || phase.perOrderLimit))
+  };
+}
+
+function activePhaseForTicket(state, eventOrId, ticket, now = new Date()) {
+  const event = typeof eventOrId === "string" ? findEvent(state, eventOrId) : eventOrId;
+  if (!event || !ticketAvailableForEvent(ticket, event.id)) return null;
+
+  const phases = (ticket.phases || []).sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  const phasesByKind = (kind) => phases.filter((phase) => String(phase.kind || phase.id || "").toLowerCase() === kind);
+  const firstAvailable = (candidates) => {
+    for (const phase of candidates) {
+      const available = phaseWithAvailability(state, event, ticket, phase, now);
+      if (available) return available;
+    }
+    return null;
+  };
+
+  const doorPhase = isEventDay(event, now) ? firstAvailable(phasesByKind("puerta")) : null;
+  if (doorPhase) return doorPhase;
+
+  const presalePhase = firstAvailable(phasesByKind("preventa"));
+  if (presalePhase) return presalePhase;
+
+  const generalPhase = firstAvailable(phasesByKind("general"));
+  if (generalPhase) return generalPhase;
+
+  for (const phase of phases.filter((candidate) => {
+    const kind = String(candidate.kind || candidate.id || "").toLowerCase();
+    return !["preventa", "general", "puerta"].includes(kind);
+  })) {
+    const available = phaseWithAvailability(state, event, ticket, phase, now);
+    if (available) return available;
   }
 
   return null;
@@ -283,16 +354,34 @@ function catalogForClient(state) {
   return {
     events: config.events,
     ticketTypes: config.ticketTypes.map((ticket) => {
-      const phase = activePhaseForTicket(state, primaryEventId, ticket);
+      const availabilityByEvent = Object.fromEntries(
+        config.events.map((event) => {
+          const phase = activePhaseForTicket(state, event, ticket);
+          return [
+            event.id,
+            {
+              price: phase?.price ?? ticket.price,
+              maxQuantity: phase?.maxQuantity ?? ticket.maxQuantity,
+              salePhaseId: phase?.id || null,
+              salePhaseName: phase?.name || "No disponible",
+              salePhaseKind: phase?.kind || null,
+              saleRemaining: phase?.remaining,
+              available: Boolean(phase)
+            }
+          ];
+        })
+      );
+      const primary = availabilityByEvent[primaryEventId] || Object.values(availabilityByEvent)[0] || null;
       return {
         ...ticket,
-        price: phase?.price ?? ticket.price,
-        maxQuantity: phase?.maxQuantity ?? ticket.maxQuantity,
-        salePhaseId: phase?.id || null,
-        salePhaseName: phase?.name || "No disponible",
-        salePhaseKind: phase?.kind || null,
-        saleRemaining: phase?.remaining,
-        available: Boolean(phase)
+        price: primary?.price ?? ticket.price,
+        maxQuantity: primary?.maxQuantity ?? ticket.maxQuantity,
+        salePhaseId: primary?.salePhaseId || null,
+        salePhaseName: primary?.salePhaseName || "No disponible",
+        salePhaseKind: primary?.salePhaseKind || null,
+        saleRemaining: primary?.saleRemaining,
+        available: Boolean(primary?.available),
+        availabilityByEvent
       };
     })
   };
@@ -686,6 +775,12 @@ function buildOrderItems(state, itemsInput) {
 
     if (!event || !ticketType) {
       const error = new Error("Evento o entrada no disponible");
+      error.status = 400;
+      throw error;
+    }
+
+    if (!ticketAvailableForEvent(ticketType, event.id)) {
+      const error = new Error("La entrada no esta disponible para este evento");
       error.status = 400;
       throw error;
     }
@@ -1785,6 +1880,11 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
       emailTemplates: mergeTemplates(state.emailTemplates || []),
       invoices: state.invoices,
       emailLogs: (state.emailLogs || []).slice(-200).reverse(),
+      storage: {
+        mode: storageMode(),
+        supabase: supabaseConfigured(),
+        warning: lastSupabaseWarning()
+      },
       integrations: {
         email: mailProviderStatus()
       }
@@ -1846,6 +1946,12 @@ app.post("/api/backoffice/guests", async (req, res, next) => {
       const ticketType = findTicketType(state, ticketTypeId);
       if (!event || !ticketType) {
         const error = new Error("Evento o entrada no disponible");
+        error.status = 400;
+        throw error;
+      }
+
+      if (!ticketAvailableForEvent(ticketType, event.id)) {
+        const error = new Error("La entrada no esta disponible para este evento");
         error.status = 400;
         throw error;
       }

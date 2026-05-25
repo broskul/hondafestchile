@@ -62,6 +62,20 @@
     return window.__hfcCatalog;
   }
 
+  function ticketAvailability(ticket, eventId) {
+    return (
+      ticket?.availabilityByEvent?.[eventId] || {
+        price: ticket?.price || 0,
+        maxQuantity: ticket?.maxQuantity || 1,
+        salePhaseId: ticket?.salePhaseId || null,
+        salePhaseName: ticket?.salePhaseName || "No disponible",
+        salePhaseKind: ticket?.salePhaseKind || null,
+        saleRemaining: ticket?.saleRemaining,
+        available: Boolean(ticket?.available)
+      }
+    );
+  }
+
   function readCart() {
     try {
       return JSON.parse(localStorage.getItem(CART_KEY) || "[]");
@@ -131,16 +145,19 @@
         const event = catalog.events.find((candidate) => candidate.id === item.eventId);
         const ticket = catalog.ticketTypes.find((candidate) => candidate.id === item.ticketTypeId);
         if (!event || !ticket) return null;
-        const quantity = Math.min(Math.max(1, Number(item.quantity || 1)), ticket.maxQuantity);
+        const availability = ticketAvailability(ticket, event.id);
+        const maxQuantity = availability.maxQuantity || ticket.maxQuantity;
+        const unitPrice = availability.price ?? ticket.price;
+        const quantity = Math.min(Math.max(1, Number(item.quantity || 1)), maxQuantity);
         return {
           ...item,
           quantity,
           eventName: event.name,
           ticketTypeName: ticket.name,
           description: ticket.description,
-          unitPrice: ticket.price,
-          total: ticket.price * quantity,
-          maxQuantity: ticket.maxQuantity
+          unitPrice,
+          total: unitPrice * quantity,
+          maxQuantity
         };
       })
       .filter(Boolean);
@@ -366,6 +383,7 @@
     clearCart,
     formatCurrency,
     getCatalog,
+    ticketAvailability,
     openCartDrawer,
     prefillBuyerForms,
     renderAllCarts,

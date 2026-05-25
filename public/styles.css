@@ -1720,6 +1720,7 @@ a:focus-visible {
 .admin-card-heading {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -1767,6 +1768,37 @@ a:focus-visible {
 .admin-form-panel input[type="checkbox"] {
   width: 22px;
   min-height: 22px;
+}
+
+.admin-check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f9f6;
+}
+
+.admin-check-list legend {
+  padding: 0 6px;
+}
+
+.admin-check-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.admin-check-list input[type="checkbox"] {
+  width: 20px;
+  min-height: 20px;
+}
+
+.muted-inline {
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .admin-toolbar {

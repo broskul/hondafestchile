@@ -14,7 +14,8 @@ La ruta no aparece en la navegacion publica principal. Usa `BACKOFFICE_TOKEN` en
 
 - KPIs de ventas, ventas pagadas, ingresos, entradas emitidas, entradas validadas y usuarios enrolados.
 - Modulo BI con desglose por evento, tipo de entrada y etapa de venta.
-- Configuracion editable de entradas: preventa, venta general y puerta con valor, cupos, fecha desde/hasta y maximo por compra.
+- Configuracion flexible de eventos y entradas: se pueden crear/eliminar eventos, crear entradas con nombre propio y asignarlas a uno o varios eventos.
+- Cada entrada conserva etapas preventa, venta general y puerta con valor, cupos y maximo por compra. La venta general se activa cuando no quedan cupos de preventa; puerta solo se publica el dia real del evento.
 - Creacion de invitados con entrada gratis, orden comp y ticket QR validable en puerta.
 - Importacion de contactos por CSV pegado en pantalla.
 - Correccion de correos de enrolados/contactos y reenvio de verificacion.

@@ -87,6 +87,17 @@ function formatCurrency(value) {
   }).format(value || 0);
 }
 
+function ticketAvailability(ticket, eventId) {
+  return (
+    ticket?.availabilityByEvent?.[eventId] || {
+      price: ticket?.price || 0,
+      maxQuantity: ticket?.maxQuantity || 1,
+      salePhaseName: ticket?.salePhaseName || "No disponible",
+      available: Boolean(ticket?.available)
+    }
+  );
+}
+
 function setStatus(element, html, isError = false) {
   element.hidden = false;
   element.classList.toggle("error", isError);
@@ -149,11 +160,17 @@ function populateSelects() {
   const ticketSelect = $("#ticketSelect");
   if (!eventSelect || !ticketSelect) return;
 
+  const selectedEventId = eventSelect.value || state.events[0]?.id;
   eventSelect.innerHTML = state.events.map((event) => `<option value="${event.id}">${event.name}</option>`).join("");
+  eventSelect.value = selectedEventId;
+  const eventId = eventSelect.value || state.events[0]?.id;
   ticketSelect.innerHTML = state.ticketTypes
+    .filter((ticket) => !Array.isArray(ticket.eventIds) || !ticket.eventIds.length || ticket.eventIds.includes(eventId))
     .map(
-      (ticket) =>
-        `<option value="${ticket.id}" ${ticket.available ? "" : "disabled"}>${ticket.name} - ${formatCurrency(ticket.price)} (${ticket.available ? ticket.salePhaseName : "no disponible"})</option>`
+      (ticket) => {
+        const availability = ticketAvailability(ticket, eventId);
+        return `<option value="${ticket.id}" ${availability.available ? "" : "disabled"}>${ticket.name} - ${formatCurrency(availability.price)} (${availability.available ? availability.salePhaseName : "no disponible"})</option>`;
+      }
     )
     .join("");
 
@@ -163,18 +180,20 @@ function populateSelects() {
 function updateTotal() {
   if (!$("#ticketSelect") || !$("#quantityInput") || !$("#totalOutput")) return;
   const ticket = state.ticketTypes.find((item) => item.id === $("#ticketSelect").value);
+  const eventId = $("#eventSelect")?.value || state.events[0]?.id;
+  const availability = ticketAvailability(ticket, eventId);
   const quantityInput = $("#quantityInput");
   const quantity = Math.max(1, Number(quantityInput.value || 1));
 
   if (ticket) {
-    quantityInput.max = ticket.maxQuantity;
-    if (quantity > ticket.maxQuantity) {
-      quantityInput.value = ticket.maxQuantity;
+    quantityInput.max = availability.maxQuantity;
+    if (quantity > availability.maxQuantity) {
+      quantityInput.value = availability.maxQuantity;
     }
   }
 
   const safeQuantity = Math.max(1, Number(quantityInput.value || 1));
-  $("#totalOutput").textContent = formatCurrency((ticket?.price || 0) * safeQuantity);
+  $("#totalOutput").textContent = formatCurrency((availability.price || 0) * safeQuantity);
 }
 
 function switchTab(tabName) {
@@ -728,6 +747,7 @@ async function init() {
   });
 
   $("#ticketSelect")?.addEventListener("change", updateTotal);
+  $("#eventSelect")?.addEventListener("change", populateSelects);
   $("#quantityInput")?.addEventListener("input", updateTotal);
   $("#registerForm")?.addEventListener("submit", handleRegister);
   $("#orderForm")?.addEventListener("submit", handleOrder);

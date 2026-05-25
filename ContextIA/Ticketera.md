@@ -18,7 +18,7 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 3. El carrito lateral se abre como lightbox desde cualquier pagina con `shared.js`.
 4. `/carrito` permite revisar cantidades y finalizar compra con correo/RUT.
 5. `POST /api/orders/from-cart` crea orden multiproducto.
-6. El backend resuelve la etapa activa de cada entrada: preventa, venta general o puerta, validando fecha tope, cupos y maximo por compra.
+6. El backend resuelve la etapa activa por evento y entrada: preventa si tiene cupos, venta general cuando preventa se agota, o puerta solo el dia real del evento.
 7. Al pagar, `completeOrderPayment` emite tickets con codigo y QR.
 8. `/mis-compras` recupera tickets y boleta por correo/RUT.
 9. `/validar` usa `BarcodeDetector` si el navegador lo soporta, o ingreso manual de codigo.
@@ -38,5 +38,4 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 
 ## Pendientes
 
-- Agregar creacion de nuevos eventos/tipos de entrada desde UI; hoy se editan los eventos/tipos base y sus fases.
 - Mejorar escaneo QR con libreria fallback para navegadores sin `BarcodeDetector`.
