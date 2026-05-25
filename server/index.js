@@ -3,12 +3,20 @@ const dotenv = require("dotenv");
 dotenv.config();
 dotenv.config({ path: ".env.local", override: true });
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
 const QRCode = require("qrcode");
 
 const { events, ticketTypes, findEvent, findTicketType } = require("./config/catalog");
 const { sendTicketEmail, sendVerificationEmail, smtpConfigured } = require("./lib/mailer");
-const { createPreference, getPayment, mercadoPagoConfigured } = require("./lib/mercadopago");
+const {
+  createPreference,
+  getPayment,
+  mercadoPagoConfigured,
+  mercadoPagoRuntimeStatus,
+  parseWebhookNotification,
+  verifyWebhookSignature
+} = require("./lib/mercadopago");
 const { issueBoleta, openFacturaConfigured } = require("./lib/openfactura");
 const { cleanRut, formatRut, validateRut } = require("./lib/rut");
 const {
@@ -72,6 +80,9 @@ function publicOrder(order) {
     total: order.total,
     status: order.status,
     paymentMode: order.paymentMode,
+    paymentStatus: order.payment?.status || null,
+    paymentProvider: order.payment?.provider || null,
+    paymentId: order.payment?.paymentId || null,
     checkoutUrl: order.checkoutUrl,
     invoiceStatus: order.invoiceStatus,
     createdAt: order.createdAt
@@ -104,6 +115,122 @@ function baseUrl(req) {
     return process.env.PUBLIC_BASE_URL.replace(/\/$/, "");
   }
   return `${req.protocol}://${req.get("host")}`;
+}
+
+function assetBaseUrl() {
+  const base =
+    process.env.R2_PUBLIC_BASE_URL ||
+    process.env.PUBLIC_R2_BASE_URL ||
+    process.env.R2_ASSET_BASE_URL ||
+    "";
+  return String(base).trim().replace(/\/$/, "");
+}
+
+function encodeR2Key(key) {
+  return key
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+}
+
+function loadAllowedAssetKeys() {
+  const keys = new Set();
+  const manifestPath = path.join(process.cwd(), "HFC_R2_upload_ready", "_manifest.json");
+
+  try {
+    const rows = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    keys.add("_README.txt");
+    keys.add("_manifest.csv");
+    keys.add("_manifest.json");
+    for (const row of rows) {
+      if (row.r2_key) keys.add(row.r2_key);
+      if (row.metadata_key) keys.add(row.metadata_key);
+    }
+  } catch {
+    // The manifest exists locally during development. In production, the route
+    // can still serve known public keys when R2_PUBLIC_BASE_URL is configured.
+  }
+
+  return keys;
+}
+
+const allowedAssetKeys = loadAllowedAssetKeys();
+
+function r2CredentialsConfigured() {
+  return Boolean(
+    (process.env.CLOUDFLARE_S3_DEFAULT || process.env.CLOUDFLARE_S3_API) &&
+      (process.env.cloudflare_s3_bucket || process.env.CLOUDFLARE_R2_BUCKET || process.env.R2_BUCKET_NAME) &&
+      process.env.CLOUDFLARE_S3_ACCESS_KEY_ID &&
+      process.env.CLOUDFLARE_S3_SECRET_ACCESS_KEY
+  );
+}
+
+function hmac(key, value, encoding) {
+  return crypto.createHmac("sha256", key).update(value, "utf8").digest(encoding);
+}
+
+function r2SigningKey(secret, dateStamp) {
+  const dateKey = hmac(`AWS4${secret}`, dateStamp);
+  const regionKey = hmac(dateKey, "auto");
+  const serviceKey = hmac(regionKey, "s3");
+  return hmac(serviceKey, "aws4_request");
+}
+
+function signedR2Headers(method, key, payloadHash) {
+  const endpoint = String(process.env.CLOUDFLARE_S3_DEFAULT || process.env.CLOUDFLARE_S3_API || "").replace(/\/$/, "");
+  const bucket = process.env.cloudflare_s3_bucket || process.env.CLOUDFLARE_R2_BUCKET || process.env.R2_BUCKET_NAME;
+  const url = new URL(`${endpoint}/${encodeURIComponent(bucket)}/${encodeR2Key(key)}`);
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+  const headers = {
+    host: url.host,
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate
+  };
+  const canonicalHeaders = Object.keys(headers)
+    .sort()
+    .map((header) => `${header}:${headers[header]}\n`)
+    .join("");
+  const signedHeaders = Object.keys(headers).sort().join(";");
+  const canonicalRequest = [method, url.pathname, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
+  const credentialScope = `${dateStamp}/auto/s3/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    credentialScope,
+    crypto.createHash("sha256").update(canonicalRequest).digest("hex")
+  ].join("\n");
+  const signature = crypto
+    .createHmac("sha256", r2SigningKey(process.env.CLOUDFLARE_S3_SECRET_ACCESS_KEY, dateStamp))
+    .update(stringToSign, "utf8")
+    .digest("hex");
+
+  return {
+    url: url.toString(),
+    headers: {
+      ...headers,
+      Authorization: `AWS4-HMAC-SHA256 Credential=${process.env.CLOUDFLARE_S3_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+    }
+  };
+}
+
+async function proxyR2Object(req, res, key) {
+  const emptyPayloadHash = crypto.createHash("sha256").update("").digest("hex");
+  const signed = signedR2Headers("GET", key, emptyPayloadHash);
+  const response = await fetch(signed.url, {
+    headers: signed.headers
+  });
+
+  if (!response.ok) {
+    res.status(response.status).type("text/plain").send("No se pudo leer el recurso");
+    return;
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType) res.type(contentType);
+  res.set("Cache-Control", "public, max-age=31536000, immutable");
+  res.send(Buffer.from(await response.arrayBuffer()));
 }
 
 function requireString(body, field, label) {
@@ -208,6 +335,133 @@ function createTickets({ order, user, items }) {
   return tickets;
 }
 
+function envFlag(name) {
+  return /^(1|true|yes|si|sí)$/i.test(String(process.env[name] || "").trim());
+}
+
+function normalizedPaymentData(paymentData = {}) {
+  const raw = paymentData.raw || {};
+  return {
+    provider: paymentData.provider || "mercadopago",
+    paymentId: paymentData.paymentId || raw.id || null,
+    status: paymentData.status || raw.status || "approved",
+    statusDetail: paymentData.statusDetail || raw.status_detail || null,
+    paymentType: paymentData.paymentType || raw.payment_type_id || null,
+    preferenceId: paymentData.preferenceId || raw.preference_id || null,
+    externalReference: paymentData.externalReference || raw.external_reference || null,
+    merchantOrderId: paymentData.merchantOrderId || raw.order?.id || raw.merchant_order_id || null,
+    transactionAmount: Number(paymentData.transactionAmount || raw.transaction_amount || 0),
+    paidAt: paymentData.paidAt || raw.date_approved || null,
+    raw: paymentData.raw || null
+  };
+}
+
+function paymentRecordId(provider, paymentId) {
+  if (!paymentId) return id("payment");
+  const safePaymentId = String(paymentId).replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `${provider}_payment_${safePaymentId}`;
+}
+
+function upsertPaymentRecord(state, order, paymentData) {
+  const payment = normalizedPaymentData(paymentData);
+  const now = new Date().toISOString();
+  const provider = String(payment.provider || order.paymentMode || "mercadopago");
+  const paymentId = payment.paymentId ? String(payment.paymentId) : null;
+  const existingIndex = state.payments.findIndex(
+    (candidate) =>
+      paymentId &&
+      ((candidate.provider === provider && String(candidate.paymentId || "") === paymentId) ||
+        candidate.id === paymentRecordId(provider, paymentId))
+  );
+  const existing = existingIndex >= 0 ? state.payments[existingIndex] : null;
+
+  const record = {
+    id: existing?.id || paymentRecordId(provider, paymentId),
+    orderId: order.id,
+    provider,
+    paymentId,
+    status: String(payment.status || "unknown"),
+    statusDetail: payment.statusDetail,
+    paymentType: payment.paymentType,
+    preferenceId: payment.preferenceId || order.preferenceId || null,
+    externalReference: payment.externalReference || order.id,
+    merchantOrderId: payment.merchantOrderId,
+    amount: payment.transactionAmount || order.total,
+    currency: "CLP",
+    paidAt: payment.paidAt,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now
+  };
+
+  if (envFlag("MERCADOPAGO_STORE_RAW_PAYLOADS") && payment.raw) {
+    record.raw = payment.raw;
+  }
+
+  if (existingIndex >= 0) {
+    state.payments[existingIndex] = {
+      ...existing,
+      ...record
+    };
+  } else {
+    state.payments.push(record);
+  }
+
+  return record;
+}
+
+function orderPaymentSummary(paymentRecord, fallback = {}) {
+  return {
+    status: paymentRecord.status,
+    provider: paymentRecord.provider,
+    paymentId: paymentRecord.paymentId,
+    statusDetail: paymentRecord.statusDetail,
+    paymentType: paymentRecord.paymentType,
+    preferenceId: paymentRecord.preferenceId,
+    paidAt: paymentRecord.paidAt || fallback.paidAt || null,
+    updatedAt: paymentRecord.updatedAt
+  };
+}
+
+function orderStatusForPaymentStatus(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "approved") return "paid";
+  if (["pending", "in_process", "authorized"].includes(normalized)) return "payment_pending";
+  if (["rejected", "cancelled", "refunded", "charged_back"].includes(normalized)) return "payment_failed";
+  return "payment_review";
+}
+
+async function updateOrderPaymentStatus(orderId, paymentData = {}) {
+  let result;
+  await updateState((state) => {
+    const order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+
+    const paymentRecord = upsertPaymentRecord(state, order, paymentData);
+    if (order.status !== "paid") {
+      order.status = orderStatusForPaymentStatus(paymentRecord.status);
+      order.payment = orderPaymentSummary(paymentRecord, order.payment);
+      order.updatedAt = new Date().toISOString();
+    }
+
+    state.audit.push({
+      id: id("audit"),
+      type: "payment_status_updated",
+      orderId: order.id,
+      paymentId: paymentRecord.paymentId,
+      status: paymentRecord.status,
+      createdAt: new Date().toISOString()
+    });
+
+    result = { order, payment: paymentRecord };
+  });
+
+  return result;
+}
+
 async function completeOrderPayment(orderId, paymentData = {}) {
   let state = await readState();
   const order = state.orders.find((candidate) => candidate.id === orderId);
@@ -230,16 +484,16 @@ async function completeOrderPayment(orderId, paymentData = {}) {
 
   let tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
   let invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+  const paymentRecord = upsertPaymentRecord(state, order, {
+    ...paymentData,
+    status: paymentData.status || "approved"
+  });
 
   if (order.status !== "paid") {
     order.status = "paid";
-    order.payment = {
-      status: "approved",
-      provider: paymentData.provider || order.paymentMode || "demo",
-      paymentId: paymentData.paymentId || null,
-      raw: paymentData.raw || null,
+    order.payment = orderPaymentSummary(paymentRecord, {
       paidAt: new Date().toISOString()
-    };
+    });
 
     if (!tickets.length) {
       tickets = createTickets({ order, user, items });
@@ -247,6 +501,10 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     }
 
     order.invoiceStatus = "pending";
+    order.updatedAt = new Date().toISOString();
+    await writeState(state);
+  } else {
+    order.payment = orderPaymentSummary(paymentRecord, order.payment);
     order.updatedAt = new Date().toISOString();
     await writeState(state);
   }
@@ -329,6 +587,7 @@ app.get("/api/health", (req, res) => {
     integrations: {
       smtp: smtpConfigured(),
       mercadoPago: mercadoPagoConfigured(),
+      mercadoPagoDetails: mercadoPagoRuntimeStatus(req),
       openFactura: openFacturaConfigured()
     }
   });
@@ -342,6 +601,45 @@ app.get("/api/catalog", (req, res) => {
       paymentMode: mercadoPagoConfigured() ? "mercadopago" : "demo"
     }
   });
+});
+
+app.get("/media/*", async (req, res, next) => {
+  try {
+    const key = String(req.params[0] || "").replace(/^\/+/, "");
+
+    if (!key || key.includes("..") || key.includes("\\")) {
+      res.status(400).type("text/plain").send("Recurso invalido");
+      return;
+    }
+
+    if (allowedAssetKeys.size && !allowedAssetKeys.has(key)) {
+      res.status(404).type("text/plain").send("Recurso no encontrado");
+      return;
+    }
+
+    const publicBase = assetBaseUrl();
+    if (publicBase) {
+      res.redirect(302, `${publicBase}/${encodeR2Key(key)}`);
+      return;
+    }
+
+    const localRoot = path.resolve(process.cwd(), "HFC_R2_upload_ready");
+    const localFile = path.resolve(localRoot, ...key.split("/"));
+    if (localFile.startsWith(localRoot) && fs.existsSync(localFile)) {
+      res.set("Cache-Control", "public, max-age=31536000, immutable");
+      res.sendFile(localFile);
+      return;
+    }
+
+    if (r2CredentialsConfigured()) {
+      await proxyR2Object(req, res, key);
+      return;
+    }
+
+    res.status(404).type("text/plain").send("Configura R2_PUBLIC_BASE_URL para servir imagenes publicas");
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post("/api/auth/register", async (req, res, next) => {
@@ -890,8 +1188,13 @@ app.post("/api/backoffice/orders/:orderId/resend", async (req, res, next) => {
 
 app.post("/api/webhooks/mercadopago", async (req, res, next) => {
   try {
-    const topic = req.query.type || req.query.topic || req.body.type || req.body.topic;
-    const paymentId = req.query["data.id"] || req.body?.data?.id || req.body?.id;
+    const signature = verifyWebhookSignature(req);
+    if (!signature.valid) {
+      res.status(401).json({ ok: false, message: signature.reason || "Webhook no autorizado" });
+      return;
+    }
+
+    const { topic, paymentId } = parseWebhookNotification(req);
 
     if (!paymentId || !String(topic).includes("payment")) {
       res.json({ ok: true, ignored: true });
@@ -899,12 +1202,32 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
     }
 
     const payment = await getPayment(paymentId);
-    if (payment.status === "approved" && payment.external_reference) {
+    if (!payment.external_reference) {
+      res.json({ ok: true, ignored: true, reason: "missing_external_reference" });
+      return;
+    }
+
+    const paymentData = {
+      provider: "mercadopago",
+      paymentId: String(payment.id),
+      status: payment.status,
+      statusDetail: payment.status_detail,
+      paymentType: payment.payment_type_id,
+      preferenceId: payment.preference_id,
+      externalReference: payment.external_reference,
+      merchantOrderId: payment.order?.id || payment.merchant_order_id,
+      transactionAmount: payment.transaction_amount,
+      paidAt: payment.date_approved,
+      raw: payment
+    };
+
+    if (payment.status === "approved") {
       await completeOrderPayment(payment.external_reference, {
-        provider: "mercadopago",
-        paymentId: String(payment.id),
-        raw: payment
+        ...paymentData,
+        status: "approved"
       });
+    } else {
+      await updateOrderPaymentStatus(payment.external_reference, paymentData);
     }
 
     res.json({ ok: true });

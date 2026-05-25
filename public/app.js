@@ -1,23 +1,82 @@
 const state = {
   events: [],
   ticketTypes: [],
-  selectedOrderId: null
+  selectedOrderId: null,
+  gallery: {
+    items: [],
+    categories: [],
+    activeCategory: "all",
+    activeIndex: 0,
+    query: ""
+  }
 };
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+const ALL_GALLERY_CATEGORY = "all";
+let galleryRevealObserver = null;
 
-function clamp(value, min = 0, max = 1) {
-  return Math.min(max, Math.max(min, value));
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[char];
+  });
 }
 
-function easeOutCubic(value) {
-  return 1 - Math.pow(1 - clamp(value), 3);
+function mediaPath(key) {
+  return `/media/${String(key || "")
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/")}`;
 }
 
-function easeInOutCubic(value) {
-  const safe = clamp(value);
-  return safe < 0.5 ? 4 * safe * safe * safe : 1 - Math.pow(-2 * safe + 2, 3) / 2;
+function normalizeSearch(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function registerGalleryReveal(root = document) {
+  const elements = Array.from(root.querySelectorAll(".gallery-reveal:not(.is-visible)"));
+  if (!elements.length) return;
+
+  if (!galleryRevealObserver) {
+    elements.forEach((element) => element.classList.add("is-visible"));
+    return;
+  }
+
+  elements.forEach((element) => galleryRevealObserver.observe(element));
+}
+
+function initGalleryTransitions() {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion || !("IntersectionObserver" in window)) {
+    registerGalleryReveal();
+    return;
+  }
+
+  galleryRevealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        galleryRevealObserver.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: "0px 0px -12% 0px",
+      threshold: 0.12
+    }
+  );
+
+  registerGalleryReveal();
 }
 
 function formatCurrency(value) {
@@ -265,8 +324,8 @@ async function simulatePayment() {
 async function inspectReturnParams() {
   const params = new URLSearchParams(window.location.search);
   const verified = params.get("verified");
-  const payment = params.get("payment");
-  const orderId = params.get("order");
+  const payment = params.get("payment") || params.get("status") || params.get("collection_status");
+  const orderId = params.get("order") || params.get("external_reference");
 
   if (verified === "1") {
     toast("Correo confirmado. Ya puedes comprar entradas.");
@@ -287,10 +346,26 @@ async function inspectReturnParams() {
 
     try {
       const data = await api(`/api/orders/${orderId}`);
+      const paymentLabel =
+        {
+          success: "aprobado",
+          approved: "aprobado",
+          pending: "pendiente",
+          in_process: "pendiente",
+          failure: "rechazado",
+          rejected: "rechazado"
+        }[payment] || payment;
+      const nextAction =
+        data.order.status === "paid"
+          ? `<div class="status-actions"><a class="button secondary" href="/mis-compras">Ver mis entradas</a></div>`
+          : "";
+      if (data.order.status === "paid") {
+        localStorage.removeItem("hfc_cart");
+      }
       setStatus(
         status,
-        `<strong>Estado de pago:</strong> ${payment}.<br />
-        Orden ${data.order.id}: ${data.order.status}.`
+        `<strong>Estado de pago:</strong> ${paymentLabel}.<br />
+        Orden ${data.order.id}: ${data.order.status}.${nextAction}`
       );
     } catch (error) {
       setStatus(status, error.message, true);
@@ -298,73 +373,346 @@ async function inspectReturnParams() {
   }
 }
 
-function initHeroDrive() {
-  const hero = $(".hero-drive");
-  if (!hero) return;
+async function loadGalleryData() {
+  const response = await fetch("/gallery-data.json", { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error("No se pudo cargar la galeria de fotos");
+  }
+  return response.json();
+}
 
-  const menuNode = $("#heroPlateMenu");
-  const menuLinks = menuNode ? Array.from(menuNode.querySelectorAll("a")) : [];
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let ticking = false;
+function filteredGalleryItems() {
+  const query = normalizeSearch(state.gallery.query);
+  return state.gallery.items.filter((item) => {
+    const matchesCategory =
+      state.gallery.activeCategory === ALL_GALLERY_CATEGORY || item.categorySlug === state.gallery.activeCategory;
+    if (!matchesCategory) return false;
+    if (!query) return true;
 
-  function setMenuFocus(enabled) {
-    menuLinks.forEach((link) => {
-      link.tabIndex = enabled ? 0 : -1;
-    });
+    const haystack = normalizeSearch(
+      [
+        item.title,
+        item.description,
+        item.keywords,
+        item.category,
+        item.collection,
+        item.capturedAt
+      ].join(" ")
+    );
+    return haystack.includes(query);
+  });
+}
+
+function galleryCategoryButtons() {
+  const categories = [
+    {
+      name: "Todas",
+      slug: ALL_GALLERY_CATEGORY,
+      count: state.gallery.items.length
+    },
+    ...state.gallery.categories
+  ];
+
+  return categories
+    .map((category) => {
+      const active = state.gallery.activeCategory === category.slug;
+      return `
+        <button
+          class="gallery-filter-button gallery-tab-button${active ? " is-active" : ""}"
+          type="button"
+          data-gallery-category="${escapeHtml(category.slug)}"
+          role="tab"
+          aria-pressed="${active}"
+          aria-selected="${active}"
+        >
+          <span>${escapeHtml(category.name)}</span>
+          <strong>${category.count}</strong>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function humanGalleryTitle(item) {
+  const candidates = [item.title, item.category, item.collection, item.description, "Foto del evento"];
+  for (const candidate of candidates) {
+    const title = String(candidate || "")
+      .replace(/\s*-\s*IMG[_-]?\d+\b/gi, "")
+      .replace(/\bIMG[_-]?\d+\b/gi, "")
+      .replace(/\.(jpe?g|png|webp|gif|mp4|mov)\b/gi, "")
+      .replace(/^\d+[-_\s]+/g, "")
+      .replace(/^Fotografia de\s+/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (title && !/IMG[_-]?\d+/i.test(title)) return title;
+  }
+  return "Foto del evento";
+}
+
+function humanGalleryDescription(item) {
+  const fallback = humanGalleryTitle(item);
+  const text = String(item.description || fallback)
+    .replace(/\s*Coleccion original:.*$/i, "")
+    .replace(/,\s*util para galeria deportiva, cobertura del evento y archivo historico de pista\.?/i, ".")
+    .replace(/^Fotografia de\s+/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : fallback;
+}
+
+function galleryTagList(item, limit = 4) {
+  const blocked = new Set(["hfc", "honda fest chile", "honda-fest-2025", "honda-fest-2025-seleccion", "japon-2025"]);
+  const tags = String(item.keywords || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag) => !blocked.has(tag.toLowerCase()));
+  return [...new Set(tags)].slice(0, limit);
+}
+
+function renderGalleryTags(item) {
+  const tags = galleryTagList(item);
+  if (!tags.length) return "";
+  return `<small>${tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}</small>`;
+}
+
+function gallerySlide(item, index, total) {
+  if (!item) {
+    return `
+      <div class="gallery-empty">
+        <strong>No encontramos fotos para esa busqueda.</strong>
+        <span>Prueba con pista, premiacion, paddock, comunidad, acceso o autos.</span>
+      </div>
+    `;
   }
 
-  function render() {
-    ticking = false;
+  const src = mediaPath(item.r2Key);
+  const title = humanGalleryTitle(item);
+  const description = humanGalleryDescription(item);
+  const width = item.width || 2048;
+  const height = item.height || 1365;
 
-    const rect = hero.getBoundingClientRect();
-    const scrollable = Math.max(1, hero.offsetHeight - window.innerHeight);
-    const progress = clamp(-rect.top / scrollable);
-    const reduced = reduceMotion.matches;
-    const drive = reduced ? 0.5 : easeInOutCubic(progress);
-    const close = reduced ? 0 : easeOutCubic((progress - 0.08) / 0.88);
-    const menuProgress = easeOutCubic((progress - 0.42) / 0.28);
-    const contentOpacity = reduced ? 1 - menuProgress : 1 - easeOutCubic((progress - 0.08) / 0.32);
-    const compact = window.innerWidth < 700;
+  return `
+    <button class="gallery-nav gallery-nav--prev" type="button" data-gallery-prev aria-label="Foto anterior">
+      <span aria-hidden="true">&lsaquo;</span>
+    </button>
+    <figure class="gallery-slide">
+      <a
+        class="gallery-image-link gallery-slide__image"
+        href="${escapeHtml(src)}"
+        data-gallery-title="${escapeHtml(title)}"
+        data-gallery-description="${escapeHtml(description)}"
+      >
+        <img
+          src="${escapeHtml(src)}"
+          alt="${escapeHtml(description)}"
+          title="${escapeHtml(title)}"
+          width="${width}"
+          height="${height}"
+          loading="eager"
+          decoding="async"
+        />
+      </a>
+      <figcaption class="gallery-slide__caption">
+        <span class="gallery-slide__counter">${index + 1} / ${total}</span>
+        <strong>${escapeHtml(title)}</strong>
+        <p>${escapeHtml(description)}</p>
+        ${renderGalleryTags(item)}
+      </figcaption>
+    </figure>
+    <button class="gallery-nav gallery-nav--next" type="button" data-gallery-next aria-label="Foto siguiente">
+      <span aria-hidden="true">&rsaquo;</span>
+    </button>
+  `;
+}
 
-    hero.style.setProperty("--content-opacity", contentOpacity.toFixed(3));
-    hero.style.setProperty("--content-y", `${(1 - contentOpacity) * -34}px`);
-    hero.style.setProperty("--media-scale", (1.04 + progress * 0.11).toFixed(3));
-    hero.style.setProperty("--media-x", `${progress * (compact ? -8 : -22)}px`);
-    hero.style.setProperty("--media-y", `${progress * -12}px`);
-    hero.style.setProperty("--car-scroll-x", `${(drive - 0.5) * (compact ? 18 : 34)}px`);
-    hero.style.setProperty("--car-scroll-y", `${close * (compact ? 48 : 74)}px`);
-    hero.style.setProperty("--car-scroll-scale", (1 + close * (compact ? 0.82 : 1.14)).toFixed(3));
-    hero.style.setProperty("--wheel-rotation", `${Math.round(progress * 820)}deg`);
-    hero.style.setProperty("--plate-opacity", (1 - menuProgress).toFixed(3));
-    hero.style.setProperty("--plate-scale", (1 + menuProgress * 3.2).toFixed(3));
-    hero.style.setProperty("--menu-opacity", menuProgress.toFixed(3));
-    hero.style.setProperty("--menu-y", `${(1 - menuProgress) * 105}%`);
-    hero.style.setProperty("--menu-scale-x", (0.08 + menuProgress * 0.92).toFixed(3));
-    hero.style.setProperty("--menu-scale-y", (0.16 + menuProgress * 0.84).toFixed(3));
-    hero.style.setProperty("--menu-radius", `${Math.round((1 - menuProgress) * 8)}px`);
+function galleryThumb(item, index, active) {
+  const src = mediaPath(item.r2Key);
+  const title = humanGalleryTitle(item);
+  return `
+    <button
+      class="gallery-thumb${active ? " is-active" : ""}"
+      type="button"
+      data-gallery-index="${index}"
+      aria-label="Ver ${escapeHtml(title)}"
+      aria-current="${active ? "true" : "false"}"
+    >
+      <img
+        src="${escapeHtml(src)}"
+        alt=""
+        width="${item.width || 2048}"
+        height="${item.height || 1365}"
+        loading="${index < 12 ? "eager" : "lazy"}"
+        decoding="async"
+      />
+      <span>${escapeHtml(title)}</span>
+    </button>
+  `;
+}
 
-    const menuReady = menuProgress > 0.82;
-    hero.dataset.menuReady = String(menuReady);
-    hero.dataset.contentHidden = String(contentOpacity < 0.08);
-    setMenuFocus(menuReady);
+function galleryCanonicalOrigin() {
+  try {
+    return new URL(document.querySelector("link[rel='canonical']")?.href || window.location.href).origin;
+  } catch {
+    return window.location.origin;
+  }
+}
+
+function updateGalleryStructuredData() {
+  const script = $("#galleryJsonLd");
+  if (!script || !state.gallery.items.length) return;
+
+  const origin = galleryCanonicalOrigin();
+  const payload = {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: "Galeria Honda Fest Chile",
+    description:
+      "Galeria completa de Honda Fest Chile con pista, paddock, premiaciones, comunidad y cultura japonesa.",
+    image: state.gallery.items.map((item) => ({
+      "@type": "ImageObject",
+      name: humanGalleryTitle(item),
+      contentUrl: `${origin}${mediaPath(item.r2Key)}`,
+      caption: humanGalleryDescription(item),
+      keywords: item.keywords
+    }))
+  };
+
+  script.textContent = JSON.stringify(payload);
+}
+
+function renderGallery() {
+  const controls = $("#galleryControls");
+  const viewer = $("#galleryViewer");
+  const thumbs = $("#galleryThumbs");
+  const summary = $("#gallerySummary");
+  const search = $("#gallerySearch");
+  if (!controls || !viewer || !thumbs || !summary) return;
+
+  const items = filteredGalleryItems();
+  const activeCategory = state.gallery.categories.find((category) => category.slug === state.gallery.activeCategory);
+  const activeLabel = activeCategory?.name || "Todas las categorias";
+  state.gallery.activeIndex = Math.min(Math.max(0, state.gallery.activeIndex), Math.max(0, items.length - 1));
+  const activeItem = items[state.gallery.activeIndex];
+  const queryLabel = state.gallery.query ? ` / busqueda: "${state.gallery.query}"` : "";
+
+  controls.innerHTML = galleryCategoryButtons();
+  if (search && search.value !== state.gallery.query) {
+    search.value = state.gallery.query;
+  }
+  summary.innerHTML = `
+    <strong>${items.length}</strong>
+    <span>${escapeHtml(activeLabel + queryLabel)} &middot; ${state.gallery.items.length} fotos totales &middot; ${state.gallery.categories.length} tipos</span>
+  `;
+  viewer.innerHTML = gallerySlide(activeItem, state.gallery.activeIndex, items.length);
+  thumbs.innerHTML = items.map((item, index) => galleryThumb(item, index, index === state.gallery.activeIndex)).join("");
+  thumbs.querySelector(".gallery-thumb.is-active")?.scrollIntoView({
+    behavior: "smooth",
+    inline: "center",
+    block: "nearest"
+  });
+  registerGalleryReveal(viewer);
+}
+
+async function initGalleryCatalog() {
+  const viewer = $("#galleryViewer");
+  const summary = $("#gallerySummary");
+  if (!viewer || !summary) return;
+
+  try {
+    const data = await loadGalleryData();
+    state.gallery.items = Array.isArray(data.items) ? data.items : [];
+    state.gallery.categories = Array.isArray(data.categories) ? data.categories : [];
+    state.gallery.activeCategory = ALL_GALLERY_CATEGORY;
+    state.gallery.activeIndex = 0;
+    state.gallery.query = "";
+    renderGallery();
+    updateGalleryStructuredData();
+  } catch (error) {
+    summary.innerHTML = `<strong>Galeria no disponible</strong><span>${escapeHtml(error.message)}</span>`;
+    viewer.innerHTML = "";
+  }
+}
+
+function setGalleryIndex(index) {
+  const items = filteredGalleryItems();
+  if (!items.length) {
+    state.gallery.activeIndex = 0;
+    renderGallery();
+    return;
   }
 
-  function queueRender() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(render);
-  }
+  state.gallery.activeIndex = ((index % items.length) + items.length) % items.length;
+  renderGallery();
+}
 
-  window.addEventListener("scroll", queueRender, { passive: true });
-  window.addEventListener("resize", queueRender);
-  reduceMotion.addEventListener?.("change", queueRender);
-  render();
+function changeGallerySlide(delta) {
+  setGalleryIndex(state.gallery.activeIndex + delta);
+}
+
+function initGalleryLightbox() {
+  const dialog = $("#galleryDialog");
+  if (!dialog) return;
+
+  const image = dialog.querySelector("img");
+  const title = dialog.querySelector("h2");
+  const description = dialog.querySelector("p");
+  const closeButton = dialog.querySelector(".gallery-dialog-close");
+
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const link = target?.closest(".gallery-image-link");
+    if (!link || typeof dialog.showModal !== "function") return;
+    event.preventDefault();
+    const thumbnail = link.querySelector("img");
+    image.src = link.href;
+    image.alt = thumbnail?.alt || "";
+    title.textContent = link.dataset.galleryTitle || thumbnail?.title || "Galeria Honda Fest Chile";
+    description.textContent = link.dataset.galleryDescription || thumbnail?.alt || "";
+    dialog.showModal();
+  });
+
+  closeButton?.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) {
+      dialog.close();
+    }
+  });
 }
 
 async function init() {
-  initHeroDrive();
+  initGalleryTransitions();
+  initGalleryLightbox();
+  $("#galleryControls")?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const button = target?.closest("[data-gallery-category]");
+    if (!button) return;
+    state.gallery.activeCategory = button.dataset.galleryCategory || ALL_GALLERY_CATEGORY;
+    state.gallery.activeIndex = 0;
+    renderGallery();
+  });
+  $("#gallerySearch")?.addEventListener("input", (event) => {
+    state.gallery.query = event.currentTarget.value.trim();
+    state.gallery.activeIndex = 0;
+    renderGallery();
+  });
+  $("#galleryViewer")?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    if (target?.closest("[data-gallery-prev]")) changeGallerySlide(-1);
+    if (target?.closest("[data-gallery-next]")) changeGallerySlide(1);
+  });
+  $("#galleryThumbs")?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const thumb = target?.closest("[data-gallery-index]");
+    if (!thumb) return;
+    setGalleryIndex(Number(thumb.dataset.galleryIndex || 0));
+  });
+  $("#galerias")?.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") changeGallerySlide(-1);
+    if (event.key === "ArrowRight") changeGallerySlide(1);
+  });
 
-  const catalog = await api("/api/catalog");
+  const [catalog] = await Promise.all([api("/api/catalog"), initGalleryCatalog()]);
   state.events = catalog.events;
   state.ticketTypes = catalog.ticketTypes;
   renderEvents();

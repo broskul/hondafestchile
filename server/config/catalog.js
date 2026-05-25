@@ -2,13 +2,13 @@ const events = [
   {
     id: "japon-fest-chile-2026",
     name: "Japon Fest Chile",
-    eyebrow: "Cultura japonesa y motores",
-    dateLabel: "Temporada 2026",
+    eyebrow: "Proximo evento",
+    dateLabel: "19 de julio de 2026",
     venue: "Recinto por confirmar",
     city: "Chile",
     summary:
-      "Una jornada para celebrar cultura japonesa, autos preparados, clubes, cosplay, musica, stands y gastronomia.",
-    highlights: ["Exhibicion de clubes", "Zona food trucks", "Stands y cultura japonesa", "Show & shine"],
+      "Una jornada para celebrar cultura japonesa, autos preparados, clubes, cosplay, musica, stands y gastronomia el 19 de julio.",
+    highlights: ["19 de julio", "Exhibicion de clubes", "Stands y cultura japonesa", "Show & shine"],
     accent: "japon"
   },
   {
