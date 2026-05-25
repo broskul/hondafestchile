@@ -1,0 +1,9 @@
+_hfc_asset_review/
+.codex-logs/
+.codex-npm-cache-wrangler/
+data/
+HFC Recursos 2026/
+HFC_R2_upload_ready/
+node_modules/
+Logo HFC.avif
+npm-debug.log*
