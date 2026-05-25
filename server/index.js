@@ -2262,6 +2262,10 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Honda Fest Chile listo en http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Honda Fest Chile listo en http://localhost:${port}`);
+  });
+}
+
+module.exports = app;
