@@ -1,7 +1,41 @@
 const nodemailer = require("nodemailer");
+const { renderTemplate, ticketEmailVariables } = require("./emailTemplates");
+
+let graphTokenCache = null;
 
 function smtpConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+function cleanEnv(name) {
+  return String(process.env[name] || "").trim();
+}
+
+function senderAddress() {
+  const explicit = cleanEnv("MS_SENDER_EMAIL") || cleanEnv("SMTP_USER");
+  if (explicit) return explicit;
+
+  const from = cleanEnv("SMTP_FROM");
+  const match = from.match(/<([^>]+)>/);
+  return match ? match[1].trim() : from;
+}
+
+function graphConfigured() {
+  return Boolean(
+    cleanEnv("MS_TENANT_ID") &&
+      cleanEnv("MS_CLIENT_ID") &&
+      cleanEnv("MS_CLIENT_SECRET") &&
+      senderAddress()
+  );
+}
+
+function mailProviderStatus() {
+  return {
+    provider: graphConfigured() ? "ms-graph" : smtpConfigured() ? "smtp" : "demo",
+    msGraph: graphConfigured(),
+    smtp: smtpConfigured(),
+    sender: senderAddress() || null
+  };
 }
 
 function getTransporter() {
@@ -20,13 +54,96 @@ function getTransporter() {
   });
 }
 
+function recipientList(value) {
+  const values = Array.isArray(value) ? value : String(value || "").split(/[;,]/);
+  return values.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+async function getGraphAccessToken() {
+  if (graphTokenCache && graphTokenCache.expiresAt > Date.now() + 60000) {
+    return graphTokenCache.accessToken;
+  }
+
+  const body = new URLSearchParams({
+    client_id: cleanEnv("MS_CLIENT_ID"),
+    client_secret: cleanEnv("MS_CLIENT_SECRET"),
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials"
+  });
+
+  const response = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(cleanEnv("MS_TENANT_ID"))}/oauth2/v2.0/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = payload.error_description || payload.error || "No se pudo obtener token Microsoft Graph";
+    throw new Error(`Microsoft Graph auth: ${detail}`);
+  }
+
+  graphTokenCache = {
+    accessToken: payload.access_token,
+    expiresAt: Date.now() + Number(payload.expires_in || 3600) * 1000
+  };
+  return graphTokenCache.accessToken;
+}
+
+async function sendWithGraph(mail) {
+  const accessToken = await getGraphAccessToken();
+  const sender = senderAddress();
+  const html = mail.html || "";
+  const text = mail.text || "";
+  const content = html || text;
+  const response = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: {
+        subject: mail.subject,
+        body: {
+          contentType: html ? "HTML" : "Text",
+          content
+        },
+        toRecipients: recipientList(mail.to).map((address) => ({
+          emailAddress: { address }
+        })),
+        ccRecipients: recipientList(mail.cc).map((address) => ({
+          emailAddress: { address }
+        })),
+        bccRecipients: recipientList(mail.bcc).map((address) => ({
+          emailAddress: { address }
+        }))
+      },
+      saveToSentItems: cleanEnv("MS_SAVE_TO_SENT_ITEMS") !== "false"
+    })
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const detail = payload?.error?.message || payload?.message || "No se pudo enviar correo";
+    throw new Error(`Microsoft Graph sendMail: ${detail}`);
+  }
+
+  return { delivered: true, mode: "ms-graph", messageId: null };
+}
+
 async function sendMail(message) {
-  const transporter = getTransporter();
   const mail = {
     from: process.env.SMTP_FROM || "Honda Fest Chile <tickets@hondafestchile.cl>",
     ...message
   };
 
+  if (graphConfigured()) {
+    return sendWithGraph(mail);
+  }
+
+  const transporter = getTransporter();
   if (!transporter) {
     console.info("[email-demo]", {
       to: mail.to,
@@ -40,7 +157,24 @@ async function sendMail(message) {
   return { delivered: true, mode: "smtp", messageId: result.messageId };
 }
 
-async function sendVerificationEmail({ user, verificationUrl }) {
+async function sendVerificationEmail({ user, verificationUrl, template }) {
+  if (template) {
+    const rendered = renderTemplate(template, {
+      name: user.name,
+      email: user.email,
+      event_name: "Honda Fest Chile",
+      verification_url: verificationUrl,
+      enroll_url: verificationUrl,
+      cta_url: verificationUrl
+    });
+    return sendMail({
+      to: user.email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html
+    });
+  }
+
   return sendMail({
     to: user.email,
     subject: "Confirma tu correo para Honda Fest Chile",
@@ -56,7 +190,17 @@ async function sendVerificationEmail({ user, verificationUrl }) {
   });
 }
 
-async function sendTicketEmail({ user, order, event, ticketType, tickets, invoice }) {
+async function sendTicketEmail({ user, order, event, ticketType, tickets, invoice, template, baseUrl }) {
+  if (template) {
+    const rendered = renderTemplate(template, ticketEmailVariables({ user, order, event, tickets, invoice, baseUrl }));
+    return sendMail({
+      to: user.email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html
+    });
+  }
+
   const items = order.items?.length
     ? order.items
     : [
@@ -113,6 +257,8 @@ async function sendTicketEmail({ user, order, event, ticketType, tickets, invoic
 }
 
 module.exports = {
+  graphConfigured,
+  mailProviderStatus,
   sendMail,
   sendTicketEmail,
   sendVerificationEmail,

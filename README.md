@@ -51,8 +51,9 @@ Si las tablas `hfc_*` aun no existen, la app cae a JSON local para no romper el 
 - Mercado Pago: se crea una preferencia usando `POST https://api.mercadopago.com/checkout/preferences`.
 - Webhook Mercado Pago: `POST /api/webhooks/mercadopago`. Si configuras `MERCADOPAGO_WEBHOOK_SECRET`, la app valida `x-signature` y `x-request-id` antes de consultar el pago.
 - OpenFactura: `server/lib/openfactura.js` centraliza la llamada. Requiere `OPENFACTURA_API_KEY` y `OPENFACTURA_ENDPOINT`; el payload puede requerir ajuste segun la documentacion entregada por la cuenta OpenFactura/Haulmer.
-- Email: SMTP con Nodemailer. Sin SMTP, los enlaces se muestran en consola para desarrollo.
+- Email: Microsoft Graph con `MS_TENANT_ID`, `MS_CLIENT_ID` y `MS_CLIENT_SECRET`; SMTP queda como fallback. Sin proveedor, los enlaces se muestran en consola para desarrollo.
 - Backoffice: usa `BACKOFFICE_TOKEN`. En desarrollo local puede abrir sin token si `NODE_ENV` no es `production`.
+- Backoffice de ticketera: en `/backoffice-hfc` se editan eventos, preventa, venta general, puerta, cupos, invitados gratis, contactos CSV, plantillas, correos masivos/unitarios y BI para organizadores.
 
 ### Mercado Pago
 
@@ -65,6 +66,10 @@ MERCADOPAGO_WEBHOOK_SECRET=
 ```
 
 `PUBLIC_BASE_URL` debe ser el dominio HTTPS publico. Si el webhook vive en otra URL, define `MERCADOPAGO_NOTIFICATION_URL`. Puedes revisar el estado sin secretos en `GET /api/health`.
+
+### Microsoft Graph Email
+
+La app registrada en Microsoft Entra debe tener permiso Application `Mail.Send` con admin consent. El remitente se toma de `MS_SENDER_EMAIL`; si queda vacio, usa `SMTP_USER` o el correo dentro de `SMTP_FROM`.
 
 ## Referencias consultadas
 

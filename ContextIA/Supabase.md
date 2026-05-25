@@ -29,6 +29,9 @@ Tablas:
 - `hfc_tickets`
 - `hfc_invoices`
 - `hfc_payments`
+- `hfc_settings`
+- `hfc_contacts`
+- `hfc_email_templates`
 - `hfc_email_logs`
 - `hfc_audit`
 

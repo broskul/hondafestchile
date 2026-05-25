@@ -151,7 +151,10 @@ function populateSelects() {
 
   eventSelect.innerHTML = state.events.map((event) => `<option value="${event.id}">${event.name}</option>`).join("");
   ticketSelect.innerHTML = state.ticketTypes
-    .map((ticket) => `<option value="${ticket.id}">${ticket.name} - ${formatCurrency(ticket.price)}</option>`)
+    .map(
+      (ticket) =>
+        `<option value="${ticket.id}" ${ticket.available ? "" : "disabled"}>${ticket.name} - ${formatCurrency(ticket.price)} (${ticket.available ? ticket.salePhaseName : "no disponible"})</option>`
+    )
     .join("");
 
   updateTotal();
@@ -516,7 +519,6 @@ function gallerySlide(item, index, total) {
       <figcaption class="gallery-slide__caption">
         <span class="gallery-slide__counter">${index + 1} / ${total}</span>
         <strong>${escapeHtml(title)}</strong>
-        <p>${escapeHtml(description)}</p>
         ${renderGalleryTags(item)}
       </figcaption>
     </figure>

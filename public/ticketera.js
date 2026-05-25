@@ -26,16 +26,17 @@ async function renderProducts() {
                     <div>
                       <h4>${ticket.name}</h4>
                       <p>${ticket.description}</p>
+                      <small>${ticket.available ? ticket.salePhaseName : "Venta no disponible"}</small>
                     </div>
                     <strong>${HFC.formatCurrency(ticket.price)}</strong>
                     <label>
                       Cantidad
-                      <input type="number" min="1" max="${ticket.maxQuantity}" value="1"
+                      <input type="number" min="1" max="${ticket.maxQuantity}" value="1" ${ticket.available ? "" : "disabled"}
                         data-qty="${event.id}-${ticket.id}" />
                     </label>
-                    <button class="button primary full" type="button" data-add-ticket
+                    <button class="button primary full" type="button" data-add-ticket ${ticket.available ? "" : "disabled"}
                       data-event-id="${event.id}" data-ticket-type-id="${ticket.id}">
-                      Agregar al carrito
+                      ${ticket.available ? "Agregar al carrito" : "No disponible"}
                     </button>
                   </article>
                 `

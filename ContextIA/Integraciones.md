@@ -8,7 +8,8 @@ Centralizar los sistemas externos necesarios para ticketera, pagos, correo y bol
 
 - Mercado Pago Checkout Pro para pago online.
 - OpenFactura/Haulmer para DTE y boleta electronica.
-- SMTP para confirmacion de correo y envio de tickets.
+- Microsoft Graph (`MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET`) para confirmacion de correo, tickets y campanas. Requiere `Mail.Send` Application permission con admin consent y un remitente en `MS_SENDER_EMAIL` o `SMTP_FROM`.
+- SMTP queda como fallback si Microsoft Graph no esta configurado.
 - Supabase para persistencia de usuarios, ordenes, tickets, pagos, DTE y auditoria.
 
 ## Variables de entorno

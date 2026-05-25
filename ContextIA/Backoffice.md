@@ -13,6 +13,13 @@ La ruta no aparece en la navegacion publica principal. Usa `BACKOFFICE_TOKEN` en
 ## Funcionalidades vigentes
 
 - KPIs de ventas, ventas pagadas, ingresos, entradas emitidas, entradas validadas y usuarios enrolados.
+- Modulo BI con desglose por evento, tipo de entrada y etapa de venta.
+- Configuracion editable de entradas: preventa, venta general y puerta con valor, cupos, fecha desde/hasta y maximo por compra.
+- Creacion de invitados con entrada gratis, orden comp y ticket QR validable en puerta.
+- Importacion de contactos por CSV pegado en pantalla.
+- Correccion de correos de enrolados/contactos y reenvio de verificacion.
+- Envio unitario o masivo usando plantillas para pago, invitacion a enrolarse, entrada contra enrolamiento y campanas libres.
+- Edicion de plantillas de correo desde backoffice.
 - Tabla de ventas con cliente, total, estado, tickets, DTE y accion de reenvio.
 - Tabla de entradas en detalle con codigo, evento, asistente, RUT y estado.
 - Tabla de usuarios enrolados.
@@ -23,7 +30,9 @@ La ruta no aparece en la navegacion publica principal. Usa `BACKOFFICE_TOKEN` en
 - `public/backoffice.html`
 - `public/backoffice.js`
 - `server/index.js`
+- `server/lib/emailTemplates.js`
 - `server/lib/mailer.js`
+- `supabase/schema.sql`
 
 ## Pendientes
 

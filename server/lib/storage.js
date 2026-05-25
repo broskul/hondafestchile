@@ -11,6 +11,9 @@ const initialState = {
   tickets: [],
   invoices: [],
   payments: [],
+  settings: [],
+  contacts: [],
+  emailTemplates: [],
   emailLogs: [],
   audit: []
 };
@@ -22,6 +25,9 @@ const supabaseCollections = {
   tickets: "hfc_tickets",
   invoices: "hfc_invoices",
   payments: "hfc_payments",
+  settings: "hfc_settings",
+  contacts: "hfc_contacts",
+  emailTemplates: "hfc_email_templates",
   emailLogs: "hfc_email_logs",
   audit: "hfc_audit"
 };
@@ -80,6 +86,15 @@ function isMissingSchemaError(error) {
   return /Could not find the table|schema cache|PGRST205/i.test(error.message || "");
 }
 
+function isReachabilityError(error) {
+  const message = `${error.message || ""} ${error.cause?.code || ""} ${error.cause?.message || ""}`;
+  return /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|network/i.test(message);
+}
+
+function canUseLocalFallback(error) {
+  return isMissingSchemaError(error) || (process.env.NODE_ENV !== "production" && isReachabilityError(error));
+}
+
 async function readSupabaseState() {
   let entries;
 
@@ -96,9 +111,10 @@ async function readSupabaseState() {
       })
     );
   } catch (error) {
-    if (isMissingSchemaError(error)) {
-      lastSupabaseWarning =
-        "Supabase esta configurado, pero faltan tablas hfc_*. Ejecuta supabase/schema.sql en el SQL Editor.";
+    if (canUseLocalFallback(error)) {
+      lastSupabaseWarning = isMissingSchemaError(error)
+        ? "Supabase esta configurado, pero faltan tablas hfc_*. Ejecuta supabase/schema.sql en el SQL Editor."
+        : "Supabase no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
       console.warn(lastSupabaseWarning);
       return readJsonState();
     }
@@ -165,6 +181,23 @@ function supabaseRow(collection, item) {
     return { ...base, order_id: item.orderId || null };
   }
 
+  if (collection === "settings") {
+    return { ...base, type: item.type || null };
+  }
+
+  if (collection === "contacts") {
+    return {
+      ...base,
+      email: item.email || null,
+      corrected_email: item.correctedEmail || null,
+      source: item.source || null
+    };
+  }
+
+  if (collection === "emailTemplates") {
+    return { ...base, type: item.type || item.id || null };
+  }
+
   if (collection === "emailLogs" || collection === "audit") {
     return { ...base, type: item.type || null };
   }
@@ -195,9 +228,10 @@ async function writeSupabaseState(state) {
         body: items.map((item) => supabaseRow(collection, item))
       });
     } catch (error) {
-      if (isMissingSchemaError(error)) {
-        lastSupabaseWarning =
-          "Supabase esta configurado, pero faltan tablas hfc_*. Se uso JSON local como fallback.";
+      if (canUseLocalFallback(error)) {
+        lastSupabaseWarning = isMissingSchemaError(error)
+          ? "Supabase esta configurado, pero faltan tablas hfc_*. Se uso JSON local como fallback."
+          : "Supabase no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
         console.warn(lastSupabaseWarning);
         await writeJsonState(state);
         return;

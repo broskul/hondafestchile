@@ -7,8 +7,14 @@ const fs = require("fs");
 const path = require("path");
 const QRCode = require("qrcode");
 
-const { events, ticketTypes, findEvent, findTicketType } = require("./config/catalog");
-const { sendTicketEmail, sendVerificationEmail, smtpConfigured } = require("./lib/mailer");
+const {
+  events: defaultEvents,
+  ticketTypes: defaultTicketTypes,
+  findEvent: findDefaultEvent,
+  findTicketType: findDefaultTicketType
+} = require("./config/catalog");
+const { findTemplate, mergeTemplates, normalizeTemplate, renderTemplate } = require("./lib/emailTemplates");
+const { mailProviderStatus, sendMail, sendTicketEmail, sendVerificationEmail, smtpConfigured } = require("./lib/mailer");
 const {
   createPreference,
   getPayment,
@@ -32,7 +38,15 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 
 app.use(express.json({ limit: "1mb" }));
-app.use(express.static(path.join(process.cwd(), "public")));
+app.use(
+  express.static(path.join(process.cwd(), "public"), {
+    setHeaders(res, filePath) {
+      if (path.extname(filePath).toLowerCase() === ".avif") {
+        res.setHeader("Content-Type", "image/avif");
+      }
+    }
+  })
+);
 
 function id(prefix) {
   return `${prefix}_${crypto.randomBytes(10).toString("hex")}`;
@@ -40,6 +54,410 @@ function id(prefix) {
 
 function normalizeEmail(email = "") {
   return String(email).trim().toLowerCase();
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+const TICKETING_SETTING_ID = "ticketing_config";
+const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
+
+function defaultTicketPhases(ticket) {
+  return [
+    {
+      id: "preventa",
+      name: "Preventa",
+      kind: "preventa",
+      price: ticket.price,
+      quota: null,
+      startsAt: "",
+      endsAt: "",
+      perOrderLimit: ticket.maxQuantity,
+      enabled: false,
+      sortOrder: 10
+    },
+    {
+      id: "general",
+      name: "Venta general",
+      kind: "general",
+      price: ticket.price,
+      quota: null,
+      startsAt: "",
+      endsAt: "",
+      perOrderLimit: ticket.maxQuantity,
+      enabled: true,
+      sortOrder: 20
+    },
+    {
+      id: "puerta",
+      name: "Puerta",
+      kind: "puerta",
+      price: ticket.price,
+      quota: null,
+      startsAt: "",
+      endsAt: "",
+      perOrderLimit: ticket.maxQuantity,
+      enabled: false,
+      sortOrder: 30
+    }
+  ];
+}
+
+function defaultTicketingConfig() {
+  return {
+    events: clone(defaultEvents),
+    ticketTypes: defaultTicketTypes.map((ticket) => ({
+      ...clone(ticket),
+      active: true,
+      phases: defaultTicketPhases(ticket)
+    }))
+  };
+}
+
+function normalizePhase(phase = {}, ticket = {}, index = 0) {
+  const fallbackId = ["preventa", "general", "puerta"][index] || `fase-${index + 1}`;
+  const idValue = String(phase.id || phase.kind || fallbackId)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-");
+  const kind = String(phase.kind || idValue || fallbackId).trim().toLowerCase();
+  const price = Number.isFinite(Number(phase.price)) ? Number(phase.price) : Number(ticket.price || 0);
+  const quota = phase.quota === "" || phase.quota === null || phase.quota === undefined ? null : Number(phase.quota);
+  const perOrderLimit =
+    phase.perOrderLimit === "" || phase.perOrderLimit === null || phase.perOrderLimit === undefined
+      ? Number(ticket.maxQuantity || 1)
+      : Number(phase.perOrderLimit);
+
+  return {
+    id: idValue || fallbackId,
+    name: String(phase.name || phase.label || fallbackId).trim(),
+    kind,
+    price: Math.max(0, Math.round(price || 0)),
+    quota: Number.isFinite(quota) && quota > 0 ? Math.floor(quota) : null,
+    startsAt: String(phase.startsAt || phase.startAt || "").trim(),
+    endsAt: String(phase.endsAt || phase.endAt || "").trim(),
+    perOrderLimit: Number.isFinite(perOrderLimit) && perOrderLimit > 0 ? Math.floor(perOrderLimit) : 1,
+    enabled: phase.enabled !== false,
+    sortOrder: Number(phase.sortOrder || (index + 1) * 10)
+  };
+}
+
+function normalizeTicket(ticket = {}) {
+  const idValue = String(ticket.id || ticket.name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-");
+  const base = defaultTicketTypes.find((candidate) => candidate.id === idValue) || {};
+  const normalized = {
+    ...base,
+    ...ticket,
+    id: idValue || base.id || id("ticket-type"),
+    name: String(ticket.name || base.name || "Entrada").trim(),
+    description: String(ticket.description || base.description || "").trim(),
+    price: Math.max(0, Math.round(Number(ticket.price ?? base.price ?? 0))),
+    maxQuantity: Math.max(1, Math.floor(Number(ticket.maxQuantity ?? base.maxQuantity ?? 1))),
+    active: ticket.active !== false,
+    eventIds: Array.isArray(ticket.eventIds) ? ticket.eventIds.map(String).filter(Boolean) : []
+  };
+  const phases = Array.isArray(ticket.phases) && ticket.phases.length ? ticket.phases : defaultTicketPhases(normalized);
+  normalized.phases = phases.map((phase, index) => normalizePhase(phase, normalized, index));
+  return normalized;
+}
+
+function normalizeEvent(event = {}) {
+  const idValue = String(event.id || event.name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-");
+  const base = defaultEvents.find((candidate) => candidate.id === idValue) || {};
+  return {
+    ...base,
+    ...event,
+    id: idValue || base.id || id("event"),
+    name: String(event.name || base.name || "Honda Fest Chile").trim(),
+    eyebrow: String(event.eyebrow || base.eyebrow || "Evento").trim(),
+    dateLabel: String(event.dateLabel || base.dateLabel || "").trim(),
+    venue: String(event.venue || base.venue || "").trim(),
+    city: String(event.city || base.city || "Chile").trim(),
+    summary: String(event.summary || base.summary || "").trim(),
+    highlights: Array.isArray(event.highlights) ? event.highlights : base.highlights || [],
+    accent: String(event.accent || base.accent || "honda").trim(),
+    eventDate: String(event.eventDate || "").trim(),
+    active: event.active !== false
+  };
+}
+
+function normalizeTicketingConfig(config = {}) {
+  const defaults = defaultTicketingConfig();
+  const events = Array.isArray(config.events) && config.events.length ? config.events : defaults.events;
+  const ticketTypes =
+    Array.isArray(config.ticketTypes) && config.ticketTypes.length ? config.ticketTypes : defaults.ticketTypes;
+
+  return {
+    events: events.map(normalizeEvent).filter((event) => event.active !== false),
+    ticketTypes: ticketTypes.map(normalizeTicket).filter((ticket) => ticket.active !== false)
+  };
+}
+
+function ticketingConfig(state) {
+  const record = (state.settings || []).find(
+    (candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing"
+  );
+  return normalizeTicketingConfig(record?.payload || record || defaultTicketingConfig());
+}
+
+function upsertSetting(state, setting) {
+  const now = new Date().toISOString();
+  const record = {
+    id: setting.id,
+    type: setting.type,
+    payload: setting.payload,
+    createdAt: setting.createdAt || now,
+    updatedAt: now
+  };
+  const index = (state.settings || []).findIndex((candidate) => candidate.id === record.id);
+  if (!state.settings) state.settings = [];
+  if (index >= 0) state.settings[index] = { ...state.settings[index], ...record };
+  else state.settings.push(record);
+  return record;
+}
+
+function findEvent(state, eventId) {
+  return ticketingConfig(state).events.find((event) => event.id === eventId) || findDefaultEvent(eventId);
+}
+
+function findTicketType(state, ticketTypeId) {
+  return ticketingConfig(state).ticketTypes.find((ticket) => ticket.id === ticketTypeId) || findDefaultTicketType(ticketTypeId);
+}
+
+function phaseDateActive(phase, now = new Date()) {
+  const start = phase.startsAt ? new Date(phase.startsAt) : null;
+  const end = phase.endsAt ? new Date(phase.endsAt) : null;
+  if (start && !Number.isNaN(start.getTime()) && now < start) return false;
+  if (end && !Number.isNaN(end.getTime()) && now > end) return false;
+  return true;
+}
+
+function orderCountsForPhase(state, eventId, ticketTypeId, phaseId, paidOnly = false) {
+  const statuses = paidOnly
+    ? new Set(["paid"])
+    : new Set(["created", "payment_pending", "payment_review", "paid"]);
+  return (state.orders || []).reduce((sum, order) => {
+    if (!statuses.has(order.status)) return sum;
+    return (
+      sum +
+      getOrderItems(order, state).reduce((itemSum, item) => {
+        if (item.eventId !== eventId || item.ticketTypeId !== ticketTypeId) return itemSum;
+        if ((item.salePhaseId || "general") !== phaseId) return itemSum;
+        return itemSum + Number(item.quantity || 0);
+      }, 0)
+    );
+  }, 0);
+}
+
+function activePhaseForTicket(state, eventId, ticket, now = new Date()) {
+  const phases = (ticket.phases || [])
+    .filter((phase) => phase.enabled !== false && phaseDateActive(phase, now))
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+
+  for (const phase of phases) {
+    const reserved = orderCountsForPhase(state, eventId, ticket.id, phase.id, false);
+    const remaining = phase.quota ? Math.max(0, phase.quota - reserved) : null;
+    if (remaining === 0) continue;
+    return {
+      ...phase,
+      reserved,
+      sold: orderCountsForPhase(state, eventId, ticket.id, phase.id, true),
+      remaining,
+      maxQuantity: Math.max(1, Math.min(ticket.maxQuantity, phase.perOrderLimit, remaining || phase.perOrderLimit))
+    };
+  }
+
+  return null;
+}
+
+function catalogForClient(state) {
+  const config = ticketingConfig(state);
+  const primaryEventId = config.events[0]?.id || DEFAULT_EVENT_ID;
+  return {
+    events: config.events,
+    ticketTypes: config.ticketTypes.map((ticket) => {
+      const phase = activePhaseForTicket(state, primaryEventId, ticket);
+      return {
+        ...ticket,
+        price: phase?.price ?? ticket.price,
+        maxQuantity: phase?.maxQuantity ?? ticket.maxQuantity,
+        salePhaseId: phase?.id || null,
+        salePhaseName: phase?.name || "No disponible",
+        salePhaseKind: phase?.kind || null,
+        saleRemaining: phase?.remaining,
+        available: Boolean(phase)
+      };
+    })
+  };
+}
+
+function salesBi(state) {
+  const config = ticketingConfig(state);
+  const eventsById = new Map(config.events.map((event) => [event.id, event]));
+  const ticketsById = new Map(config.ticketTypes.map((ticket) => [ticket.id, ticket]));
+  const byEvent = new Map();
+  const byTicket = new Map();
+  const byPhase = new Map();
+
+  for (const order of state.orders || []) {
+    const isPaid = order.status === "paid";
+    const items = getOrderItems(order, state);
+    for (const item of items) {
+      const quantity = Number(item.quantity || 0);
+      const total = isPaid ? Number(item.total || 0) : 0;
+      const eventKey = item.eventId || "sin-evento";
+      const ticketKey = item.ticketTypeId || "sin-entrada";
+      const phaseKey = item.salePhaseId || "general";
+      const eventRow = byEvent.get(eventKey) || {
+        id: eventKey,
+        name: eventsById.get(eventKey)?.name || item.eventName || eventKey,
+        sold: 0,
+        revenue: 0,
+        guests: 0
+      };
+      const ticketRow = byTicket.get(ticketKey) || {
+        id: ticketKey,
+        name: ticketsById.get(ticketKey)?.name || item.ticketTypeName || ticketKey,
+        sold: 0,
+        revenue: 0,
+        guests: 0
+      };
+      const phaseRow = byPhase.get(phaseKey) || {
+        id: phaseKey,
+        name: item.salePhaseName || phaseKey,
+        sold: 0,
+        revenue: 0,
+        guests: 0
+      };
+      if (isPaid) {
+        eventRow.sold += quantity;
+        eventRow.revenue += total;
+        ticketRow.sold += quantity;
+        ticketRow.revenue += total;
+        phaseRow.sold += quantity;
+        phaseRow.revenue += total;
+      }
+      if (order.source === "guest" || item.salePhaseKind === "guest") {
+        eventRow.guests += quantity;
+        ticketRow.guests += quantity;
+        phaseRow.guests += quantity;
+      }
+      byEvent.set(eventKey, eventRow);
+      byTicket.set(ticketKey, ticketRow);
+      byPhase.set(phaseKey, phaseRow);
+    }
+  }
+
+  return {
+    byEvent: Array.from(byEvent.values()).sort((a, b) => b.sold - a.sold),
+    byTicket: Array.from(byTicket.values()).sort((a, b) => b.sold - a.sold),
+    byPhase: Array.from(byPhase.values()).sort((a, b) => b.sold - a.sold)
+  };
+}
+
+const emailDomainFixes = {
+  "gmeil.com": "gmail.com",
+  "gmial.com": "gmail.com",
+  "gmail.con": "gmail.com",
+  "gmail.cl": "gmail.com",
+  "hotmial.com": "hotmail.com",
+  "hotmil.com": "hotmail.com",
+  "hotmail.con": "hotmail.com",
+  "outlok.com": "outlook.com",
+  "outlook.con": "outlook.com",
+  "yaho.com": "yahoo.com"
+};
+
+function emailSuggestion(email) {
+  const normalized = normalizeEmail(email).replace(/\s+/g, "");
+  const [local, domain] = normalized.split("@");
+  if (!local || !domain) {
+    return { email: normalized, valid: false, suggestion: normalized, reason: "Formato incompleto" };
+  }
+  const suggestedDomain = emailDomainFixes[domain] || domain;
+  const suggestion = `${local.replace(/[^\w.+-]/g, "")}@${suggestedDomain}`;
+  return {
+    email: normalized,
+    valid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(suggestion),
+    suggestion: suggestion !== normalized ? suggestion : "",
+    reason: suggestion !== normalized ? `Dominio sugerido: ${suggestedDomain}` : ""
+  };
+}
+
+function parseCsvRows(csvText = "") {
+  const rows = [];
+  let row = [];
+  let value = "";
+  let quoted = false;
+
+  for (let index = 0; index < csvText.length; index += 1) {
+    const char = csvText[index];
+    const next = csvText[index + 1];
+    if (char === '"' && quoted && next === '"') {
+      value += '"';
+      index += 1;
+      continue;
+    }
+    if (char === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (char === "," && !quoted) {
+      row.push(value);
+      value = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(value);
+      value = "";
+      if (row.some((cell) => String(cell).trim())) rows.push(row);
+      row = [];
+      continue;
+    }
+    value += char;
+  }
+
+  row.push(value);
+  if (row.some((cell) => String(cell).trim())) rows.push(row);
+  return rows;
+}
+
+function contactsFromCsv(csvText = "", source = "csv") {
+  const rows = parseCsvRows(csvText);
+  if (!rows.length) return [];
+  const headers = rows[0].map((header) => String(header || "").trim().toLowerCase());
+  const emailIndex = headers.findIndex((header) => ["email", "correo", "mail", "e-mail"].includes(header));
+  const nameIndex = headers.findIndex((header) => ["name", "nombre", "cliente", "contacto"].includes(header));
+  const phoneIndex = headers.findIndex((header) => ["phone", "telefono", "teléfono", "celular"].includes(header));
+  const rutIndex = headers.findIndex((header) => ["rut", "run"].includes(header));
+  const startIndex = emailIndex >= 0 || nameIndex >= 0 ? 1 : 0;
+
+  return rows.slice(startIndex).map((row, index) => {
+    const fallbackEmail = row.find((cell) => String(cell).includes("@")) || "";
+    const rawEmail = emailIndex >= 0 ? row[emailIndex] : fallbackEmail;
+    const suggestion = emailSuggestion(rawEmail);
+    const now = new Date().toISOString();
+    return {
+      id: id("contact"),
+      name: String(nameIndex >= 0 ? row[nameIndex] : row[0] || "").trim() || `Contacto ${index + 1}`,
+      email: suggestion.email,
+      correctedEmail: suggestion.suggestion || "",
+      emailSuggestion: suggestion,
+      phone: String(phoneIndex >= 0 ? row[phoneIndex] : "").trim(),
+      rut: String(rutIndex >= 0 ? row[rutIndex] : "").trim(),
+      source,
+      createdAt: now,
+      updatedAt: now
+    };
+  });
 }
 
 function hashPassword(password) {
@@ -79,6 +497,9 @@ function publicOrder(order) {
     quantity: order.quantity,
     total: order.total,
     status: order.status,
+    source: order.source || "online",
+    salePhaseName: order.salePhaseName || null,
+    salePhaseKind: order.salePhaseKind || null,
     paymentMode: order.paymentMode,
     paymentStatus: order.payment?.status || null,
     paymentProvider: order.payment?.provider || null,
@@ -99,6 +520,8 @@ function publicTicket(ticket, req) {
     ticketTypeId: ticket.ticketTypeId,
     eventName: ticket.eventName,
     ticketTypeName: ticket.ticketTypeName,
+    salePhaseName: ticket.salePhaseName || null,
+    salePhaseKind: ticket.salePhaseKind || null,
     code: ticket.code,
     holderName: ticket.holderName,
     holderRut: ticket.holderRut,
@@ -249,7 +672,7 @@ function findUserByEmailRut(state, email, rutInput) {
   );
 }
 
-function buildOrderItems(itemsInput) {
+function buildOrderItems(state, itemsInput) {
   if (!Array.isArray(itemsInput) || !itemsInput.length) {
     const error = new Error("El carrito esta vacio");
     error.status = 400;
@@ -257,8 +680,8 @@ function buildOrderItems(itemsInput) {
   }
 
   return itemsInput.map((item, index) => {
-    const event = findEvent(item.eventId);
-    const ticketType = findTicketType(item.ticketTypeId);
+    const event = findEvent(state, item.eventId);
+    const ticketType = findTicketType(state, item.ticketTypeId);
     const quantity = Number(item.quantity || 1);
 
     if (!event || !ticketType) {
@@ -267,8 +690,18 @@ function buildOrderItems(itemsInput) {
       throw error;
     }
 
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > ticketType.maxQuantity) {
-      const error = new Error(`La cantidad permitida para ${ticketType.name} es 1 a ${ticketType.maxQuantity}`);
+    const phase = activePhaseForTicket(state, event.id, ticketType);
+    if (!phase) {
+      const error = new Error(`${ticketType.name} no tiene una etapa de venta activa`);
+      error.status = 409;
+      throw error;
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > phase.maxQuantity) {
+      const remainingText = phase.remaining === null ? "" : ` Quedan ${phase.remaining} en ${phase.name}.`;
+      const error = new Error(
+        `La cantidad permitida para ${ticketType.name} en ${phase.name} es 1 a ${phase.maxQuantity}.${remainingText}`
+      );
       error.status = 400;
       throw error;
     }
@@ -280,18 +713,21 @@ function buildOrderItems(itemsInput) {
       ticketTypeId: ticketType.id,
       ticketTypeName: ticketType.name,
       description: ticketType.description,
+      salePhaseId: phase.id,
+      salePhaseName: phase.name,
+      salePhaseKind: phase.kind,
       quantity,
-      unitPrice: ticketType.price,
-      total: ticketType.price * quantity
+      unitPrice: phase.price,
+      total: phase.price * quantity
     };
   });
 }
 
-function getOrderItems(order) {
+function getOrderItems(order, state = null) {
   if (order.items?.length) return order.items;
 
-  const event = findEvent(order.eventId);
-  const ticketType = findTicketType(order.ticketTypeId);
+  const event = state ? findEvent(state, order.eventId) : findDefaultEvent(order.eventId);
+  const ticketType = state ? findTicketType(state, order.ticketTypeId) : findDefaultTicketType(order.ticketTypeId);
   if (!event || !ticketType) return [];
 
   return [
@@ -302,6 +738,9 @@ function getOrderItems(order) {
       ticketTypeId: ticketType.id,
       ticketTypeName: ticketType.name,
       description: ticketType.description,
+      salePhaseId: order.salePhaseId || "general",
+      salePhaseName: order.salePhaseName || "Venta general",
+      salePhaseKind: order.salePhaseKind || "general",
       quantity: order.quantity,
       unitPrice: ticketType.price,
       total: order.total
@@ -323,6 +762,9 @@ function createTickets({ order, user, items }) {
         ticketTypeId: item.ticketTypeId,
         eventName: item.eventName,
         ticketTypeName: item.ticketTypeName,
+        salePhaseId: item.salePhaseId,
+        salePhaseName: item.salePhaseName,
+        salePhaseKind: item.salePhaseKind,
         code: `HFC-${new Date().getFullYear()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}-${index + 1}`,
         holderName: user.name,
         holderRut: user.rut,
@@ -472,10 +914,10 @@ async function completeOrderPayment(orderId, paymentData = {}) {
   }
 
   const user = state.users.find((candidate) => candidate.id === order.userId);
-  const items = getOrderItems(order);
+  const items = getOrderItems(order, state);
   const firstItem = items[0];
-  const event = firstItem ? findEvent(firstItem.eventId) : null;
-  const ticketType = firstItem ? findTicketType(firstItem.ticketTypeId) : null;
+  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
+  const ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
   if (!user || !items.length) {
     const error = new Error("Orden incompleta");
     error.status = 409;
@@ -533,7 +975,16 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     }
   }
 
-  await sendTicketEmail({ user, order, event, ticketType, tickets, invoice });
+  await sendTicketEmail({
+    user,
+    order,
+    event,
+    ticketType,
+    tickets,
+    invoice,
+    template: findTemplate(state.emailTemplates, "payment"),
+    baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : ""
+  });
   return { order, user, event, ticketType, tickets, invoice };
 }
 
@@ -547,10 +998,10 @@ async function resendOrderEmail(orderId) {
   }
 
   const user = state.users.find((candidate) => candidate.id === order.userId);
-  const items = getOrderItems(order);
+  const items = getOrderItems(order, state);
   const firstItem = items[0];
-  const event = firstItem ? findEvent(firstItem.eventId) : null;
-  const ticketType = firstItem ? findTicketType(firstItem.ticketTypeId) : null;
+  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
+  const ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
   const tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
   const invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
 
@@ -560,7 +1011,16 @@ async function resendOrderEmail(orderId) {
     throw error;
   }
 
-  await sendTicketEmail({ user, order, event, ticketType, tickets, invoice });
+  await sendTicketEmail({
+    user,
+    order,
+    event,
+    ticketType,
+    tickets,
+    invoice,
+    template: findTemplate(state.emailTemplates, "payment"),
+    baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : ""
+  });
 
   await updateState((nextState) => {
     nextState.emailLogs.push({
@@ -586,6 +1046,7 @@ app.get("/api/health", (req, res) => {
     },
     integrations: {
       smtp: smtpConfigured(),
+      email: mailProviderStatus(),
       mercadoPago: mercadoPagoConfigured(),
       mercadoPagoDetails: mercadoPagoRuntimeStatus(req),
       openFactura: openFacturaConfigured()
@@ -593,14 +1054,18 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.get("/api/catalog", (req, res) => {
-  res.json({
-    events,
-    ticketTypes,
-    integrations: {
-      paymentMode: mercadoPagoConfigured() ? "mercadopago" : "demo"
-    }
-  });
+app.get("/api/catalog", async (req, res, next) => {
+  try {
+    const state = await readState();
+    res.json({
+      ...catalogForClient(state),
+      integrations: {
+        paymentMode: mercadoPagoConfigured() ? "mercadopago" : "demo"
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get("/media/*", async (req, res, next) => {
@@ -837,19 +1302,22 @@ app.post("/api/auth/resend-verification", async (req, res, next) => {
   }
 });
 
-async function createOrderFromItems({ req, user, items }) {
+async function createOrderFromItems({ req, user, items, state }) {
   const now = new Date().toISOString();
   const total = items.reduce((sum, item) => sum + item.total, 0);
   const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const firstItem = items[0];
-  const event = findEvent(firstItem.eventId);
-  const ticketType = findTicketType(firstItem.ticketTypeId);
+  const event = findEvent(state, firstItem.eventId);
+  const ticketType = findTicketType(state, firstItem.ticketTypeId);
 
   const order = {
     id: id("order"),
     userId: user.id,
     eventId: firstItem.eventId,
     ticketTypeId: firstItem.ticketTypeId,
+    salePhaseId: firstItem.salePhaseId,
+    salePhaseName: firstItem.salePhaseName,
+    salePhaseKind: firstItem.salePhaseKind,
     items,
     quantity,
     unitPrice: firstItem.unitPrice,
@@ -893,9 +1361,8 @@ app.post("/api/orders", async (req, res, next) => {
       throw error;
     }
 
-    const items = buildOrderItems([{ eventId, ticketTypeId, quantity }]);
-
     const state = await readState();
+    const items = buildOrderItems(state, [{ eventId, ticketTypeId, quantity }]);
     const user = findUserByEmailRut(state, email, rutInput);
 
     if (!user) {
@@ -910,7 +1377,7 @@ app.post("/api/orders", async (req, res, next) => {
       throw error;
     }
 
-    const { order, preference } = await createOrderFromItems({ req, user, items });
+    const { order, preference } = await createOrderFromItems({ req, user, items, state });
 
     res.status(201).json({
       ok: true,
@@ -934,8 +1401,8 @@ app.post("/api/orders/from-cart", async (req, res, next) => {
       throw error;
     }
 
-    const items = buildOrderItems(req.body.items);
     const state = await readState();
+    const items = buildOrderItems(state, req.body.items);
     const user = findUserByEmailRut(state, email, rutInput);
 
     if (!user) {
@@ -950,7 +1417,7 @@ app.post("/api/orders/from-cart", async (req, res, next) => {
       throw error;
     }
 
-    const { order, preference } = await createOrderFromItems({ req, user, items });
+    const { order, preference } = await createOrderFromItems({ req, user, items, state });
 
     res.status(201).json({
       ok: true,
@@ -1127,6 +1594,153 @@ function requireAdmin(req) {
   }
 }
 
+function publicContact(contact) {
+  const suggestion = emailSuggestion(contact.correctedEmail || contact.email);
+  return {
+    id: contact.id,
+    name: contact.name,
+    email: contact.email,
+    correctedEmail: contact.correctedEmail || "",
+    effectiveEmail: contact.correctedEmail || contact.email,
+    phone: contact.phone || "",
+    rut: contact.rut || "",
+    source: contact.source || "",
+    emailSuggestion: contact.emailSuggestion || suggestion,
+    createdAt: contact.createdAt,
+    updatedAt: contact.updatedAt
+  };
+}
+
+function publicAdminUser(user, state) {
+  const orders = (state.orders || []).filter((order) => order.userId === user.id);
+  const tickets = (state.tickets || []).filter((ticket) => ticket.userId === user.id);
+  return {
+    ...publicUser(user),
+    source: user.source || "web",
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    emailSuggestion: emailSuggestion(user.email),
+    orders: orders.length,
+    tickets: tickets.length
+  };
+}
+
+function logEmailResult(state, entry) {
+  if (!state.emailLogs) state.emailLogs = [];
+  state.emailLogs.push({
+    id: id("email"),
+    ...entry,
+    createdAt: new Date().toISOString()
+  });
+}
+
+function audienceFromRequest(state, body = {}) {
+  const target = String(body.target || "selected").trim();
+  const explicitEmails = String(body.emails || "")
+    .split(/[\n,;]/)
+    .map((email) => normalizeEmail(email))
+    .filter(Boolean)
+    .map((email) => ({ id: email, name: email.split("@")[0], email, kind: "manual" }));
+
+  if (target === "users_all") {
+    return (state.users || []).map((user) => ({ ...user, email: user.email, kind: "user" })).filter((user) => user.email);
+  }
+
+  if (target === "users_unverified") {
+    return (state.users || [])
+      .filter((user) => !user.emailVerified)
+      .map((user) => ({ ...user, email: user.email, kind: "user" }))
+      .filter((user) => user.email);
+  }
+
+  if (target === "contacts_all") {
+    return (state.contacts || [])
+      .map((contact) => ({
+        ...contact,
+        email: contact.correctedEmail || contact.email,
+        kind: "contact"
+      }))
+      .filter((contact) => contact.email);
+  }
+
+  if (target === "selected_users" && Array.isArray(body.ids)) {
+    const ids = new Set(body.ids);
+    return (state.users || [])
+      .filter((user) => ids.has(user.id))
+      .map((user) => ({ ...user, email: user.email, kind: "user" }))
+      .filter((user) => user.email);
+  }
+
+  return explicitEmails;
+}
+
+async function sendCampaignBatch({ req, state, body }) {
+  const template = findTemplate(state.emailTemplates, body.templateId || body.templateType || "marketing");
+  const recipients = audienceFromRequest(state, body);
+  const base = baseUrl(req);
+  const unique = new Map();
+  for (const recipient of recipients) {
+    const email = normalizeEmail(recipient.email);
+    if (email) unique.set(email, { ...recipient, email });
+  }
+
+  const results = [];
+  for (const recipient of unique.values()) {
+    const variables = {
+      name: recipient.name || recipient.email,
+      email: recipient.email,
+      event_name: body.eventName || "Honda Fest Chile",
+      enroll_url: `${base}/ticketera`,
+      cta_url: body.ctaUrl || `${base}/ticketera`,
+      campaign_title: body.subject || body.campaignTitle || template.subject || "Honda Fest Chile",
+      campaign_body: body.body || body.campaignBody || ""
+    };
+    const rendered = renderTemplate(
+      {
+        ...template,
+        subject: body.subject || template.subject,
+        text: body.text || template.text,
+        html: body.html || template.html
+      },
+      variables
+    );
+
+    try {
+      const result = await sendMail({
+        to: recipient.email,
+        subject: rendered.subject,
+        text: rendered.text,
+        html: rendered.html
+      });
+      logEmailResult(state, {
+        type: body.templateId || body.templateType || template.type,
+        templateId: template.id,
+        to: recipient.email,
+        recipientId: recipient.id,
+        recipientKind: recipient.kind,
+        status: "sent",
+        mode: result.mode,
+        subject: rendered.subject
+      });
+      results.push({ email: recipient.email, ok: true, mode: result.mode });
+    } catch (error) {
+      logEmailResult(state, {
+        type: body.templateId || body.templateType || template.type,
+        templateId: template.id,
+        to: recipient.email,
+        recipientId: recipient.id,
+        recipientKind: recipient.kind,
+        status: "failed",
+        error: error.message,
+        subject: rendered.subject
+      });
+      results.push({ email: recipient.email, ok: false, message: error.message });
+    }
+  }
+
+  return results;
+}
+
 app.get("/api/backoffice/summary", async (req, res, next) => {
   try {
     requireAdmin(req);
@@ -1156,16 +1770,402 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         paidOrders: paidOrders.length,
         revenue,
         tickets: state.tickets.length,
+        guestTickets: state.tickets.filter((ticket) => ticket.salePhaseKind === "guest").length,
         checkedInTickets: state.tickets.filter((ticket) => ticket.status === "checked_in").length,
         users: state.users.length,
-        enrolados: state.users.filter((user) => user.emailVerified).length
+        enrolados: state.users.filter((user) => user.emailVerified).length,
+        contacts: (state.contacts || []).length
       },
+      bi: salesBi(state),
+      ticketing: ticketingConfig(state),
       orders,
       tickets: state.tickets.map((ticket) => publicTicket(ticket, req)),
-      users: state.users.map(publicUser),
+      users: state.users.map((user) => publicAdminUser(user, state)),
+      contacts: (state.contacts || []).map(publicContact),
+      emailTemplates: mergeTemplates(state.emailTemplates || []),
       invoices: state.invoices,
-      emailLogs: state.emailLogs || []
+      emailLogs: (state.emailLogs || []).slice(-200).reverse(),
+      integrations: {
+        email: mailProviderStatus()
+      }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/backoffice/ticketing", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    let saved;
+    await updateState((state) => {
+      const payload = normalizeTicketingConfig(req.body.ticketing || req.body);
+      saved = upsertSetting(state, {
+        id: TICKETING_SETTING_ID,
+        type: "ticketing",
+        payload
+      });
+      state.audit.push({
+        id: id("audit"),
+        type: "ticketing_config_updated",
+        settingId: saved.id,
+        createdAt: saved.updatedAt
+      });
+    });
+    res.json({ ok: true, ticketing: saved.payload });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/guests", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const name = requireString(req.body, "name", "Nombre");
+    const email = normalizeEmail(requireString(req.body, "email", "Correo"));
+    const eventId = requireString(req.body, "eventId", "Evento");
+    const ticketTypeId = requireString(req.body, "ticketTypeId", "Entrada");
+    const quantity = Math.max(1, Math.min(20, Number(req.body.quantity || 1)));
+    const rutInput = String(req.body.rut || "").trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      const error = new Error("El correo no tiene un formato valido");
+      error.status = 400;
+      throw error;
+    }
+
+    if (rutInput && !validateRut(rutInput)) {
+      const error = new Error("El RUT del invitado no es valido");
+      error.status = 400;
+      throw error;
+    }
+
+    let result;
+    await updateState((state) => {
+      const event = findEvent(state, eventId);
+      const ticketType = findTicketType(state, ticketTypeId);
+      if (!event || !ticketType) {
+        const error = new Error("Evento o entrada no disponible");
+        error.status = 400;
+        throw error;
+      }
+
+      const now = new Date().toISOString();
+      let user = state.users.find((candidate) => candidate.email === email);
+      if (!user) {
+        user = {
+          id: id("user"),
+          name,
+          email,
+          rut: rutInput ? formatRut(rutInput) : null,
+          phone: String(req.body.phone || "").trim(),
+          club: "Invitado",
+          vehicle: "",
+          interests: [],
+          passwordHash: "",
+          source: "guest",
+          emailVerified: true,
+          verificationToken: null,
+          createdAt: now,
+          updatedAt: now
+        };
+        state.users.push(user);
+      } else {
+        user.name = name || user.name;
+        user.rut = rutInput ? formatRut(rutInput) : user.rut;
+        user.source = user.source || "guest";
+        user.emailVerified = true;
+        user.updatedAt = now;
+      }
+
+      const items = [
+        {
+          id: id("line"),
+          eventId: event.id,
+          eventName: event.name,
+          ticketTypeId: ticketType.id,
+          ticketTypeName: ticketType.name,
+          description: ticketType.description,
+          salePhaseId: "guest",
+          salePhaseName: "Invitado",
+          salePhaseKind: "guest",
+          quantity,
+          unitPrice: 0,
+          total: 0
+        }
+      ];
+      const order = {
+        id: id("guest_order"),
+        userId: user.id,
+        eventId: event.id,
+        ticketTypeId: ticketType.id,
+        salePhaseId: "guest",
+        salePhaseName: "Invitado",
+        salePhaseKind: "guest",
+        items,
+        quantity,
+        unitPrice: 0,
+        total: 0,
+        status: "paid",
+        source: "guest",
+        paymentMode: "guest",
+        invoiceStatus: "not_required",
+        note: String(req.body.note || "").trim(),
+        createdAt: now,
+        updatedAt: now
+      };
+      const tickets = createTickets({ order, user, items });
+      state.orders.push(order);
+      state.tickets.push(...tickets);
+      state.audit.push({
+        id: id("audit"),
+        type: "guest_tickets_created",
+        orderId: order.id,
+        userId: user.id,
+        quantity,
+        createdAt: now
+      });
+      result = { user, order, tickets, event, ticketType };
+    });
+
+    if (req.body.sendEmail !== false) {
+      const state = await readState();
+      await sendTicketEmail({
+        user: result.user,
+        order: result.order,
+        event: result.event,
+        ticketType: result.ticketType,
+        tickets: result.tickets,
+        invoice: null,
+        template: findTemplate(state.emailTemplates, "ticket_after_enrollment"),
+        baseUrl: baseUrl(req)
+      });
+      await updateState((state) => {
+        logEmailResult(state, {
+          type: "ticket_after_enrollment",
+          templateId: "ticket_after_enrollment",
+          to: result.user.email,
+          userId: result.user.id,
+          orderId: result.order.id,
+          status: "sent"
+        });
+      });
+    }
+
+    res.status(201).json({
+      ok: true,
+      order: publicOrder(result.order),
+      user: publicUser(result.user),
+      tickets: result.tickets.map((ticket) => publicTicket(ticket, req))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/contacts/import", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const contacts = contactsFromCsv(req.body.csv || req.body.text || "", req.body.source || "csv");
+    let imported = 0;
+    await updateState((state) => {
+      if (!state.contacts) state.contacts = [];
+      for (const contact of contacts) {
+        const existing = state.contacts.find(
+          (candidate) =>
+            normalizeEmail(candidate.email) === contact.email ||
+            normalizeEmail(candidate.correctedEmail) === contact.email
+        );
+        if (existing) {
+          Object.assign(existing, {
+            ...contact,
+            id: existing.id,
+            createdAt: existing.createdAt,
+            updatedAt: new Date().toISOString()
+          });
+        } else {
+          state.contacts.push(contact);
+        }
+        imported += 1;
+      }
+      state.audit.push({
+        id: id("audit"),
+        type: "contacts_imported",
+        count: imported,
+        source: req.body.source || "csv",
+        createdAt: new Date().toISOString()
+      });
+    });
+    const state = await readState();
+    res.json({ ok: true, imported, contacts: (state.contacts || []).map(publicContact) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/api/backoffice/contacts/:contactId/email", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const email = normalizeEmail(requireString(req.body, "email", "Correo"));
+    let contact;
+    await updateState((state) => {
+      contact = (state.contacts || []).find((candidate) => candidate.id === req.params.contactId);
+      if (!contact) {
+        const error = new Error("Contacto no encontrado");
+        error.status = 404;
+        throw error;
+      }
+      contact.correctedEmail = email;
+      contact.emailSuggestion = emailSuggestion(email);
+      contact.updatedAt = new Date().toISOString();
+      state.audit.push({
+        id: id("audit"),
+        type: "contact_email_corrected",
+        contactId: contact.id,
+        email,
+        createdAt: contact.updatedAt
+      });
+    });
+    res.json({ ok: true, contact: publicContact(contact) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/api/backoffice/users/:userId/email", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const email = normalizeEmail(requireString(req.body, "email", "Correo"));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      const error = new Error("El correo no tiene un formato valido");
+      error.status = 400;
+      throw error;
+    }
+
+    let user;
+    await updateState((state) => {
+      user = state.users.find((candidate) => candidate.id === req.params.userId);
+      if (!user) {
+        const error = new Error("Usuario no encontrado");
+        error.status = 404;
+        throw error;
+      }
+      const duplicate = state.users.find((candidate) => candidate.id !== user.id && candidate.email === email);
+      if (duplicate) {
+        const error = new Error("Ya existe otro enrolado con ese correo");
+        error.status = 409;
+        throw error;
+      }
+      user.previousEmail = user.email;
+      user.email = email;
+      user.emailVerified = false;
+      user.verificationToken = id("verify");
+      user.verificationSentAt = new Date().toISOString();
+      user.updatedAt = user.verificationSentAt;
+      state.audit.push({
+        id: id("audit"),
+        type: "user_email_corrected",
+        userId: user.id,
+        previousEmail: user.previousEmail,
+        email,
+        createdAt: user.updatedAt
+      });
+    });
+
+    if (req.body.resend !== false) {
+      const verificationUrl = `${baseUrl(req)}/api/auth/verify?token=${user.verificationToken}`;
+      await sendVerificationEmail({ user, verificationUrl });
+      await updateState((state) => {
+        logEmailResult(state, {
+          type: "verification_after_email_correction",
+          to: user.email,
+          userId: user.id,
+          status: "sent"
+        });
+      });
+    }
+
+    const state = await readState();
+    res.json({ ok: true, user: publicAdminUser(user, state) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/users/:userId/resend-verification", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    let user;
+    await updateState((state) => {
+      user = state.users.find((candidate) => candidate.id === req.params.userId);
+      if (!user) {
+        const error = new Error("Usuario no encontrado");
+        error.status = 404;
+        throw error;
+      }
+      user.verificationToken = id("verify");
+      user.verificationSentAt = new Date().toISOString();
+      user.updatedAt = user.verificationSentAt;
+    });
+    const verificationUrl = `${baseUrl(req)}/api/auth/verify?token=${user.verificationToken}`;
+    await sendVerificationEmail({ user, verificationUrl });
+    await updateState((state) => {
+      logEmailResult(state, {
+        type: "resend_verification",
+        to: user.email,
+        userId: user.id,
+        status: "sent"
+      });
+    });
+    res.json({ ok: true, user: publicUser(user) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/email/send", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    let results = [];
+    await updateState(async (state) => {
+      results = await sendCampaignBatch({ req, state, body: req.body });
+    });
+    res.json({
+      ok: true,
+      sent: results.filter((result) => result.ok).length,
+      failed: results.filter((result) => !result.ok).length,
+      results
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/backoffice/email-templates/:templateId", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    let template;
+    await updateState((state) => {
+      if (!state.emailTemplates) state.emailTemplates = [];
+      template = normalizeTemplate({
+        id: req.params.templateId,
+        type: req.body.type || req.params.templateId,
+        name: req.body.name,
+        subject: req.body.subject,
+        text: req.body.text,
+        html: req.body.html
+      });
+      const index = state.emailTemplates.findIndex((candidate) => candidate.id === template.id);
+      if (index >= 0) state.emailTemplates[index] = { ...state.emailTemplates[index], ...template };
+      else state.emailTemplates.push(template);
+      state.audit.push({
+        id: id("audit"),
+        type: "email_template_updated",
+        templateId: template.id,
+        createdAt: new Date().toISOString()
+      });
+    });
+    res.json({ ok: true, template });
   } catch (error) {
     next(error);
   }
