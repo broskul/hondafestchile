@@ -35,6 +35,7 @@ const {
   storageMode,
   supabaseConfigured,
   updateState,
+  verifyCheckoutStorage,
   writeState
 } = require("./lib/storage");
 
@@ -1061,9 +1062,10 @@ function paymentDataFromMercadoPago(payment) {
   };
 }
 
-function requireCheckoutStorage() {
+async function requireCheckoutStorage() {
+  await verifyCheckoutStorage();
   if (checkoutStorageReady()) return;
-  const error = new Error("Configura Supabase en Vercel antes de activar ventas con Mercado Pago");
+  const error = new Error(lastSupabaseWarning() || "Configura Supabase en Vercel antes de activar ventas con Mercado Pago");
   error.status = 503;
   throw error;
 }
@@ -1613,7 +1615,7 @@ app.post("/api/orders", async (req, res, next) => {
       throw error;
     }
 
-    requireCheckoutStorage();
+    await requireCheckoutStorage();
 
     await updateState((state) => {
       upsertCheckoutUser(state, email, req.body);
@@ -1652,7 +1654,7 @@ app.post("/api/orders/from-cart", async (req, res, next) => {
       throw error;
     }
 
-    requireCheckoutStorage();
+    await requireCheckoutStorage();
 
     await updateState((state) => {
       upsertCheckoutUser(state, email, req.body);
@@ -1704,7 +1706,7 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       throw error;
     }
 
-    requireCheckoutStorage();
+    await requireCheckoutStorage();
 
     const state = await readState();
     const order = state.orders.find((candidate) => candidate.id === req.params.orderId);

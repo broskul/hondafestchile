@@ -62,8 +62,8 @@ function storageWarning() {
 }
 
 function checkoutStorageReady() {
-  if (supabaseConfigured()) return true;
   if (!process.env.VERCEL) return true;
+  if (supabaseConfigured()) return !lastSupabaseWarning;
   return /^(1|true|yes|si|sí)$/i.test(String(process.env.ALLOW_VOLATILE_CHECKOUT || "").trim());
 }
 
@@ -108,7 +108,23 @@ function isReachabilityError(error) {
   return /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|network/i.test(message);
 }
 
-function canUseLocalFallback(error) {
+function supabaseFallbackWarning(error, write = false) {
+  if (isMissingSchemaError(error)) {
+    return write
+      ? "Supabase esta configurado, pero faltan tablas hfc_*. Se uso JSON local como fallback."
+      : "Supabase esta configurado, pero faltan tablas hfc_*. Ejecuta supabase/schema.sql en el SQL Editor.";
+  }
+
+  return process.env.NODE_ENV === "production"
+    ? "Supabase no esta alcanzable en produccion. El catalogo usa datos locales, pero checkout queda bloqueado."
+    : "Supabase no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
+}
+
+function canUseLocalReadFallback(error) {
+  return isMissingSchemaError(error) || isReachabilityError(error);
+}
+
+function canUseLocalWriteFallback(error) {
   return isMissingSchemaError(error) || (process.env.NODE_ENV !== "production" && isReachabilityError(error));
 }
 
@@ -128,10 +144,8 @@ async function readSupabaseState() {
       })
     );
   } catch (error) {
-    if (canUseLocalFallback(error)) {
-      lastSupabaseWarning = isMissingSchemaError(error)
-        ? "Supabase esta configurado, pero faltan tablas hfc_*. Ejecuta supabase/schema.sql en el SQL Editor."
-        : "Supabase no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
+    if (canUseLocalReadFallback(error)) {
+      lastSupabaseWarning = supabaseFallbackWarning(error);
       console.warn(lastSupabaseWarning);
       return readJsonState();
     }
@@ -245,10 +259,8 @@ async function writeSupabaseState(state) {
         body: items.map((item) => supabaseRow(collection, item))
       });
     } catch (error) {
-      if (canUseLocalFallback(error)) {
-        lastSupabaseWarning = isMissingSchemaError(error)
-          ? "Supabase esta configurado, pero faltan tablas hfc_*. Se uso JSON local como fallback."
-          : "Supabase no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
+      if (canUseLocalWriteFallback(error)) {
+        lastSupabaseWarning = supabaseFallbackWarning(error, true);
         console.warn(lastSupabaseWarning);
         await writeJsonState(state);
         return;
@@ -297,6 +309,32 @@ async function updateState(mutator) {
   return result;
 }
 
+async function verifyCheckoutStorage() {
+  if (!process.env.VERCEL) return;
+  if (!supabaseConfigured()) {
+    if (checkoutStorageReady()) return;
+    const error = new Error("Configura Supabase en Vercel antes de activar ventas con Mercado Pago");
+    error.status = 503;
+    throw error;
+  }
+
+  try {
+    await supabaseRequest("hfc_settings", {
+      query: {
+        select: "id",
+        limit: "1"
+      }
+    });
+    lastSupabaseWarning = null;
+  } catch (error) {
+    lastSupabaseWarning = supabaseFallbackWarning(error);
+    if (checkoutStorageReady()) return;
+    const nextError = new Error(lastSupabaseWarning);
+    nextError.status = 503;
+    throw nextError;
+  }
+}
+
 module.exports = {
   checkoutStorageReady,
   lastSupabaseWarning: storageWarning,
@@ -304,5 +342,6 @@ module.exports = {
   storageMode,
   supabaseConfigured,
   updateState,
+  verifyCheckoutStorage,
   writeState
 };
