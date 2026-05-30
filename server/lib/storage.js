@@ -1,6 +1,7 @@
 const fs = require("fs/promises");
 const os = require("os");
 const path = require("path");
+const { Pool } = require("pg");
 
 const dataDir =
   process.env.JSON_STORE_DIR ||
@@ -36,21 +37,47 @@ const supabaseCollections = {
 };
 
 let lastSupabaseWarning = null;
+let postgresPool = null;
 
 function supabaseConfigured() {
+  return postgresConfigured() || supabaseRestConfigured();
+}
+
+function cleanEnv(name) {
+  return String(process.env[name] || "").trim();
+}
+
+function getPostgresUrl() {
+  const explicit = cleanEnv("SUPABASE_DB_URL") || cleanEnv("POSTGRES_URL") || cleanEnv("DATABASE_URL");
+  if (explicit) return explicit;
+
+  const legacyValue = cleanEnv("SUPABASE_URL");
+  return /^postgres(ql)?:\/\//i.test(legacyValue) ? legacyValue : "";
+}
+
+function postgresConfigured() {
+  return Boolean(getPostgresUrl());
+}
+
+function supabaseRestConfigured() {
   return Boolean(getSupabaseUrl() && getSupabaseKey());
 }
 
 function getSupabaseUrl() {
-  return process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const explicit = cleanEnv("SUPABASE_REST_URL") || cleanEnv("NEXT_PUBLIC_SUPABASE_URL");
+  if (explicit) return explicit;
+
+  const value = cleanEnv("SUPABASE_URL");
+  return /^https?:\/\//i.test(value) ? value : "";
 }
 
 function getSupabaseKey() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return cleanEnv("SUPABASE_SERVICE_ROLE_KEY") || cleanEnv("SUPABASE_ANON_KEY") || cleanEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
 
 function storageMode() {
-  return supabaseConfigured() ? "supabase" : "json";
+  if (postgresConfigured()) return "postgres";
+  return supabaseRestConfigured() ? "supabase" : "json";
 }
 
 function storageWarning() {
@@ -65,6 +92,24 @@ function checkoutStorageReady() {
   if (!process.env.VERCEL) return true;
   if (supabaseConfigured()) return !lastSupabaseWarning;
   return /^(1|true|yes|si|sí)$/i.test(String(process.env.ALLOW_VOLATILE_CHECKOUT || "").trim());
+}
+
+function getPostgresPool() {
+  if (!postgresPool) {
+    postgresPool = new Pool({
+      connectionString: getPostgresUrl(),
+      ssl: { rejectUnauthorized: false },
+      max: Number(process.env.POSTGRES_POOL_MAX || 3),
+      idleTimeoutMillis: Number(process.env.POSTGRES_IDLE_TIMEOUT_MS || 10000),
+      connectionTimeoutMillis: Number(process.env.POSTGRES_CONNECTION_TIMEOUT_MS || 8000)
+    });
+  }
+
+  return postgresPool;
+}
+
+async function postgresQuery(text, params = []) {
+  return getPostgresPool().query(text, params);
 }
 
 async function supabaseRequest(table, options = {}) {
@@ -111,7 +156,8 @@ async function supabaseRequest(table, options = {}) {
 }
 
 function isMissingSchemaError(error) {
-  return /Could not find the table|schema cache|PGRST205/i.test(error.message || "");
+  const message = `${error.message || ""} ${error.code || ""}`;
+  return /Could not find the table|schema cache|PGRST205|relation .* does not exist|42P01/i.test(message);
 }
 
 function isReachabilityError(error) {
@@ -122,13 +168,13 @@ function isReachabilityError(error) {
 function supabaseFallbackWarning(error, write = false) {
   if (isMissingSchemaError(error)) {
     return write
-      ? "Supabase esta configurado, pero faltan tablas hfc_*. Se uso JSON local como fallback."
+      ? "La base persistente esta configurada, pero faltan tablas hfc_*. Se uso JSON local como fallback."
       : "Supabase esta configurado, pero faltan tablas hfc_*. Ejecuta supabase/schema.sql en el SQL Editor.";
   }
 
   return process.env.NODE_ENV === "production"
-    ? "Supabase no esta alcanzable en produccion. El catalogo usa datos locales, pero checkout queda bloqueado."
-    : "Supabase no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
+    ? "La base persistente no esta alcanzable en produccion. El catalogo usa datos locales, pero checkout queda bloqueado."
+    : "La base persistente no esta alcanzable en desarrollo. Se uso JSON local como fallback.";
 }
 
 function canUseLocalReadFallback(error) {
@@ -136,7 +182,35 @@ function canUseLocalReadFallback(error) {
 }
 
 function canUseLocalWriteFallback(error) {
-  return isMissingSchemaError(error) || (process.env.NODE_ENV !== "production" && isReachabilityError(error));
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") return false;
+  return isMissingSchemaError(error) || isReachabilityError(error);
+}
+
+async function readPostgresState() {
+  let entries;
+
+  try {
+    entries = await Promise.all(
+      Object.entries(supabaseCollections).map(async ([collection, table]) => {
+        const result = await postgresQuery(`select payload from public.${table} order by created_at asc`);
+        return [collection, result.rows.map((row) => row.payload).filter(Boolean)];
+      })
+    );
+  } catch (error) {
+    if (canUseLocalReadFallback(error)) {
+      lastSupabaseWarning = supabaseFallbackWarning(error);
+      console.warn(lastSupabaseWarning);
+      return readJsonState();
+    }
+    throw error;
+  }
+
+  lastSupabaseWarning = null;
+
+  return {
+    ...initialState,
+    ...Object.fromEntries(entries)
+  };
 }
 
 async function readSupabaseState() {
@@ -281,6 +355,42 @@ async function writeSupabaseState(state) {
   }
 }
 
+async function writePostgresState(state) {
+  for (const [collection, table] of Object.entries(supabaseCollections)) {
+    const items = (state[collection] || []).map((item, index) => normalizeItem(collection, item, index));
+    state[collection] = items;
+
+    if (!items.length) continue;
+
+    for (const item of items) {
+      const row = supabaseRow(collection, item);
+      const columns = Object.keys(row);
+      const placeholders = columns.map((column, index) => (column === "payload" ? `$${index + 1}::jsonb` : `$${index + 1}`));
+      const updates = columns
+        .filter((column) => column !== "id")
+        .map((column) => `${column}=excluded.${column}`);
+      const values = columns.map((column) => (column === "payload" ? JSON.stringify(row[column]) : row[column]));
+
+      try {
+        await postgresQuery(
+          `insert into public.${table} (${columns.join(",")}) values (${placeholders.join(",")}) on conflict (id) do update set ${updates.join(",")}`,
+          values
+        );
+      } catch (error) {
+        if (canUseLocalWriteFallback(error)) {
+          lastSupabaseWarning = supabaseFallbackWarning(error, true);
+          console.warn(lastSupabaseWarning);
+          await writeJsonState(state);
+          return;
+        }
+        throw error;
+      }
+    }
+  }
+
+  lastSupabaseWarning = null;
+}
+
 async function ensureStore() {
   await fs.mkdir(dataDir, { recursive: true });
 
@@ -292,7 +402,11 @@ async function ensureStore() {
 }
 
 async function readState() {
-  if (supabaseConfigured()) {
+  if (postgresConfigured()) {
+    return readPostgresState();
+  }
+
+  if (supabaseRestConfigured()) {
     return readSupabaseState();
   }
 
@@ -305,7 +419,12 @@ async function writeJsonState(state) {
 }
 
 async function writeState(state) {
-  if (supabaseConfigured()) {
+  if (postgresConfigured()) {
+    await writePostgresState(state);
+    return;
+  }
+
+  if (supabaseRestConfigured()) {
     await writeSupabaseState(state);
     return;
   }
@@ -327,6 +446,20 @@ async function verifyCheckoutStorage() {
     const error = new Error("Configura Supabase en Vercel antes de activar ventas con Mercado Pago");
     error.status = 503;
     throw error;
+  }
+
+  if (postgresConfigured()) {
+    try {
+      await postgresQuery("select id from public.hfc_settings limit 1");
+      lastSupabaseWarning = null;
+      return;
+    } catch (error) {
+      lastSupabaseWarning = supabaseFallbackWarning(error);
+      if (checkoutStorageReady()) return;
+      const nextError = new Error(lastSupabaseWarning);
+      nextError.status = 503;
+      throw nextError;
+    }
   }
 
   try {

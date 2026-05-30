@@ -34,9 +34,9 @@ Luego abre `http://localhost:3000`.
 
 ## Supabase
 
-La app usa Supabase cuando encuentra `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_URL` y una llave server-side en `.env.local`.
+La app usa Supabase cuando encuentra `SUPABASE_DB_URL` para conexion server-side a Postgres. Si no existe, mantiene fallback por REST con `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_URL` mas una llave server-side.
 
-1. Abre Supabase SQL Editor en el proyecto `jxvvjshuxdtpndskcdbk`.
+1. Abre Supabase SQL Editor en el proyecto `jvmibnyiinzpkahbkyec`.
 2. Ejecuta el contenido de `supabase/schema.sql`.
 3. Verifica:
 
@@ -44,7 +44,7 @@ La app usa Supabase cuando encuentra `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_URL`
 npm run supabase:check
 ```
 
-Si las tablas `hfc_*` aun no existen, la app cae a JSON local para no romper el desarrollo y muestra una advertencia.
+En produccion, el checkout real exige base persistente disponible. En desarrollo, si las tablas `hfc_*` aun no existen, la app cae a JSON local para no romper el trabajo y muestra una advertencia.
 
 ## Integraciones
 

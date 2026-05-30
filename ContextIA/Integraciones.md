@@ -15,7 +15,8 @@ Centralizar los sistemas externos necesarios para ticketera, pagos, correo y bol
 ## Variables de entorno
 
 - `PUBLIC_BASE_URL`
-- `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_URL`
+- `SUPABASE_DB_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_URL` o `SUPABASE_REST_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` o `SUPABASE_ANON_KEY`
 - `BACKOFFICE_TOKEN`
@@ -35,5 +36,5 @@ Centralizar los sistemas externos necesarios para ticketera, pagos, correo y bol
 ## Pendientes
 
 - Configurar credenciales reales y probar en ambientes sandbox antes de produccion.
-- Ejecutar `supabase/schema.sql` en SQL Editor antes de usar Supabase como almacenamiento principal.
+- Ejecutar `supabase/schema.sql` antes de usar Supabase como almacenamiento principal.
 - Definir dominios, correos transaccionales y politicas de rebote.
