@@ -77,6 +77,9 @@ async function supabaseRequest(table, options = {}) {
     }
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.SUPABASE_FETCH_TIMEOUT_MS || 8000));
+
   const response = await fetch(url, {
     method: options.method || "GET",
     headers: {
@@ -85,14 +88,22 @@ async function supabaseRequest(table, options = {}) {
       "Content-Type": "application/json",
       ...(options.headers || {})
     },
-    body: options.body ? JSON.stringify(options.body) : undefined
-  });
+    body: options.body ? JSON.stringify(options.body) : undefined,
+    signal: controller.signal
+  }).finally(() => clearTimeout(timeout));
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = { message: text.slice(0, 500) };
+    }
+  }
 
   if (!response.ok) {
-    const detail = payload?.message || payload?.hint || text || "Error Supabase";
+    const detail = payload?.message || payload?.hint || text || `HTTP ${response.status}`;
     throw new Error(`Supabase ${table}: ${detail}`);
   }
 
@@ -105,7 +116,7 @@ function isMissingSchemaError(error) {
 
 function isReachabilityError(error) {
   const message = `${error.message || ""} ${error.cause?.code || ""} ${error.cause?.message || ""}`;
-  return /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|network/i.test(message);
+  return /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|AbortError|aborted|network|522|Connection timed out|gateway timeout/i.test(message);
 }
 
 function supabaseFallbackWarning(error, write = false) {
