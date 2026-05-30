@@ -6,7 +6,7 @@ Centralizar los sistemas externos necesarios para ticketera, pagos, correo y bol
 
 ## Sistemas externos
 
-- Mercado Pago Checkout Pro para pago online.
+- Mercado Pago Checkout API + Card Payment Brick para pago interno online; Checkout Pro queda como fallback.
 - OpenFactura/Haulmer para DTE y boleta electronica.
 - Microsoft Graph (`MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET`) para confirmacion de correo, tickets y campanas. Requiere `Mail.Send` Application permission con admin consent y un remitente en `MS_SENDER_EMAIL` o `SMTP_FROM`.
 - SMTP queda como fallback si Microsoft Graph no esta configurado.
@@ -20,7 +20,7 @@ Centralizar los sistemas externos necesarios para ticketera, pagos, correo y bol
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` o `SUPABASE_ANON_KEY`
 - `BACKOFFICE_TOKEN`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-- `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_WEBHOOK_SECRET`, `MERCADOPAGO_NOTIFICATION_URL`
+- `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_WEBHOOK_SECRET`, `MERCADOPAGO_NOTIFICATION_URL`, `MERCADOPAGO_INTERNAL_CHECKOUT`
 - `OPENFACTURA_API_KEY`, `OPENFACTURA_ENDPOINT`, `OPENFACTURA_DTE_TYPE`, `OPENFACTURA_COMPANY_RUT`, `OPENFACTURA_COMPANY_NAME`
 
 ## Archivos clave

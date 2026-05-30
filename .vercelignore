@@ -1,6 +1,9 @@
 _hfc_asset_review/
 .codex-logs/
 .codex-npm-cache-wrangler/
+.env
+.env.local
+*.local
 data/
 HFC Recursos 2026/
 HFC_R2_upload_ready/

@@ -1,7 +1,10 @@
 const fs = require("fs/promises");
+const os = require("os");
 const path = require("path");
 
-const dataDir = path.join(process.cwd(), "data");
+const dataDir =
+  process.env.JSON_STORE_DIR ||
+  (process.env.VERCEL ? path.join(os.tmpdir(), "hfc-data") : path.join(process.cwd(), "data"));
 const dataFile = path.join(dataDir, "app-state.json");
 
 const initialState = {
@@ -48,6 +51,20 @@ function getSupabaseKey() {
 
 function storageMode() {
   return supabaseConfigured() ? "supabase" : "json";
+}
+
+function storageWarning() {
+  if (lastSupabaseWarning) return lastSupabaseWarning;
+  if (process.env.VERCEL && !supabaseConfigured()) {
+    return "Vercel esta usando JSON temporal. Configura Supabase antes de vender en produccion.";
+  }
+  return null;
+}
+
+function checkoutStorageReady() {
+  if (supabaseConfigured()) return true;
+  if (!process.env.VERCEL) return true;
+  return /^(1|true|yes|si|sí)$/i.test(String(process.env.ALLOW_VOLATILE_CHECKOUT || "").trim());
 }
 
 async function supabaseRequest(table, options = {}) {
@@ -281,7 +298,8 @@ async function updateState(mutator) {
 }
 
 module.exports = {
-  lastSupabaseWarning: () => lastSupabaseWarning,
+  checkoutStorageReady,
+  lastSupabaseWarning: storageWarning,
   readState,
   storageMode,
   supabaseConfigured,

@@ -36,11 +36,12 @@
         </div>
         <aside class="ticket-panel checkout-page">
           <p class="section-kicker">Comprador</p>
-          <h2>Datos registrados</h2>
+          <h2>Pago interno rapido</h2>
           <form class="form-grid stacked-form" id="checkoutForm" data-checkout-form>
-            <label>Correo registrado <input name="email" type="email" required placeholder="tu@correo.cl" /></label>
-            <label>RUT registrado <input name="rut" required placeholder="12.345.678-5" /></label>
-            <button class="button primary full" type="submit">Finalizar compra</button>
+            <label>Correo electronico <input name="email" type="email" required placeholder="tu@correo.cl" /></label>
+            <label class="terms-check"><input name="termsAccepted" type="checkbox" required /> <span>Acepto terminos y condiciones</span></label>
+            <div class="email-check" data-email-check hidden></div>
+            <button class="button primary full" type="submit">Pagar ahora</button>
           </form>
           <div class="status-box" id="checkoutStatus" hidden></div>
         </aside>

@@ -14,6 +14,16 @@ function mercadoPagoConfigured() {
   return Boolean(cleanEnv("MERCADOPAGO_ACCESS_TOKEN"));
 }
 
+function mercadoPagoPublicKey() {
+  return cleanEnv("MERCADOPAGO_PUBLIC_KEY");
+}
+
+function mercadoPagoInternalCheckoutEnabled() {
+  if (!mercadoPagoConfigured() || !mercadoPagoPublicKey()) return false;
+  if (/^(0|false|no)$/i.test(cleanEnv("MERCADOPAGO_INTERNAL_CHECKOUT"))) return false;
+  return true;
+}
+
 function mercadoPagoWebhookSignatureConfigured() {
   return Boolean(cleanEnv("MERCADOPAGO_WEBHOOK_SECRET"));
 }
@@ -66,9 +76,9 @@ async function createPreference({ req, order, user, event, ticketType }) {
     },
     external_reference: order.id,
     back_urls: {
-      success: `${baseUrl}/?payment=success&order=${order.id}`,
-      failure: `${baseUrl}/?payment=failure&order=${order.id}`,
-      pending: `${baseUrl}/?payment=pending&order=${order.id}`
+      success: `${baseUrl}/carrito?payment=success&order=${order.id}`,
+      failure: `${baseUrl}/carrito?payment=failure&order=${order.id}`,
+      pending: `${baseUrl}/carrito?payment=pending&order=${order.id}`
     },
     notification_url: notificationUrl,
     auto_return: "approved",
@@ -129,6 +139,114 @@ async function getPayment(paymentId) {
   }
 
   return payload;
+}
+
+function definedObject(value) {
+  if (Array.isArray(value)) {
+    return value.map(definedObject).filter((item) => item !== undefined);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value === undefined || value === "" ? undefined : value;
+  }
+
+  const entries = Object.entries(value)
+    .map(([key, item]) => [key, definedObject(item)])
+    .filter(([, item]) => item !== undefined);
+
+  return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+function paymentNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function createCardPayment({ req, order, user, formData = {}, idempotencyKey }) {
+  if (!mercadoPagoConfigured()) {
+    throw new Error("Mercado Pago no esta configurado");
+  }
+
+  const token = cleanValue(formData.token);
+  const paymentMethodId = cleanValue(formData.payment_method_id || formData.paymentMethodId);
+  const installments = paymentNumber(formData.installments, 1);
+  const payer = formData.payer || {};
+  const identification = payer.identification || {};
+
+  if (!token || !paymentMethodId) {
+    const error = new Error("Faltan datos seguros de Mercado Pago para procesar el pago");
+    error.status = 400;
+    throw error;
+  }
+
+  const baseUrl = getBaseUrl(req);
+  const notificationUrl =
+    cleanEnv("MERCADOPAGO_NOTIFICATION_URL") || `${baseUrl}/api/webhooks/mercadopago`;
+  const externalReference = order.id;
+  const body = definedObject({
+    token,
+    transaction_amount: paymentNumber(order.total),
+    installments,
+    payment_method_id: paymentMethodId,
+    issuer_id: cleanValue(formData.issuer_id || formData.issuerId),
+    description: `Honda Fest Chile - orden ${order.id}`,
+    external_reference: externalReference,
+    notification_url: notificationUrl,
+    binary_mode: cleanEnv("MERCADOPAGO_BINARY_MODE") ? envFlag("MERCADOPAGO_BINARY_MODE") : undefined,
+    statement_descriptor: cleanEnv("MERCADOPAGO_STATEMENT_DESCRIPTOR"),
+    payer: {
+      email: cleanValue(payer.email || formData.cardholderEmail || user.email),
+      identification: {
+        type: cleanValue(identification.type || formData.identificationType),
+        number: cleanValue(identification.number || formData.identificationNumber)
+      }
+    },
+    metadata: {
+      order_id: order.id,
+      user_id: user.id,
+      source: "hfc_internal_checkout"
+    },
+    additional_info: {
+      items: (order.items || []).map((item) => ({
+        id: item.ticketTypeId,
+        title: `${item.ticketTypeName} - ${item.eventName}`,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unitPrice
+      }))
+    }
+  });
+
+  const response = await fetch(`${MERCADOPAGO_API_BASE}/v1/payments`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${cleanEnv("MERCADOPAGO_ACCESS_TOKEN")}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key":
+        cleanValue(idempotencyKey) ||
+        crypto.createHash("sha256").update(`${order.id}:${token}`).digest("hex")
+    },
+    body: JSON.stringify(body)
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail =
+      payload?.message ||
+      payload?.error ||
+      payload?.cause?.[0]?.description ||
+      "No se pudo crear el pago";
+    const error = new Error(`Mercado Pago: ${detail}`);
+    error.status = response.status >= 400 && response.status < 500 ? 400 : 502;
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+}
+
+function cleanValue(value) {
+  return String(value || "").trim();
 }
 
 function parseSignatureHeader(value = "") {
@@ -215,8 +333,9 @@ function mercadoPagoRuntimeStatus(req) {
 
   return {
     configured,
-    mode: configured ? "mercadopago" : "demo",
-    publicKeyConfigured: Boolean(cleanEnv("MERCADOPAGO_PUBLIC_KEY")),
+    mode: configured ? (mercadoPagoInternalCheckoutEnabled() ? "mercadopago_api" : "mercadopago") : "demo",
+    publicKeyConfigured: Boolean(mercadoPagoPublicKey()),
+    internalCheckoutConfigured: mercadoPagoInternalCheckoutEnabled(),
     webhookSignatureConfigured: mercadoPagoWebhookSignatureConfigured(),
     notificationUrlConfigured: Boolean(notificationUrl),
     notificationUrlLooksPublic:
@@ -226,9 +345,12 @@ function mercadoPagoRuntimeStatus(req) {
 }
 
 module.exports = {
+  createCardPayment,
   createPreference,
   getPayment,
   mercadoPagoConfigured,
+  mercadoPagoInternalCheckoutEnabled,
+  mercadoPagoPublicKey,
   mercadoPagoRuntimeStatus,
   mercadoPagoWebhookSignatureConfigured,
   parseWebhookNotification,

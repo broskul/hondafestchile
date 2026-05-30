@@ -15,11 +15,11 @@
 
   async function api(path, options = {}) {
     const response = await fetch(path, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
         ...(options.headers || {})
-      },
-      ...options
+      }
     });
 
     const data = await response.json().catch(() => ({}));
@@ -138,6 +138,77 @@
     localStorage.setItem(BUYER_KEY, JSON.stringify(buyer));
   }
 
+  function validEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => {
+      const entities = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      };
+      return entities[char];
+    });
+  }
+
+  function updateEmailCheck(form) {
+    const check = $("[data-email-check]", form);
+    if (!check || !form.email) return;
+    const email = String(form.email.value || "").trim();
+    if (!email) {
+      check.hidden = true;
+      check.classList.remove("valid", "invalid");
+      check.textContent = "";
+      return;
+    }
+
+    const ok = validEmail(email);
+    check.hidden = false;
+    check.classList.toggle("valid", ok);
+    check.classList.toggle("invalid", !ok);
+    check.innerHTML = ok ? "<strong>Email verificado</strong>" : "<strong>Revisa el formato del correo</strong>";
+  }
+
+  function mountEmailChecks(root = document) {
+    $$("[data-checkout-form]", root).forEach((form) => {
+      if (!form.email || form.dataset.emailCheckMounted === "1") return;
+      form.dataset.emailCheckMounted = "1";
+      form.email.addEventListener("input", () => updateEmailCheck(form));
+      form.email.addEventListener("blur", () => updateEmailCheck(form));
+      updateEmailCheck(form);
+    });
+  }
+
+  function loadMercadoPagoSdk() {
+    if (window.MercadoPago) return Promise.resolve();
+    if (window.__hfcMercadoPagoSdkPromise) return window.__hfcMercadoPagoSdkPromise;
+
+    window.__hfcMercadoPagoSdkPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://sdk.mercadopago.com/js/v2";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("No se pudo cargar Mercado Pago"));
+      document.head.appendChild(script);
+    });
+
+    return window.__hfcMercadoPagoSdkPromise;
+  }
+
+  async function destroyMercadoPagoBrick() {
+    if (!window.__hfcCardPaymentBrickController) return;
+    try {
+      await window.__hfcCardPaymentBrickController.unmount();
+    } catch {
+      // Mercado Pago may already have destroyed the iframe.
+    }
+    window.__hfcCardPaymentBrickController = null;
+  }
+
   async function cartDetails() {
     const catalog = await getCatalog();
     return readCart()
@@ -238,7 +309,7 @@
   function buyerFromForm(form) {
     return {
       email: String(form.email.value || "").trim().toLowerCase(),
-      rut: String(form.rut.value || "").trim()
+      termsAccepted: Boolean(form.termsAccepted?.checked)
     };
   }
 
@@ -250,8 +321,16 @@
     }
 
     const buyer = buyerFromForm(form);
+    if (!validEmail(buyer.email)) {
+      setStatus(statusElement, "Ingresa un correo valido para recibir tus entradas.", true);
+      return;
+    }
+    if (!buyer.termsAccepted) {
+      setStatus(statusElement, "Acepta terminos y condiciones para continuar.", true);
+      return;
+    }
     saveBuyer(buyer);
-    setStatus(statusElement, "Creando orden...");
+    setStatus(statusElement, "Reservando tu carrito...");
 
     const data = await api("/api/orders/from-cart", {
       method: "POST",
@@ -261,10 +340,15 @@
       })
     });
 
+    if (data.paymentMode === "mercadopago_api") {
+      await renderInternalPayment(statusElement, data);
+      return;
+    }
+
     if (data.paymentMode === "mercadopago") {
       setStatus(
         statusElement,
-        `<strong>Orden creada.</strong><br />Continua en Mercado Pago.
+        `<strong>Email verificado.</strong><br />Te llevamos a Mercado Pago. Los datos del asistente se completan despues del pago.
         <div class="status-actions"><a class="button primary" href="${data.checkoutUrl}">Pagar</a></div>`
       );
       window.location.href = data.checkoutUrl;
@@ -283,16 +367,190 @@
         method: "POST",
         body: JSON.stringify({})
       });
+      await renderOrderResult(statusElement, paid);
+    });
+  }
+
+  async function renderInternalPayment(statusElement, data) {
+    const order = data.order;
+    const publicKey = data.mercadoPagoPublicKey || (await getCatalog()).integrations?.mercadoPagoPublicKey;
+    if (!order || !publicKey) {
+      setStatus(statusElement, "Mercado Pago no esta listo para pago interno.", true);
+      return;
+    }
+
+    await destroyMercadoPagoBrick();
+    const containerId = `cardPaymentBrick_${order.id}`;
+    const feedbackId = `cardPaymentFeedback_${order.id}`;
+    setStatus(
+      statusElement,
+      `<strong>Email verificado.</strong><br />Paga aqui mismo con tarjeta. Los datos del asistente se completan despues del pago.
+      <div class="internal-payment-shell">
+        <div id="${containerId}" class="mp-card-brick"></div>
+        <div id="${feedbackId}" class="payment-inline-status" role="status" aria-live="polite">Preparando pago seguro...</div>
+      </div>`
+    );
+
+    const feedback = document.getElementById(feedbackId);
+
+    try {
+      await loadMercadoPagoSdk();
+      const mp = new window.MercadoPago(publicKey, { locale: "es-CL" });
+      const bricksBuilder = mp.bricks();
+      const idempotencyKey = `${order.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+      window.__hfcCardPaymentBrickController = await bricksBuilder.create("cardPayment", containerId, {
+        initialization: {
+          amount: Number(order.total || 0)
+        },
+        callbacks: {
+          onReady: () => {
+            if (feedback) feedback.textContent = "Completa los datos de la tarjeta para confirmar.";
+          },
+          onSubmit: (formData) =>
+            new Promise(async (resolve, reject) => {
+              try {
+                if (feedback) feedback.textContent = "Procesando pago...";
+                const result = await api(`/api/orders/${order.id}/pay`, {
+                  method: "POST",
+                  headers: {
+                    "x-idempotency-key": idempotencyKey
+                  },
+                  body: JSON.stringify({ formData })
+                });
+                resolve();
+                await renderOrderResult(statusElement, result);
+              } catch (error) {
+                if (feedback) feedback.textContent = error.message;
+                reject(error);
+              }
+            }),
+          onError: (error) => {
+            if (feedback) {
+              feedback.textContent = error?.message || "Mercado Pago no pudo mostrar el formulario.";
+            }
+          }
+        }
+      });
+    } catch (error) {
+      setStatus(statusElement, error.message, true);
+    }
+  }
+
+  function profileFormHtml(orderId, user = {}) {
+    return `
+      <form class="profile-completion-form" data-profile-completion data-order-id="${escapeHtml(orderId)}">
+        <label>Correo
+          <input name="email" type="email" required readonly value="${escapeHtml(user.email || "")}" />
+        </label>
+        <label>Nombre completo
+          <input name="name" autocomplete="name" required value="${escapeHtml(user.name || "")}" placeholder="Nombre y apellido" />
+        </label>
+        <label>RUT
+          <input name="rut" required value="${escapeHtml(user.rut || "")}" placeholder="12.345.678-5" />
+        </label>
+        <label>Telefono
+          <input name="phone" autocomplete="tel" required value="${escapeHtml(user.phone || "")}" placeholder="+56 9 1234 5678" />
+        </label>
+        <label>Vehiculo
+          <input name="vehicle" value="${escapeHtml(user.vehicle || "")}" placeholder="Civic, Integra, S2000..." />
+        </label>
+        <label>Club o equipo
+          <input name="club" value="${escapeHtml(user.club || "")}" placeholder="Club, team o independiente" />
+        </label>
+        <button class="button primary full" type="submit">Emitir entradas</button>
+      </form>
+    `;
+  }
+
+  function mountProfileCompletion(statusElement) {
+    const form = $("[data-profile-completion]", statusElement);
+    if (!form || form.dataset.mounted === "1") return;
+    form.dataset.mounted = "1";
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submit = form.querySelector("button[type='submit']");
+      submit.disabled = true;
+      setStatus(statusElement, "Guardando datos y emitiendo entradas...");
+      try {
+        const payload = Object.fromEntries(new FormData(form).entries());
+        const data = await api(`/api/orders/${form.dataset.orderId}/profile`, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        await renderOrderResult(statusElement, data);
+      } catch (error) {
+        const payload = Object.fromEntries(new FormData(form).entries());
+        setStatus(
+          statusElement,
+          `<strong>${escapeHtml(error.message)}</strong>${profileFormHtml(form.dataset.orderId, payload)}`,
+          true
+        );
+        mountProfileCompletion(statusElement);
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  }
+
+  async function renderOrderResult(statusElement, data) {
+    await destroyMercadoPagoBrick();
+    const order = data.order;
+    if (!order) return;
+    if (data.user?.email) {
+      saveBuyer({
+        email: data.user.email,
+        rut: data.user.rut || "",
+        termsAccepted: true
+      });
+    }
+
+    if (order.profileRequired) {
       clearCart();
       await renderAllCarts();
       setStatus(
         statusElement,
-        `<strong>Compra confirmada.</strong><br />${paid.tickets
+        `<strong>Pago recibido.</strong><br />Completa los datos del asistente para emitir entradas y boleta.
+        ${profileFormHtml(order.id, data.user || {})}`
+      );
+      mountProfileCompletion(statusElement);
+      return;
+    }
+
+    if (order.status === "paid") {
+      clearCart();
+      await renderAllCarts();
+      const tickets = data.tickets || [];
+      setStatus(
+        statusElement,
+        `<strong>Compra confirmada.</strong><br />${tickets
           .map((ticket) => `<code>${ticket.code}</code>`)
           .join(" ")}
         <div class="status-actions"><a class="button secondary" href="/mis-compras">Ver mis entradas</a></div>`
       );
-    });
+      return;
+    }
+
+    const label = order.status === "payment_failed" ? "Pago rechazado" : "Pago pendiente";
+    setStatus(statusElement, `<strong>${label}.</strong><br />Orden ${order.id}: ${order.status}.`, order.status === "payment_failed");
+  }
+
+  async function inspectCheckoutReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment") || params.get("status") || params.get("collection_status");
+    const orderId = params.get("order") || params.get("external_reference");
+    if (!payment || !orderId) return;
+
+    const statusElement = $("#checkoutStatus") || $("[data-checkout-status]");
+    if (!statusElement) return;
+
+    setStatus(statusElement, "Consultando estado de la orden...");
+    try {
+      const data = await api(`/api/orders/${orderId}`);
+      await renderOrderResult(statusElement, data);
+    } catch (error) {
+      setStatus(statusElement, error.message, true);
+    }
   }
 
   function prefillBuyerForms() {
@@ -300,7 +558,7 @@
     if (!buyer) return;
     $$("[data-checkout-form]").forEach((form) => {
       if (form.email) form.email.value = buyer.email || "";
-      if (form.rut) form.rut.value = buyer.rut || "";
+      updateEmailCheck(form);
     });
   }
 
@@ -338,14 +596,15 @@
         <div data-cart-list></div>
         <form class="checkout-box" data-checkout-form>
           <label>
-            Correo registrado
+            Correo electronico
             <input name="email" type="email" required placeholder="tu@correo.cl" />
           </label>
-          <label>
-            RUT registrado
-            <input name="rut" required placeholder="12.345.678-5" />
+          <label class="terms-check">
+            <input name="termsAccepted" type="checkbox" required />
+            <span>Acepto terminos y condiciones</span>
           </label>
-          <button class="button primary full" type="submit">Finalizar compra</button>
+          <div class="email-check" data-email-check hidden></div>
+          <button class="button primary full" type="submit">Pagar ahora</button>
         </form>
         <div class="status-box" data-checkout-status hidden></div>
       </div>
@@ -363,6 +622,7 @@
       }
     });
     prefillBuyerForms();
+    mountEmailChecks(drawer);
     renderAllCarts();
   }
 
@@ -370,6 +630,8 @@
     mountCartDrawer();
     updateCartBadge();
     prefillBuyerForms();
+    mountEmailChecks();
+    inspectCheckoutReturn();
     $$("[data-cart-open]").forEach((button) => button.addEventListener("click", openCartDrawer));
   });
 

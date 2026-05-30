@@ -22,12 +22,12 @@ Luego abre `http://localhost:3000`.
 
 ## Flujo principal
 
-1. El asistente se registra con nombre, RUT, correo, telefono, vehiculo/club y password.
-2. El sistema valida el RUT chileno y envia un correo de confirmacion.
-3. Con el correo confirmado, el asistente agrega entradas al carrito lateral o al carrito completo.
-4. La app crea una preferencia de Mercado Pago si `MERCADOPAGO_ACCESS_TOKEN` existe; si no, usa modo demo.
-5. Al volver desde Mercado Pago, el sitio consulta el estado de la orden; el webhook confirma el pago real.
-6. Al confirmar pago por webhook o simulacion local, se emiten tickets y se llama al adaptador de OpenFactura.
+1. El asistente agrega entradas al carrito lateral o al carrito completo.
+2. Para pagar solo ingresa correo y acepta terminos; el correo se valida en linea por formato.
+3. La app crea o reutiliza un usuario de checkout rapido y monta el pago interno de Mercado Pago.
+4. Mercado Pago JS tokeniza la tarjeta y el backend crea el pago con Checkout API.
+5. Si faltan nombre, RUT o telefono, el asistente completa esos datos despues del pago.
+6. Con perfil completo y pago aprobado, se emiten tickets y se llama al adaptador de OpenFactura.
 7. El asistente recibe correo con tickets, QR y datos de boleta.
 8. En `mis-compras` puede recuperar compras por correo y RUT.
 9. En `validar` se consulta o marca ingreso usando el codigo QR.
@@ -48,7 +48,7 @@ Si las tablas `hfc_*` aun no existen, la app cae a JSON local para no romper el 
 
 ## Integraciones
 
-- Mercado Pago: se crea una preferencia usando `POST https://api.mercadopago.com/checkout/preferences`.
+- Mercado Pago: por defecto usa Card Payment Brick y `POST https://api.mercadopago.com/v1/payments`; Checkout Pro queda como fallback.
 - Webhook Mercado Pago: `POST /api/webhooks/mercadopago`. Si configuras `MERCADOPAGO_WEBHOOK_SECRET`, la app valida `x-signature` y `x-request-id` antes de consultar el pago.
 - OpenFactura: `server/lib/openfactura.js` centraliza la llamada. Requiere `OPENFACTURA_API_KEY` y `OPENFACTURA_ENDPOINT`; el payload puede requerir ajuste segun la documentacion entregada por la cuenta OpenFactura/Haulmer.
 - Email: Microsoft Graph con `MS_TENANT_ID`, `MS_CLIENT_ID` y `MS_CLIENT_SECRET`; SMTP queda como fallback. Sin proveedor, los enlaces se muestran en consola para desarrollo.
@@ -57,12 +57,13 @@ Si las tablas `hfc_*` aun no existen, la app cae a JSON local para no romper el 
 
 ### Mercado Pago
 
-Completa estas variables en `.env.local` para activar Checkout Pro:
+Completa estas variables en `.env.local` para activar el pago interno:
 
 ```env
 MERCADOPAGO_ACCESS_TOKEN=
 MERCADOPAGO_PUBLIC_KEY=
 MERCADOPAGO_WEBHOOK_SECRET=
+MERCADOPAGO_INTERNAL_CHECKOUT=true
 ```
 
 `PUBLIC_BASE_URL` debe ser el dominio HTTPS publico. Si el webhook vive en otra URL, define `MERCADOPAGO_NOTIFICATION_URL`. Puedes revisar el estado sin secretos en `GET /api/health`.
@@ -74,8 +75,8 @@ La app registrada en Microsoft Entra debe tener permiso Application `Mail.Send` 
 ## Referencias consultadas
 
 - Sitio de referencia: https://www.hondafestchile.cl/
-- Mercado Pago Checkout Pro: https://www.mercadopago.cl/developers/
-- Crear preferencia Checkout Pro: https://www.mercadopago.cl/developers/es/reference/online-payments/checkout-pro/preferences/create-preference/post
+- Mercado Pago Checkout API: https://www.mercadopago.cl/developers/es/docs/checkout-api-v2/overview
+- Mercado Pago Card Payment Brick: https://www.mercadopago.cl/developers/es/docs/checkout-api-v2/payment-integration/cards
 - Webhooks Mercado Pago: https://www.mercadopago.cl/developers/es/docs/checkout-api-payments/additional-content/your-integrations/notifications/webhooks
 - OpenFactura API: https://www.openfactura.cl/factura-electronica/api/
 - Documentacion OpenFactura: https://docs.openfactura.cl/
