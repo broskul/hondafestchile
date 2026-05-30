@@ -320,6 +320,16 @@
       return;
     }
 
+    const catalog = await getCatalog();
+    if (catalog.integrations?.paymentMode !== "demo" && catalog.integrations?.checkoutStorageReady === false) {
+      setStatus(
+        statusElement,
+        "La venta online esta casi lista. Falta conectar la base persistente antes de aceptar pagos.",
+        true
+      );
+      return;
+    }
+
     const buyer = buyerFromForm(form);
     if (!validEmail(buyer.email)) {
       setStatus(statusElement, "Ingresa un correo valido para recibir tus entradas.", true);
