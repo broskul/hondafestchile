@@ -1271,7 +1271,11 @@ async function resendOrderEmail(orderId) {
   return { order, user, tickets, invoice };
 }
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  if (process.env.VERCEL && supabaseConfigured()) {
+    await verifyCheckoutStorage().catch(() => {});
+  }
+
   res.json({
     ok: true,
     storage: {
