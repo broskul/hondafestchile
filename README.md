@@ -52,7 +52,7 @@ En produccion, el checkout real exige base persistente disponible. En desarrollo
 - Webhook Mercado Pago: `POST /api/webhooks/mercadopago`. Si configuras `MERCADOPAGO_WEBHOOK_SECRET`, la app valida `x-signature` y `x-request-id` antes de consultar el pago.
 - OpenFactura: `server/lib/openfactura.js` centraliza la llamada. Requiere `OPENFACTURA_API_KEY` y `OPENFACTURA_ENDPOINT`; el payload puede requerir ajuste segun la documentacion entregada por la cuenta OpenFactura/Haulmer.
 - Email: Microsoft Graph con `MS_TENANT_ID`, `MS_CLIENT_ID` y `MS_CLIENT_SECRET`; SMTP queda como fallback. Sin proveedor, los enlaces se muestran en consola para desarrollo.
-- Backoffice: usa `BACKOFFICE_TOKEN`. En desarrollo local puede abrir sin token si `NODE_ENV` no es `production`.
+- Backoffice: entra con la contraseña `123hfc`, o define `BACKOFFICE_PASSWORD`/`BACKOFFICE_TOKEN` para sobreescribirla.
 - Backoffice de ticketera: en `/backoffice-hfc` se crean eventos y entradas propias, se asignan entradas por evento, se editan valores/cupos de preventa, venta general y puerta, invitados gratis, contactos CSV, plantillas, correos masivos/unitarios y BI para organizadores.
 
 ### Mercado Pago

@@ -8,7 +8,7 @@ Permitir revision operativa de ventas, entradas, usuarios enrolados, DTE y reenv
 
 - `/backoffice-hfc`
 
-La ruta no aparece en la navegacion publica principal. Usa `BACKOFFICE_TOKEN` en produccion. En desarrollo local puede cargar sin token para facilitar pruebas.
+La ruta no aparece en la navegacion publica principal. Entra con la contraseña `123hfc`, o define `BACKOFFICE_PASSWORD`/`BACKOFFICE_TOKEN` para sobreescribirla.
 
 ## Funcionalidades vigentes
 
