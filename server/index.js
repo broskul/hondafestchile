@@ -1416,6 +1416,66 @@ function orderEventName(order, event) {
   return event?.name || "Honda Fest Chile";
 }
 
+function htmlEscape(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[char];
+  });
+}
+
+function formatCurrencyLabel(value) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0
+  }).format(value || 0);
+}
+
+function orderItemsTemplateRows(items = []) {
+  const normalizedItems = items.length ? items : [];
+  const text = normalizedItems
+    .map((item) => `- ${item.ticketTypeName || item.description || "Producto"} x ${item.quantity || 1}: ${formatCurrencyLabel(item.total || 0)}`)
+    .join("\n");
+  const html = normalizedItems
+    .map(
+      (item) =>
+        `<tr><td style="padding:12px;border-bottom:1px solid #eeeeee;color:#333;">${htmlEscape(item.ticketTypeName || item.description || "Producto")}<br><span style="font-size:13px;color:#777;">${htmlEscape(item.eventName || "")}</span></td><td style="padding:12px;border-bottom:1px solid #eeeeee;color:#333;">${htmlEscape(item.quantity || 1)}</td><td style="padding:12px;border-bottom:1px solid #eeeeee;color:#333;">${htmlEscape(formatCurrencyLabel(item.total || 0))}</td></tr>`
+    )
+    .join("");
+  return {
+    text,
+    html
+  };
+}
+
+function replaceLegacyEnrollmentPlaceholders(value = "") {
+  return String(value)
+    .replace(/\[Nombre del Cliente\]/g, "{{name}}")
+    .replace(/\[Tabla\]/g, "{{order_items_html}}")
+    .replace(/https:\/\/www\.hondafestchile\.cl\/mipedido\?token=\[token\]/g, "{{enroll_url}}")
+    .replace(/\[token\]/g, "{{enroll_url}}");
+}
+
+function enrollmentTemplateForEmail(template) {
+  const normalized = normalizeTemplate(template || { id: "enrollment_invitation" });
+  const sourceHtml = replaceLegacyEnrollmentPlaceholders(normalized.html);
+  const hasOrderTable = /order_items_html|<th[^>]*>\s*Producto\s*<\/th>|Producto<\/th>/i.test(sourceHtml);
+  const base = hasOrderTable ? normalized : normalizeTemplate({ id: "enrollment_invitation" });
+
+  return {
+    ...base,
+    subject: replaceLegacyEnrollmentPlaceholders(base.subject),
+    text: replaceLegacyEnrollmentPlaceholders(base.text),
+    html: replaceLegacyEnrollmentPlaceholders(base.html)
+  };
+}
+
 async function sendEnrollmentInvitationEmail({ orderId, req = null, force = false }) {
   let state = await readState();
   let order = state.orders.find((candidate) => candidate.id === orderId);
@@ -1447,17 +1507,16 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
 
   const base = configuredBaseUrl(req);
   const links = enrollmentLinks(order, base);
+  const itemRows = orderItemsTemplateRows(items);
   const variables = {
     name: user.name || nameFromEmail(user.email),
     email: user.email,
     event_name: orderEventName(order, event),
     order_id: order.id,
     order_total: order.total,
-    order_total_label: new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-      maximumFractionDigits: 0
-    }).format(order.total || 0),
+    order_total_label: formatCurrencyLabel(order.total || 0),
+    order_items_text: itemRows.text,
+    order_items_html: itemRows.html,
     enroll_url: links.enrollmentUrl,
     enrollment_url: links.enrollmentUrl,
     cta_url: links.enrollmentUrl,
@@ -1466,7 +1525,7 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
     enrollment_qr_url: links.enrollmentQrUrl,
     qr_url: links.enrollmentQrUrl
   };
-  const template = findTemplate(state.emailTemplates, "enrollment_invitation");
+  const template = enrollmentTemplateForEmail(findTemplate(state.emailTemplates, "enrollment_invitation"));
   const rendered = renderTemplate(template, variables);
   if (!rendered.text.includes(links.enrollmentUrl)) {
     rendered.text = `${rendered.text}\nAbrir formulario: ${links.enrollmentUrl}`.trim();
