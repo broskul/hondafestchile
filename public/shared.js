@@ -1,6 +1,9 @@
 (() => {
   const CART_KEY = "hfc_cart";
   const BUYER_KEY = "hfc_buyer";
+  const TICKET_VAT_RATE = 0.19;
+  const TICKET_SERVICE_CHARGE_RATE = 0.12;
+  const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -11,6 +14,39 @@
       currency: "CLP",
       maximumFractionDigits: 0
     }).format(value || 0);
+  }
+
+  function roundCurrency(value) {
+    return Math.max(0, Math.round(Number(value || 0)));
+  }
+
+  function inferNetPriceFromGross(grossPrice) {
+    return roundCurrency(Number(grossPrice || 0) / TICKET_TOTAL_FACTOR);
+  }
+
+  function priceBreakdownFromNet(netPrice) {
+    const net = roundCurrency(netPrice);
+    const netWithVat = roundCurrency(net * (1 + TICKET_VAT_RATE));
+    const netWithServiceCharge = roundCurrency(net * (1 + TICKET_SERVICE_CHARGE_RATE));
+    const serviceCharge = roundCurrency(netWithVat * TICKET_SERVICE_CHARGE_RATE);
+    const total = roundCurrency(netWithVat + serviceCharge);
+    return {
+      netPrice: net,
+      netWithVat,
+      netWithServiceCharge,
+      serviceCharge,
+      total,
+      vatRate: TICKET_VAT_RATE,
+      serviceChargeRate: TICKET_SERVICE_CHARGE_RATE
+    };
+  }
+
+  function priceBreakdownFromGross(grossPrice) {
+    return priceBreakdownFromNet(inferNetPriceFromGross(grossPrice));
+  }
+
+  function priceBreakdownFromAvailability(availability = {}) {
+    return availability.pricing || priceBreakdownFromNet(availability.netPrice ?? inferNetPriceFromGross(availability.price || 0));
   }
 
   async function api(path, options = {}) {
@@ -63,9 +99,12 @@
   }
 
   function ticketAvailability(ticket, eventId) {
+    const fallbackPricing = ticket?.pricing || priceBreakdownFromNet(ticket?.netPrice ?? inferNetPriceFromGross(ticket?.price || 0));
     return (
       ticket?.availabilityByEvent?.[eventId] || {
-        price: ticket?.price || 0,
+        price: fallbackPricing.total,
+        netPrice: fallbackPricing.netPrice,
+        pricing: fallbackPricing,
         maxQuantity: ticket?.maxQuantity || 1,
         salePhaseId: ticket?.salePhaseId || null,
         salePhaseName: ticket?.salePhaseName || "No disponible",
@@ -227,6 +266,7 @@
           ticketTypeName: ticket.name,
           description: ticket.description,
           unitPrice,
+          pricing: priceBreakdownFromAvailability(availability),
           total: unitPrice * quantity,
           maxQuantity
         };
@@ -606,6 +646,10 @@
     clearCart,
     formatCurrency,
     getCatalog,
+    inferNetPriceFromGross,
+    priceBreakdownFromAvailability,
+    priceBreakdownFromGross,
+    priceBreakdownFromNet,
     ticketAvailability,
     openCartDrawer,
     prefillBuyerForms,

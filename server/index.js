@@ -67,14 +67,50 @@ function clone(value) {
 
 const TICKETING_SETTING_ID = "ticketing_config";
 const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
+const TICKET_VAT_RATE = 0.19;
+const TICKET_SERVICE_CHARGE_RATE = 0.12;
+const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
+
+function roundCurrency(value) {
+  return Math.max(0, Math.round(Number(value || 0)));
+}
+
+function ticketPricingFromNet(netPrice) {
+  const net = roundCurrency(netPrice);
+  const netWithVat = roundCurrency(net * (1 + TICKET_VAT_RATE));
+  const netWithServiceCharge = roundCurrency(net * (1 + TICKET_SERVICE_CHARGE_RATE));
+  const serviceCharge = roundCurrency(netWithVat * TICKET_SERVICE_CHARGE_RATE);
+  const total = roundCurrency(netWithVat + serviceCharge);
+  return {
+    netPrice: net,
+    netWithVat,
+    netWithServiceCharge,
+    serviceCharge,
+    total,
+    vatRate: TICKET_VAT_RATE,
+    serviceChargeRate: TICKET_SERVICE_CHARGE_RATE
+  };
+}
+
+function inferNetPriceFromGross(grossPrice) {
+  return roundCurrency(Number(grossPrice || 0) / TICKET_TOTAL_FACTOR);
+}
+
+function explicitNetPrice(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
 
 function defaultTicketPhases(ticket) {
+  const pricing = ticketPricingFromNet(explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(ticket.price));
   return [
     {
       id: "preventa",
       name: "Preventa",
       kind: "preventa",
-      price: ticket.price,
+      price: pricing.total,
+      netPrice: pricing.netPrice,
+      pricing,
       quota: null,
       startsAt: "",
       endsAt: "",
@@ -86,7 +122,9 @@ function defaultTicketPhases(ticket) {
       id: "general",
       name: "Venta general",
       kind: "general",
-      price: ticket.price,
+      price: pricing.total,
+      netPrice: pricing.netPrice,
+      pricing,
       quota: null,
       startsAt: "",
       endsAt: "",
@@ -98,7 +136,9 @@ function defaultTicketPhases(ticket) {
       id: "puerta",
       name: "Puerta",
       kind: "puerta",
-      price: ticket.price,
+      price: pricing.total,
+      netPrice: pricing.netPrice,
+      pricing,
       quota: null,
       startsAt: "",
       endsAt: "",
@@ -127,7 +167,11 @@ function normalizePhase(phase = {}, ticket = {}, index = 0) {
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-");
   const kind = String(phase.kind || idValue || fallbackId).trim().toLowerCase();
-  const price = Number.isFinite(Number(phase.price)) ? Number(phase.price) : Number(ticket.price || 0);
+  const rawPrice = Number.isFinite(Number(phase.price)) ? Number(phase.price) : Number(ticket.price || 0);
+  const netPrice =
+    explicitNetPrice(phase.netPrice ?? phase.basePrice ?? phase.priceNet) ??
+    inferNetPriceFromGross(rawPrice);
+  const pricing = ticketPricingFromNet(netPrice);
   const quota = phase.quota === "" || phase.quota === null || phase.quota === undefined ? null : Number(phase.quota);
   const perOrderLimit =
     phase.perOrderLimit === "" || phase.perOrderLimit === null || phase.perOrderLimit === undefined
@@ -138,7 +182,9 @@ function normalizePhase(phase = {}, ticket = {}, index = 0) {
     id: idValue || fallbackId,
     name: String(phase.name || phase.label || fallbackId).trim(),
     kind,
-    price: Math.max(0, Math.round(price || 0)),
+    price: pricing.total,
+    netPrice: pricing.netPrice,
+    pricing,
     quota: Number.isFinite(quota) && quota > 0 ? Math.floor(quota) : null,
     startsAt: String(phase.startsAt || phase.startAt || "").trim(),
     endsAt: String(phase.endsAt || phase.endAt || "").trim(),
@@ -154,13 +200,17 @@ function normalizeTicket(ticket = {}) {
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-");
   const base = defaultTicketTypes.find((candidate) => candidate.id === idValue) || {};
+  const rawPrice = Math.max(0, Math.round(Number(ticket.price ?? base.price ?? 0)));
+  const pricing = ticketPricingFromNet(explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(rawPrice));
   const normalized = {
     ...base,
     ...ticket,
     id: idValue || base.id || id("ticket-type"),
     name: String(ticket.name || base.name || "Entrada").trim(),
     description: String(ticket.description || base.description || "").trim(),
-    price: Math.max(0, Math.round(Number(ticket.price ?? base.price ?? 0))),
+    price: pricing.total,
+    netPrice: pricing.netPrice,
+    pricing,
     maxQuantity: Math.max(1, Math.floor(Number(ticket.maxQuantity ?? base.maxQuantity ?? 1))),
     active: ticket.active !== false,
     eventIds: Array.isArray(ticket.eventIds) ? ticket.eventIds.map(String).filter(Boolean) : []
@@ -362,10 +412,13 @@ function catalogForClient(state) {
       const availabilityByEvent = Object.fromEntries(
         config.events.map((event) => {
           const phase = activePhaseForTicket(state, event, ticket);
+          const pricing = phase?.pricing || ticket.pricing || ticketPricingFromNet(phase?.netPrice ?? ticket.netPrice ?? 0);
           return [
             event.id,
             {
-              price: phase?.price ?? ticket.price,
+              price: pricing.total,
+              netPrice: pricing.netPrice,
+              pricing,
               maxQuantity: phase?.maxQuantity ?? ticket.maxQuantity,
               salePhaseId: phase?.id || null,
               salePhaseName: phase?.name || "No disponible",
@@ -380,6 +433,8 @@ function catalogForClient(state) {
       return {
         ...ticket,
         price: primary?.price ?? ticket.price,
+        netPrice: primary?.netPrice ?? ticket.netPrice,
+        pricing: primary?.pricing ?? ticket.pricing,
         maxQuantity: primary?.maxQuantity ?? ticket.maxQuantity,
         salePhaseId: primary?.salePhaseId || null,
         salePhaseName: primary?.salePhaseName || "No disponible",
@@ -952,6 +1007,8 @@ function buildOrderItems(state, itemsInput) {
       salePhaseName: phase.name,
       salePhaseKind: phase.kind,
       quantity,
+      netPrice: phase.netPrice,
+      pricing: phase.pricing,
       unitPrice: phase.price,
       total: phase.price * quantity
     };

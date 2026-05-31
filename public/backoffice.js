@@ -39,6 +39,23 @@ function readNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function phasePricing(phase = {}) {
+  return phase.pricing || HFC.priceBreakdownFromNet(phase.netPrice ?? HFC.inferNetPriceFromGross(phase.price || 0));
+}
+
+function phaseWithPricing(phase = {}, fallbackPrice = 0) {
+  const hasNetPrice = phase.netPrice !== undefined && phase.netPrice !== null && phase.netPrice !== "";
+  const pricing = HFC.priceBreakdownFromNet(
+    hasNetPrice ? phase.netPrice : HFC.inferNetPriceFromGross(phase.price || fallbackPrice)
+  );
+  return {
+    ...phase,
+    price: pricing.total,
+    netPrice: pricing.netPrice,
+    pricing
+  };
+}
+
 function makeId(prefix, value = "") {
   const slug = String(value || prefix)
     .trim()
@@ -61,7 +78,8 @@ function optionList(items, selected) {
 
 function phaseBadge(phase) {
   const limit = phase.quota ? `${phase.quota} cupos` : "sin limite";
-  return `${escapeHtml(phase.name)} - ${HFC.formatCurrency(phase.price)} - ${limit}`;
+  const pricing = phasePricing(phase);
+  return `${escapeHtml(phase.name)} - neto ${HFC.formatCurrency(pricing.netPrice)} / final ${HFC.formatCurrency(pricing.total)} - ${limit}`;
 }
 
 function defaultPhase(kind, ticket = {}) {
@@ -75,25 +93,35 @@ function defaultPhase(kind, ticket = {}) {
     general: 20,
     puerta: 30
   };
-  return {
+  const pricing = HFC.priceBreakdownFromNet(ticket.netPrice ?? HFC.inferNetPriceFromGross(ticket.price || 0));
+  return phaseWithPricing({
     id: kind,
     kind,
     name: labels[kind] || kind,
-    price: Number(ticket.price || 0),
+    price: pricing.total,
+    netPrice: pricing.netPrice,
+    pricing,
     quota: kind === "preventa" ? 100 : null,
     startsAt: "",
     endsAt: "",
     perOrderLimit: Number(ticket.maxQuantity || 1),
     enabled: kind !== "puerta",
     sortOrder: sortOrder[kind] || 99
-  };
+  });
 }
 
 function ensureTicketPhases(ticket) {
   const phases = Array.isArray(ticket.phases) ? ticket.phases : [];
   return ["preventa", "general", "puerta"].map((kind) => {
     const existing = phases.find((phase) => (phase.kind || phase.id) === kind);
-    return existing ? { ...defaultPhase(kind, ticket), ...existing, id: kind, kind } : defaultPhase(kind, ticket);
+    const base = defaultPhase(kind, ticket);
+    if (!existing) return base;
+    const merged = { ...base, ...existing, id: kind, kind };
+    if (existing.netPrice === undefined && existing.basePrice === undefined && existing.priceNet === undefined) {
+      delete merged.netPrice;
+      delete merged.pricing;
+    }
+    return phaseWithPricing(merged, existing.price || base.price);
   });
 }
 
@@ -119,6 +147,8 @@ function newTicketDraft() {
     name: "Nueva entrada",
     description: "",
     price: 0,
+    netPrice: 0,
+    pricing: HFC.priceBreakdownFromNet(0),
     maxQuantity: 6,
     eventIds: [],
     active: true
@@ -260,17 +290,25 @@ function renderTicketing(data) {
                   <div class="phase-grid">
                     ${ticket.phases
                       .map(
-                        (phase) => `
+                        (phase) => {
+                          const pricing = phasePricing(phase);
+                          return `
                           <fieldset class="phase-card" data-phase-card="${escapeHtml(phase.id)}">
                             <legend>${phaseBadge(phase)}</legend>
                             <label>Activa <input data-phase-field="enabled" type="checkbox" ${phase.enabled ? "checked" : ""} /></label>
                             <label>Nombre <input data-phase-field="name" value="${escapeHtml(phase.name)}" /></label>
-                            <label>Valor <input data-phase-field="price" type="number" min="0" step="100" value="${phase.price}" /></label>
+                            <label class="full">Valor neto sin cargo ni IVA <input data-phase-field="netPrice" type="number" min="0" step="100" value="${pricing.netPrice}" /></label>
+                            <div class="phase-price-preview">
+                              <label>Sin cargo + IVA <input data-phase-preview="netWithVat" readonly value="${HFC.formatCurrency(pricing.netWithVat)}" /></label>
+                              <label>Con cargo neto <input data-phase-preview="netWithServiceCharge" readonly value="${HFC.formatCurrency(pricing.netWithServiceCharge)}" /></label>
+                              <label>Con cargo + IVA <input data-phase-preview="total" readonly value="${HFC.formatCurrency(pricing.total)}" /></label>
+                            </div>
                             <label>Cupos fase <input data-phase-field="quota" type="number" min="0" placeholder="Sin limite" value="${phase.quota || ""}" /></label>
                             <label>Max. por compra <input data-phase-field="perOrderLimit" type="number" min="1" value="${phase.perOrderLimit}" /></label>
                             <small>${phaseRule(phase.kind || phase.id)}</small>
                           </fieldset>
-                        `
+                        `;
+                        }
                       )
                       .join("")}
                   </div>
@@ -311,12 +349,16 @@ function collectTicketingForm(form) {
       const maxQuantity = readNumber(card.querySelector('[data-ticket-field="maxQuantity"]').value, 1);
       const phases = Array.from(card.querySelectorAll("[data-phase-card]")).map((phaseCard, index) => {
         const phaseId = phaseCard.dataset.phaseCard;
+        const netPrice = readNumber(phaseCard.querySelector('[data-phase-field="netPrice"]').value, 0);
+        const pricing = HFC.priceBreakdownFromNet(netPrice);
         return {
           id: phaseId,
           kind: phaseId,
           enabled: phaseCard.querySelector('[data-phase-field="enabled"]').checked,
           name: phaseCard.querySelector('[data-phase-field="name"]').value.trim(),
-          price: readNumber(phaseCard.querySelector('[data-phase-field="price"]').value, 0),
+          price: pricing.total,
+          netPrice: pricing.netPrice,
+          pricing,
           quota: phaseCard.querySelector('[data-phase-field="quota"]').value
             ? readNumber(phaseCard.querySelector('[data-phase-field="quota"]').value, null)
             : null,
@@ -333,6 +375,8 @@ function collectTicketingForm(form) {
         name: card.querySelector('[data-ticket-field="name"]').value.trim(),
         description: card.querySelector('[data-ticket-field="description"]').value.trim(),
         price: general?.price || 0,
+        netPrice: general?.netPrice || 0,
+        pricing: general?.pricing || HFC.priceBreakdownFromNet(general?.netPrice || 0),
         maxQuantity,
         eventIds: selectedEvents.length === eventIds.length ? [] : selectedEvents,
         active: true,
@@ -348,6 +392,25 @@ function syncTicketingDraftFromForm() {
   if (form && backofficeData?.ticketing) {
     backofficeData.ticketing = collectTicketingForm(form);
   }
+}
+
+function refreshPhasePreview(phaseCard) {
+  const netInput = phaseCard.querySelector('[data-phase-field="netPrice"]');
+  if (!netInput) return;
+  const pricing = HFC.priceBreakdownFromNet(readNumber(netInput.value, 0));
+  const previews = {
+    netWithVat: HFC.formatCurrency(pricing.netWithVat),
+    netWithServiceCharge: HFC.formatCurrency(pricing.netWithServiceCharge),
+    total: HFC.formatCurrency(pricing.total)
+  };
+  for (const [key, value] of Object.entries(previews)) {
+    const output = phaseCard.querySelector(`[data-phase-preview="${key}"]`);
+    if (output) output.value = value;
+  }
+}
+
+function refreshPhasePreviews(root = document) {
+  HFC.$$("[data-phase-card]", root).forEach(refreshPhasePreview);
 }
 
 function renderGuests(data) {
@@ -629,6 +692,11 @@ async function loadBackoffice() {
 }
 
 function attachBackofficeEvents() {
+  refreshPhasePreviews();
+  HFC.$$('[data-phase-field="netPrice"]').forEach((input) => {
+    input.addEventListener("input", () => refreshPhasePreview(input.closest("[data-phase-card]")));
+  });
+
   HFC.$$("[data-admin-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       activeTab = button.dataset.adminTab;
