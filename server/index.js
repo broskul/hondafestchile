@@ -1504,12 +1504,18 @@ app.get("/api/health", async (req, res) => {
 app.get("/api/catalog", async (req, res, next) => {
   try {
     const state = await readState();
+    const mercadoPagoDetails = mercadoPagoRuntimeStatus(req);
+    const testMode = Boolean(mercadoPagoDetails.sandbox);
     res.json({
       ...catalogForClient(state),
       integrations: {
         paymentMode: paymentModeForClient(),
         mercadoPagoPublicKey: mercadoPagoInternalCheckoutEnabled() ? mercadoPagoPublicKey() : null,
-        checkoutStorageReady: checkoutStorageReady()
+        checkoutStorageReady: checkoutStorageReady(),
+        testMode,
+        testModeMessage: testMode
+          ? "Sitio en modo prueba: no estas comprando entradas reales. Usa solo tarjetas de prueba."
+          : ""
       }
     });
   } catch (error) {

@@ -383,7 +383,8 @@
 
   async function renderInternalPayment(statusElement, data) {
     const order = data.order;
-    const publicKey = data.mercadoPagoPublicKey || (await getCatalog()).integrations?.mercadoPagoPublicKey;
+    const catalog = await getCatalog();
+    const publicKey = data.mercadoPagoPublicKey || catalog.integrations?.mercadoPagoPublicKey;
     if (!order || !publicKey) {
       setStatus(statusElement, "Mercado Pago no esta listo para pago interno.", true);
       return;
@@ -392,9 +393,13 @@
     await destroyMercadoPagoBrick();
     const containerId = `cardPaymentBrick_${order.id}`;
     const feedbackId = `cardPaymentFeedback_${order.id}`;
+    const testModeNotice = catalog.integrations?.testMode
+      ? `<div class="payment-test-warning"><strong>Pago de prueba.</strong> No se emitiran compras reales en este ambiente.</div>`
+      : "";
     setStatus(
       statusElement,
       `<strong>Email verificado.</strong><br />Paga aqui mismo con tarjeta. Los datos del asistente se completan despues del pago.
+      ${testModeNotice}
       <div class="internal-payment-shell">
         <div id="${containerId}" class="mp-card-brick"></div>
         <div id="${feedbackId}" class="payment-inline-status" role="status" aria-live="polite">Preparando pago seguro...</div>
