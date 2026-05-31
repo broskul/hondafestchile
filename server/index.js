@@ -885,17 +885,32 @@ function safeEqualString(left, right) {
 }
 
 function ensureEnrollmentToken(order) {
-  if (!order.enrollmentToken) {
+  if (!order.enrollmentToken || order.enrollmentTokenConsumedAt) {
     order.enrollmentToken = secureToken("enroll");
     order.enrollmentTokenCreatedAt = new Date().toISOString();
+    order.enrollmentTokenConsumedAt = null;
+    order.enrollmentTokenStatus = "active";
   }
   return order.enrollmentToken;
+}
+
+function enrollmentTokenIsActive(order) {
+  return Boolean(
+    order?.enrollmentToken &&
+      !order.enrollmentTokenConsumedAt &&
+      order.status === "paid" &&
+      order.profileRequired
+  );
 }
 
 function findOrderByEnrollmentToken(state, token) {
   const normalized = String(token || "").trim();
   if (!normalized) return null;
-  return state.orders.find((order) => safeEqualString(order.enrollmentToken, normalized)) || null;
+  return (
+    state.orders.find(
+      (order) => enrollmentTokenIsActive(order) && safeEqualString(order.enrollmentToken, normalized)
+    ) || null
+  );
 }
 
 function publicEnrollmentOrder({ state, order, req, includeLinks = true }) {
@@ -2163,7 +2178,7 @@ function requireEnrollmentPortalSession(req, state) {
 
 function authorizeEnrollmentAccess(req, state, order) {
   const token = String(req.body.enrollmentToken || req.query.enrollmentToken || req.headers["x-enrollment-token"] || "").trim();
-  if (token && safeEqualString(token, order.enrollmentToken)) {
+  if (token && enrollmentTokenIsActive(order) && safeEqualString(token, order.enrollmentToken)) {
     return { type: "token" };
   }
 
@@ -2249,6 +2264,9 @@ async function completeEnrollmentProfile(req, orderId) {
     order.profileRequired = false;
     order.enrollmentCompletedAt = order.enrollmentCompletedAt || now;
     order.enrollmentCompletedBy = access.type;
+    order.enrollmentTokenConsumedAt = now;
+    order.enrollmentTokenStatus = "consumed";
+    order.enrollmentToken = null;
     order.updatedAt = now;
     paymentForFulfillment = order.payment || {
       provider: order.paymentMode || "mercadopago",
