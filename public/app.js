@@ -16,6 +16,8 @@ const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const ALL_GALLERY_CATEGORY = "all";
 const GALLERY_LOGO_SRC = "/logo-hfc.avif";
 let galleryRevealObserver = null;
+let galleryCornerLogoSrc = GALLERY_LOGO_SRC;
+let gallerySignatureLogoSrc = GALLERY_LOGO_SRC;
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => {
@@ -541,21 +543,6 @@ function loadCanvasImage(src) {
     );
 }
 
-function roundedRect(ctx, x, y, width, height, radius) {
-  const safeRadius = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + safeRadius, y);
-  ctx.lineTo(x + width - safeRadius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
-  ctx.lineTo(x + width, y + height - safeRadius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
-  ctx.lineTo(x + safeRadius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
-  ctx.lineTo(x, y + safeRadius);
-  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
-  ctx.closePath();
-}
-
 function drawCoverImage(ctx, image, x, y, width, height) {
   const imageRatio = image.naturalWidth / image.naturalHeight;
   const targetRatio = width / height;
@@ -585,25 +572,102 @@ function drawContainImage(ctx, image, x, y, width, height) {
   return { x: drawX, y: drawY, width: drawWidth, height: drawHeight };
 }
 
-function drawGalleryLogo(ctx, logo, canvasWidth, canvasHeight, story = false) {
-  const logoWidth = Math.round(Math.min(canvasWidth * (story ? 0.24 : 0.18), story ? 250 : 220));
-  const logoHeight = Math.round(logoWidth * (logo.naturalHeight / logo.naturalWidth));
-  const padding = Math.round(Math.max(canvasWidth * 0.012, story ? 20 : 14));
-  const margin = Math.round(Math.max(canvasWidth * 0.024, story ? 48 : 22));
-  const panelWidth = logoWidth + padding * 2;
-  const panelHeight = logoHeight + padding * 2;
-  const x = canvasWidth - panelWidth - margin;
-  const y = canvasHeight - panelHeight - margin;
+function processedLogoCanvas(logo, width, mode = "color") {
+  const canvas = document.createElement("canvas");
+  const height = Math.max(1, Math.round(width * (logo.naturalHeight / logo.naturalWidth)));
+  canvas.width = Math.max(1, Math.round(width));
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return canvas;
+
+  ctx.drawImage(logo, 0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const red = data[index];
+    const green = data[index + 1];
+    const blue = data[index + 2];
+    const alpha = data[index + 3];
+    const max = Math.max(red, green, blue);
+    const min = Math.min(red, green, blue);
+    const saturation = max - min;
+    const whiteBackground = red > 222 && green > 222 && blue > 222 && saturation < 42;
+
+    if (alpha < 8 || whiteBackground) {
+      data[index + 3] = 0;
+      continue;
+    }
+
+    if (mode === "signature") {
+      data[index] = 246;
+      data[index + 1] = 250;
+      data[index + 2] = 255;
+      data[index + 3] = Math.round(alpha * 0.72);
+    } else {
+      data[index + 3] = Math.round(alpha * 0.9);
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+function processedLogoDataUrl(logo, width, mode) {
+  return processedLogoCanvas(logo, width, mode).toDataURL("image/png");
+}
+
+async function initGalleryLogoAssets() {
+  try {
+    const logoAsset = await loadCanvasImage(GALLERY_LOGO_SRC);
+    galleryCornerLogoSrc = processedLogoDataUrl(logoAsset.image, 420, "color");
+    gallerySignatureLogoSrc = processedLogoDataUrl(logoAsset.image, 1100, "signature");
+    logoAsset.revoke();
+  } catch {
+    galleryCornerLogoSrc = GALLERY_LOGO_SRC;
+    gallerySignatureLogoSrc = GALLERY_LOGO_SRC;
+  }
+}
+
+function applyGalleryLogoSources(root = document) {
+  root.querySelectorAll("[data-gallery-corner-logo]").forEach((image) => {
+    image.src = galleryCornerLogoSrc;
+  });
+  root.querySelectorAll("[data-gallery-signature-logo]").forEach((image) => {
+    image.src = gallerySignatureLogoSrc;
+  });
+}
+
+function drawSignatureLogo(ctx, logo, bounds) {
+  const logoWidth = Math.round(bounds.width * 0.75);
+  const mark = processedLogoCanvas(logo, logoWidth, "signature");
+  const x = bounds.x + (bounds.width - mark.width) / 2;
+  const y = bounds.y + (bounds.height - mark.height) / 2;
 
   ctx.save();
-  ctx.shadowColor = "rgba(0, 0, 0, 0.32)";
-  ctx.shadowBlur = story ? 24 : 18;
-  ctx.shadowOffsetY = story ? 8 : 5;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
-  roundedRect(ctx, x, y, panelWidth, panelHeight, Math.max(12, padding * 0.7));
-  ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.drawImage(logo, x + padding, y + padding, logoWidth, logoHeight);
+  ctx.globalAlpha = 0.18;
+  ctx.globalCompositeOperation = "screen";
+  ctx.filter = `drop-shadow(0 0 ${Math.round(bounds.width * 0.018)}px rgba(255,255,255,0.34))`;
+  ctx.drawImage(mark, x, y);
+  ctx.globalAlpha = 0.08;
+  ctx.globalCompositeOperation = "overlay";
+  ctx.filter = "none";
+  ctx.drawImage(mark, x - 2, y - 2);
+  ctx.restore();
+}
+
+function drawCornerLogo(ctx, logo, bounds, story = false) {
+  const logoWidth = Math.round(Math.min(bounds.width * (story ? 0.18 : 0.14), story ? 190 : 210));
+  const mark = processedLogoCanvas(logo, logoWidth, "color");
+  const margin = Math.round(Math.max(bounds.width * 0.026, story ? 22 : 18));
+  const x = bounds.x + bounds.width - mark.width - margin;
+  const y = bounds.y + bounds.height - mark.height - margin;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.42)";
+  ctx.shadowBlur = story ? 22 : 18;
+  ctx.shadowOffsetY = story ? 7 : 5;
+  ctx.drawImage(mark, x, y);
   ctx.restore();
 }
 
@@ -644,14 +708,16 @@ async function createBrandedGalleryBlob(item, mode = "download") {
       ctx.lineWidth = 3;
       ctx.strokeRect(photoFrame.x, photoFrame.y, photoFrame.width, photoFrame.height);
       ctx.restore();
-      drawGalleryLogo(ctx, logoAsset.image, canvas.width, canvas.height, true);
+      drawCornerLogo(ctx, logoAsset.image, photoFrame, true);
     } else {
       const maxSide = 2200;
       const scale = Math.min(1, maxSide / Math.max(photoAsset.image.naturalWidth, photoAsset.image.naturalHeight));
       canvas.width = Math.round(photoAsset.image.naturalWidth * scale);
       canvas.height = Math.round(photoAsset.image.naturalHeight * scale);
       ctx.drawImage(photoAsset.image, 0, 0, canvas.width, canvas.height);
-      drawGalleryLogo(ctx, logoAsset.image, canvas.width, canvas.height, false);
+      const photoBounds = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+      drawSignatureLogo(ctx, logoAsset.image, photoBounds);
+      drawCornerLogo(ctx, logoAsset.image, photoBounds, false);
     }
 
     return canvasToJpegBlob(canvas);
@@ -762,7 +828,24 @@ function gallerySlide(item, index, total) {
         <strong>${escapeHtml(title)}</strong>
         ${renderGalleryTags(item)}
       </figcaption>
-      <img class="gallery-slide__watermark" src="${GALLERY_LOGO_SRC}" alt="" width="175" height="117" draggable="false" />
+      <img
+        class="gallery-slide__signature"
+        src="${escapeHtml(gallerySignatureLogoSrc)}"
+        alt=""
+        width="900"
+        height="602"
+        draggable="false"
+        data-gallery-signature-logo
+      />
+      <img
+        class="gallery-slide__watermark"
+        src="${escapeHtml(galleryCornerLogoSrc)}"
+        alt=""
+        width="175"
+        height="117"
+        draggable="false"
+        data-gallery-corner-logo
+      />
       <div class="gallery-slide__actions">
         <button class="gallery-share-button" type="button" data-gallery-action="download">Descargar con logo</button>
         <button class="gallery-share-button gallery-share-button--primary" type="button" data-gallery-action="story">Publicar historia</button>
@@ -854,6 +937,7 @@ function renderGallery() {
     <span>${escapeHtml(activeLabel + queryLabel)} &middot; ${state.gallery.items.length} fotos totales &middot; ${state.gallery.categories.length} tipos</span>
   `;
   viewer.innerHTML = gallerySlide(activeItem, state.gallery.activeIndex, items.length);
+  applyGalleryLogoSources(viewer);
   thumbs.innerHTML = items.map((item, index) => galleryThumb(item, index, index === state.gallery.activeIndex)).join("");
   thumbs.querySelector(".gallery-thumb.is-active")?.scrollIntoView({
     behavior: "smooth",
@@ -950,6 +1034,8 @@ function initGalleryLightbox() {
 }
 
 async function init() {
+  await initGalleryLogoAssets();
+  applyGalleryLogoSources();
   initGalleryTransitions();
   initGalleryLightbox();
   $("#galleryControls")?.addEventListener("click", (event) => {

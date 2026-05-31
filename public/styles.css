@@ -2592,17 +2592,30 @@ a:focus-visible {
   -webkit-user-drag: none;
 }
 
+.gallery-dialog-signature {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: min(75%, 760px);
+  height: auto;
+  opacity: 0.18;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.22));
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 .gallery-dialog-watermark {
   position: absolute;
   right: clamp(16px, 3vw, 34px);
   bottom: clamp(16px, 3vw, 34px);
   display: block;
-  width: clamp(92px, 15vw, 168px);
+  width: clamp(80px, 12vw, 132px);
   height: auto;
-  padding: clamp(8px, 1.2vw, 14px);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.34);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.48));
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
@@ -3182,17 +3195,30 @@ a:focus-visible {
   font-size: 0.62rem;
 }
 
+.gallery-slide__signature {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: min(75%, 880px);
+  height: auto;
+  opacity: 0.18;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.24));
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 .gallery-slide__watermark {
   position: absolute;
   right: clamp(16px, 2.4vw, 30px);
   bottom: clamp(16px, 2.4vw, 30px);
   z-index: 2;
-  width: clamp(86px, 10vw, 148px);
+  width: clamp(70px, 8vw, 118px);
   height: auto;
-  padding: clamp(7px, 1vw, 12px);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.42));
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
@@ -3442,15 +3468,21 @@ a:focus-visible {
   #galerias .gallery-slide__watermark {
     right: 12px;
     bottom: 96px;
-    width: 72px;
-    padding: 6px;
+    width: 62px;
+  }
+
+  #galerias .gallery-slide__signature {
+    width: 76%;
   }
 
   .gallery-dialog-watermark {
     right: 14px;
     bottom: 14px;
-    width: 92px;
-    padding: 7px;
+    width: 76px;
+  }
+
+  .gallery-dialog-signature {
+    width: 78%;
   }
 
   #galerias .gallery-slide__caption p {
