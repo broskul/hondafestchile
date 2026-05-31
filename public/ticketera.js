@@ -1,10 +1,3 @@
-function formToJson(form) {
-  const data = new FormData(form);
-  const payload = Object.fromEntries(data.entries());
-  payload.interests = data.getAll("interests");
-  return payload;
-}
-
 async function renderProducts() {
   const catalog = await HFC.getCatalog();
   const grid = HFC.$("#productGrid");
@@ -68,42 +61,6 @@ async function renderProducts() {
   });
 }
 
-async function handleRegister(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const status = HFC.$("#registerStatus");
-  const submit = form.querySelector("button[type='submit']");
-  submit.disabled = true;
-  HFC.setStatus(status, "Creando registro...");
-
-  try {
-    const data = await HFC.api("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(formToJson(form))
-    });
-
-    localStorage.setItem(
-      "hfc_buyer",
-      JSON.stringify({
-        email: data.user.email,
-        rut: data.user.rut
-      })
-    );
-    HFC.prefillBuyerForms();
-
-    const devButton = data.devVerificationUrl
-      ? `<div class="status-actions"><a class="button secondary" href="${data.devVerificationUrl}">Confirmar correo</a></div>`
-      : "";
-
-    HFC.setStatus(status, `<strong>Registro creado.</strong><br />Confirma tu correo para comprar.${devButton}`);
-  } catch (error) {
-    HFC.setStatus(status, error.message, true);
-  } finally {
-    submit.disabled = false;
-  }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts().catch((error) => HFC.toast(error.message));
-  HFC.$("#registerForm").addEventListener("submit", handleRegister);
 });

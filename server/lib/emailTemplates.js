@@ -26,18 +26,25 @@ const defaultEmailTemplates = [
   {
     id: "enrollment_invitation",
     type: "enrollment_invitation",
-    name: "Invitacion a enrolarse",
-    subject: "Enrolate para {{event_name}}",
+    name: "Completar datos post pago",
+    subject: "Completa tus datos para {{event_name}}",
     text: [
       "Hola {{name}}.",
-      "Te invitamos a enrolarte para {{event_name}}.",
-      "Completa tu registro aqui: {{enroll_url}}"
+      "Tu pago fue recibido para {{event_name}}.",
+      "Completa los datos del asistente para emitir tus entradas y boleta.",
+      "Orden: {{order_id}}",
+      "Abrir formulario: {{enroll_url}}",
+      "QR: {{enroll_qr_url}}"
     ].join("\n"),
     html: [
       '<div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212">',
-      "<h1>Enrolate para {{event_name}}</h1>",
-      "<p>Hola {{name}}, completa tu registro para recibir informacion y comprar entradas.</p>",
-      '<p><a href="{{enroll_url}}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Enrolarme</a></p>',
+      "<h1>Completa tus datos</h1>",
+      "<p>Hola {{name}}, recibimos tu pago para <strong>{{event_name}}</strong>.</p>",
+      "<p>Completa los datos del asistente para emitir tus entradas y boleta.</p>",
+      "<p><strong>Orden:</strong> {{order_id}}</p>",
+      '<p><a href="{{enroll_url}}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Completar datos</a></p>',
+      '<p><img src="{{enroll_qr_url}}" alt="QR para completar datos" width="180" /></p>',
+      '<p style="font-size:13px;color:#5c646f">Tambien puedes abrir este enlace: <a href="{{enroll_url}}">{{enroll_url}}</a></p>',
       "</div>"
     ].join("")
   },
@@ -175,7 +182,7 @@ function ticketEmailVariables({ user, order, event, tickets = [], invoice, baseU
     ticket_list_html: ticketListHtml,
     invoice_label: invoiceLabel,
     cta_url: baseUrl || "",
-    enroll_url: baseUrl ? `${baseUrl}/ticketera` : "/ticketera",
+    enroll_url: baseUrl ? `${baseUrl}/enrolamiento` : "/enrolamiento",
     campaign_title: "Honda Fest Chile",
     campaign_body: ""
   };

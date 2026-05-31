@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Enrolamiento | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/shared.js"></script>
+    <script defer src="/enrolamiento.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/">
+        <span class="brand-mark">HFC</span>
+        <span><strong>Honda Fest Chile</strong><small>Enrolamiento</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Enrolamiento">
+        <a href="/ticketera">Ticketera</a>
+        <a href="/mis-compras">Mis compras</a>
+        <a href="/validar">Validar</a>
+      </nav>
+      <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Acceso seguro</p>
+          <h1>Completa los datos de tu compra.</h1>
+          <p>El pago ya quedo asegurado. Con estos datos emitimos las entradas y la boleta.</p>
+        </div>
+      </section>
+
+      <section class="section split-section enrollment-section">
+        <div class="ticket-panel page-panel enrollment-main">
+          <div id="enrollmentContent" aria-live="polite"></div>
+          <div class="status-box" id="enrollmentStatus" hidden></div>
+        </div>
+
+        <aside class="ticket-panel checkout-page enrollment-portal" id="portalPanel">
+          <p class="section-kicker">Portal privado</p>
+          <h2>Gestion interna</h2>
+          <form class="form-grid stacked-form" id="portalLoginForm">
+            <label>Usuario <input name="username" autocomplete="username" required value="admin" /></label>
+            <label>Password <input name="password" type="password" autocomplete="current-password" required /></label>
+            <button class="button primary full" type="submit">Entrar</button>
+          </form>
+          <div class="status-box" id="portalStatus" hidden></div>
+          <div id="portalOrders" class="portal-orders" hidden></div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1559,6 +1559,83 @@ a:focus-visible {
   margin-top: 16px;
 }
 
+.ticketera-shop-section {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ticketera-shop-section .inline-heading p:not(.section-kicker) {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.ticketera-shop-section .ticket-product-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.enrollment-section.token-only {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
+.enrollment-main h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
+  line-height: 1;
+}
+
+.enrollment-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.portal-orders {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.portal-order-list {
+  display: grid;
+  gap: 14px;
+}
+
+.portal-order-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.portal-order-card strong,
+.portal-order-card span,
+.portal-order-card small {
+  display: block;
+}
+
+.portal-order-card span,
+.portal-order-card small {
+  margin-top: 5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.portal-order-card img {
+  width: 84px;
+  height: 84px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.portal-order-card .status-actions {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+
 .order-items {
   margin: 16px 0;
   padding-left: 18px;
@@ -2009,7 +2086,12 @@ a:focus-visible {
   }
 
   .form-grid,
+  .enrollment-form,
   .interest-set {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-order-card {
     grid-template-columns: 1fr;
   }
 

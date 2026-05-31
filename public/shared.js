@@ -447,62 +447,6 @@
     }
   }
 
-  function profileFormHtml(orderId, user = {}) {
-    return `
-      <form class="profile-completion-form" data-profile-completion data-order-id="${escapeHtml(orderId)}">
-        <label>Correo
-          <input name="email" type="email" required readonly value="${escapeHtml(user.email || "")}" />
-        </label>
-        <label>Nombre completo
-          <input name="name" autocomplete="name" required value="${escapeHtml(user.name || "")}" placeholder="Nombre y apellido" />
-        </label>
-        <label>RUT
-          <input name="rut" required value="${escapeHtml(user.rut || "")}" placeholder="12.345.678-5" />
-        </label>
-        <label>Telefono
-          <input name="phone" autocomplete="tel" required value="${escapeHtml(user.phone || "")}" placeholder="+56 9 1234 5678" />
-        </label>
-        <label>Vehiculo
-          <input name="vehicle" value="${escapeHtml(user.vehicle || "")}" placeholder="Civic, Integra, S2000..." />
-        </label>
-        <label>Club o equipo
-          <input name="club" value="${escapeHtml(user.club || "")}" placeholder="Club, team o independiente" />
-        </label>
-        <button class="button primary full" type="submit">Emitir entradas</button>
-      </form>
-    `;
-  }
-
-  function mountProfileCompletion(statusElement) {
-    const form = $("[data-profile-completion]", statusElement);
-    if (!form || form.dataset.mounted === "1") return;
-    form.dataset.mounted = "1";
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const submit = form.querySelector("button[type='submit']");
-      submit.disabled = true;
-      setStatus(statusElement, "Guardando datos y emitiendo entradas...");
-      try {
-        const payload = Object.fromEntries(new FormData(form).entries());
-        const data = await api(`/api/orders/${form.dataset.orderId}/profile`, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        await renderOrderResult(statusElement, data);
-      } catch (error) {
-        const payload = Object.fromEntries(new FormData(form).entries());
-        setStatus(
-          statusElement,
-          `<strong>${escapeHtml(error.message)}</strong>${profileFormHtml(form.dataset.orderId, payload)}`,
-          true
-        );
-        mountProfileCompletion(statusElement);
-      } finally {
-        submit.disabled = false;
-      }
-    });
-  }
-
   async function renderOrderResult(statusElement, data) {
     await destroyMercadoPagoBrick();
     const order = data.order;
@@ -518,12 +462,14 @@
     if (order.profileRequired) {
       clearCart();
       await renderAllCarts();
+      const enrollmentAction = data.enrollmentUrl
+        ? `<div class="status-actions"><a class="button primary" href="${escapeHtml(data.enrollmentUrl)}">Completar datos</a></div>`
+        : "";
       setStatus(
         statusElement,
-        `<strong>Pago recibido.</strong><br />Completa los datos del asistente para emitir entradas y boleta.
-        ${profileFormHtml(order.id, data.user || {})}`
+        `<strong>Pago recibido.</strong><br />Te enviamos un correo con el boton y QR para completar los datos del asistente.
+        ${enrollmentAction}`
       );
-      mountProfileCompletion(statusElement);
       return;
     }
 

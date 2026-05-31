@@ -638,6 +638,32 @@ function baseUrl(req) {
   return `${req.protocol}://${req.get("host")}`;
 }
 
+function configuredBaseUrl(req = null) {
+  if (req) return baseUrl(req);
+  if (process.env.PUBLIC_BASE_URL) {
+    return process.env.PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+  return `http://localhost:${port}`;
+}
+
+function enrollmentUrlForToken(reqOrBase, token) {
+  const base = typeof reqOrBase === "string" ? reqOrBase : configuredBaseUrl(reqOrBase);
+  return `${base.replace(/\/$/, "")}/enrolamiento?token=${encodeURIComponent(token)}`;
+}
+
+function enrollmentQrUrlForToken(reqOrBase, token) {
+  const base = typeof reqOrBase === "string" ? reqOrBase : configuredBaseUrl(reqOrBase);
+  return `${base.replace(/\/$/, "")}/api/enrollment/${encodeURIComponent(token)}/qr.svg`;
+}
+
+function enrollmentLinks(order, reqOrBase) {
+  if (!order?.enrollmentToken) return {};
+  return {
+    enrollmentUrl: enrollmentUrlForToken(reqOrBase, order.enrollmentToken),
+    enrollmentQrUrl: enrollmentQrUrlForToken(reqOrBase, order.enrollmentToken)
+  };
+}
+
 function assetBaseUrl() {
   const base =
     process.env.R2_PUBLIC_BASE_URL ||
@@ -790,6 +816,46 @@ function nameFromEmail(email) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ") || "Asistente";
+}
+
+function secureToken(prefix) {
+  return `${prefix}_${crypto.randomBytes(24).toString("hex")}`;
+}
+
+function safeEqualString(left, right) {
+  if (!left || !right) return false;
+  const leftBuffer = Buffer.from(String(left));
+  const rightBuffer = Buffer.from(String(right));
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function ensureEnrollmentToken(order) {
+  if (!order.enrollmentToken) {
+    order.enrollmentToken = secureToken("enroll");
+    order.enrollmentTokenCreatedAt = new Date().toISOString();
+  }
+  return order.enrollmentToken;
+}
+
+function findOrderByEnrollmentToken(state, token) {
+  const normalized = String(token || "").trim();
+  if (!normalized) return null;
+  return state.orders.find((order) => safeEqualString(order.enrollmentToken, normalized)) || null;
+}
+
+function publicEnrollmentOrder({ state, order, req, includeLinks = true }) {
+  const user = order ? state.users.find((candidate) => candidate.id === order.userId) : null;
+  const tickets = order
+    ? state.tickets.filter((ticket) => ticket.orderId === order.id).map((ticket) => publicTicket(ticket, req))
+    : [];
+
+  return {
+    order: publicOrder(order),
+    user: publicUser(user),
+    tickets,
+    invoice: order ? state.invoices.find((invoice) => invoice.orderId === order.id) || null : null,
+    ...(includeLinks ? enrollmentLinks(order, req) : {})
+  };
 }
 
 function upsertCheckoutUser(state, email, body = {}) {
@@ -1131,6 +1197,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
   const profileReady = userProfileComplete(user);
 
   if (!profileReady) {
+    ensureEnrollmentToken(order);
     order.status = "paid";
     order.payment = orderPaymentSummary(paymentRecord, {
       paidAt: new Date().toISOString()
@@ -1138,9 +1205,25 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     order.profileRequired = true;
     order.fulfillmentStatus = "profile_pending";
     order.invoiceStatus = "profile_pending";
+    order.enrollmentEmailStatus = order.enrollmentEmailSentAt ? "sent" : "pending";
     order.updatedAt = new Date().toISOString();
     await writeState(state);
-    return { order, user, event, ticketType, tickets: [], invoice: null, profileRequired: true };
+    const emailResult = order.enrollmentEmailSentAt
+      ? { ok: true, skipped: true, ...enrollmentLinks(order, configuredBaseUrl()) }
+      : await sendEnrollmentInvitationEmail({ orderId: order.id });
+    state = await readState();
+    const freshOrder = state.orders.find((candidate) => candidate.id === order.id) || order;
+    return {
+      order: freshOrder,
+      user,
+      event,
+      ticketType,
+      tickets: [],
+      invoice: null,
+      profileRequired: true,
+      enrollmentEmail: emailResult,
+      ...enrollmentLinks(freshOrder, configuredBaseUrl())
+    };
   }
 
   if (order.status !== "paid") {
@@ -1269,6 +1352,130 @@ async function resendOrderEmail(orderId) {
   });
 
   return { order, user, tickets, invoice };
+}
+
+function orderEventName(order, event) {
+  if (order?.items?.length === 1) return order.items[0].eventName || event?.name || "Honda Fest Chile";
+  return event?.name || "Honda Fest Chile";
+}
+
+async function sendEnrollmentInvitationEmail({ orderId, req = null, force = false }) {
+  let state = await readState();
+  let order = state.orders.find((candidate) => candidate.id === orderId);
+  if (!order) {
+    const error = new Error("Orden no encontrada");
+    error.status = 404;
+    throw error;
+  }
+
+  const user = state.users.find((candidate) => candidate.id === order.userId);
+  const items = getOrderItems(order, state);
+  const firstItem = items[0];
+  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
+
+  if (!user) {
+    const error = new Error("Usuario no encontrado para enviar enrolamiento");
+    error.status = 409;
+    throw error;
+  }
+
+  ensureEnrollmentToken(order);
+  if (!force && order.enrollmentEmailSentAt) {
+    return { ok: true, skipped: true, ...enrollmentLinks(order, configuredBaseUrl(req)) };
+  }
+
+  await writeState(state);
+  state = await readState();
+  order = state.orders.find((candidate) => candidate.id === orderId) || order;
+
+  const base = configuredBaseUrl(req);
+  const links = enrollmentLinks(order, base);
+  const variables = {
+    name: user.name || nameFromEmail(user.email),
+    email: user.email,
+    event_name: orderEventName(order, event),
+    order_id: order.id,
+    order_total: order.total,
+    order_total_label: new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0
+    }).format(order.total || 0),
+    enroll_url: links.enrollmentUrl,
+    enrollment_url: links.enrollmentUrl,
+    cta_url: links.enrollmentUrl,
+    button_url: links.enrollmentUrl,
+    enroll_qr_url: links.enrollmentQrUrl,
+    enrollment_qr_url: links.enrollmentQrUrl,
+    qr_url: links.enrollmentQrUrl
+  };
+  const template = findTemplate(state.emailTemplates, "enrollment_invitation");
+  const rendered = renderTemplate(template, variables);
+  if (!rendered.text.includes(links.enrollmentUrl)) {
+    rendered.text = `${rendered.text}\nAbrir formulario: ${links.enrollmentUrl}`.trim();
+  }
+  if (!rendered.text.includes(links.enrollmentQrUrl)) {
+    rendered.text = `${rendered.text}\nQR: ${links.enrollmentQrUrl}`.trim();
+  }
+  if (!rendered.html.includes(links.enrollmentUrl) || !rendered.html.includes(links.enrollmentQrUrl)) {
+    rendered.html = `${rendered.html}
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212;margin-top:18px">
+        <p><a href="${links.enrollmentUrl}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Completar datos</a></p>
+        <p><img src="${links.enrollmentQrUrl}" alt="QR para completar datos" width="180" /></p>
+      </div>`;
+  }
+
+  try {
+    const result = await sendMail({
+      to: user.email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html
+    });
+
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      if (freshOrder) {
+        freshOrder.enrollmentEmailSentAt = new Date().toISOString();
+        freshOrder.enrollmentEmailStatus = "sent";
+        freshOrder.enrollmentEmailError = null;
+        freshOrder.updatedAt = freshOrder.enrollmentEmailSentAt;
+      }
+      logEmailResult(nextState, {
+        type: "enrollment_invitation",
+        templateId: template.id,
+        to: user.email,
+        userId: user.id,
+        orderId: order.id,
+        status: "sent",
+        mode: result.mode,
+        subject: rendered.subject
+      });
+    });
+
+    return { ok: true, mode: result.mode, ...links };
+  } catch (error) {
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      if (freshOrder) {
+        freshOrder.enrollmentEmailStatus = "failed";
+        freshOrder.enrollmentEmailError = error.message;
+        freshOrder.updatedAt = new Date().toISOString();
+      }
+      logEmailResult(nextState, {
+        type: "enrollment_invitation",
+        templateId: template.id,
+        to: user.email,
+        userId: user.id,
+        orderId: order.id,
+        status: "failed",
+        error: error.message,
+        subject: rendered.subject
+      });
+    });
+
+    return { ok: false, message: error.message, ...links };
+  }
 }
 
 app.get("/api/health", async (req, res) => {
@@ -1727,7 +1934,14 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
         .filter((ticket) => ticket.orderId === order.id)
         .map((ticket) => publicTicket(ticket, req));
       const invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
-      res.json({ ok: true, order: publicOrder(order), user: publicUser(user), tickets, invoice });
+      res.json({
+        ok: true,
+        order: publicOrder(order),
+        user: publicUser(user),
+        tickets,
+        invoice,
+        ...(order.profileRequired ? enrollmentLinks(order, req) : {})
+      });
       return;
     }
 
@@ -1759,7 +1973,8 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
           id: payment.id,
           status: payment.status,
           statusDetail: payment.status_detail
-        }
+        },
+        ...(result.order.profileRequired ? enrollmentLinks(result.order, req) : {})
       });
       return;
     }
@@ -1784,108 +1999,178 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
   }
 });
 
+function enrollmentPortalCredentials() {
+  return {
+    username: String(process.env.ENROLLMENT_PORTAL_USER || "admin").trim(),
+    password: String(
+      process.env.ENROLLMENT_PORTAL_PASSWORD ||
+        process.env.BACKOFFICE_PASSWORD ||
+        process.env.BACKOFFICE_TOKEN ||
+        ""
+    ).trim()
+  };
+}
+
+function bearerToken(req) {
+  return String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+}
+
+function currentEnrollmentPortalSession(req, state) {
+  const token = bearerToken(req);
+  if (!token) return null;
+  const now = Date.now();
+  return (
+    (state.sessions || []).find((session) => {
+      if (!safeEqualString(session.token, token)) return false;
+      if (session.type !== "enrollment_portal") return false;
+      if (session.expiresAt && Date.parse(session.expiresAt) <= now) return false;
+      return true;
+    }) || null
+  );
+}
+
+function requireEnrollmentPortalSession(req, state) {
+  const session = currentEnrollmentPortalSession(req, state);
+  if (!session) {
+    const error = new Error("Sesion privada requerida");
+    error.status = 401;
+    throw error;
+  }
+  return session;
+}
+
+function authorizeEnrollmentAccess(req, state, order) {
+  const token = String(req.body.enrollmentToken || req.query.enrollmentToken || req.headers["x-enrollment-token"] || "").trim();
+  if (token && safeEqualString(token, order.enrollmentToken)) {
+    return { type: "token" };
+  }
+
+  const session = currentEnrollmentPortalSession(req, state);
+  if (session) return { type: "portal", session };
+
+  const error = new Error("Token de enrolamiento o sesion privada requerida");
+  error.status = 401;
+  throw error;
+}
+
+async function completeEnrollmentProfile(req, orderId) {
+  const email = normalizeEmail(requireString(req.body, "email", "Correo"));
+  const name = requireString(req.body, "name", "Nombre");
+  const rutInput = requireString(req.body, "rut", "RUT");
+  const phone = requireString(req.body, "phone", "Telefono");
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("El correo no tiene un formato valido");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!validateRut(rutInput)) {
+    const error = new Error("El RUT no es valido");
+    error.status = 400;
+    throw error;
+  }
+
+  let paymentForFulfillment = null;
+
+  await updateState((state) => {
+    const order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+
+    if (order.status !== "paid") {
+      const error = new Error("La orden aun no tiene pago confirmado");
+      error.status = 409;
+      throw error;
+    }
+
+    const access = authorizeEnrollmentAccess(req, state, order);
+    const user = state.users.find((candidate) => candidate.id === order.userId);
+    if (!user || user.email !== email) {
+      const error = new Error("El correo no coincide con la orden");
+      error.status = 403;
+      throw error;
+    }
+
+    const normalizedRut = cleanRut(rutInput);
+    const rutOwner = state.users.find(
+      (candidate) => candidate.id !== user.id && cleanRut(candidate.rut) === normalizedRut
+    );
+    if (rutOwner) {
+      const error = new Error("Ese RUT ya esta asociado a otro registro");
+      error.status = 409;
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    user.name = name;
+    user.rut = formatRut(rutInput);
+    user.phone = phone;
+    user.club = String(req.body.club || user.club || "").trim();
+    user.vehicle = String(req.body.vehicle || user.vehicle || "").trim();
+    user.emailVerified = true;
+    user.profileStatus = "complete";
+    user.profileCompletedAt = user.profileCompletedAt || now;
+    user.updatedAt = now;
+
+    state.tickets
+      .filter((ticket) => ticket.orderId === order.id)
+      .forEach((ticket) => {
+        ticket.holderName = user.name;
+        ticket.holderRut = user.rut;
+        ticket.updatedAt = now;
+      });
+
+    order.profileRequired = false;
+    order.enrollmentCompletedAt = order.enrollmentCompletedAt || now;
+    order.enrollmentCompletedBy = access.type;
+    order.updatedAt = now;
+    paymentForFulfillment = order.payment || {
+      provider: order.paymentMode || "mercadopago",
+      paymentId: null,
+      status: "approved"
+    };
+
+    state.audit.push({
+      id: id("audit"),
+      type: "checkout_profile_completed",
+      orderId: order.id,
+      userId: user.id,
+      source: access.type,
+      createdAt: now
+    });
+  });
+
+  const state = await readState();
+  const order = state.orders.find((candidate) => candidate.id === orderId);
+  if (!order || order.status !== "paid") {
+    return { order, profileCompleted: true };
+  }
+
+  const result = await completeOrderPayment(orderId, {
+    provider: paymentForFulfillment?.provider || order.paymentMode || "mercadopago",
+    paymentId: paymentForFulfillment?.paymentId || null,
+    status: "approved",
+    statusDetail: paymentForFulfillment?.statusDetail || null
+  });
+
+  return {
+    ...result,
+    profileCompleted: true
+  };
+}
+
 app.post("/api/orders/:orderId/profile", async (req, res, next) => {
   try {
-    const orderId = req.params.orderId;
-    const email = normalizeEmail(requireString(req.body, "email", "Correo"));
-    const name = requireString(req.body, "name", "Nombre");
-    const rutInput = requireString(req.body, "rut", "RUT");
-    const phone = requireString(req.body, "phone", "Telefono");
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      const error = new Error("El correo no tiene un formato valido");
-      error.status = 400;
-      throw error;
-    }
-
-    if (!validateRut(rutInput)) {
-      const error = new Error("El RUT no es valido");
-      error.status = 400;
-      throw error;
-    }
-
-    let paymentForFulfillment = null;
-
-    await updateState((state) => {
-      const order = state.orders.find((candidate) => candidate.id === orderId);
-      if (!order) {
-        const error = new Error("Orden no encontrada");
-        error.status = 404;
-        throw error;
-      }
-
-      const user = state.users.find((candidate) => candidate.id === order.userId);
-      if (!user || user.email !== email) {
-        const error = new Error("El correo no coincide con la orden");
-        error.status = 403;
-        throw error;
-      }
-
-      const normalizedRut = cleanRut(rutInput);
-      const rutOwner = state.users.find(
-        (candidate) => candidate.id !== user.id && cleanRut(candidate.rut) === normalizedRut
-      );
-      if (rutOwner) {
-        const error = new Error("Ese RUT ya esta asociado a otro registro");
-        error.status = 409;
-        throw error;
-      }
-
-      const now = new Date().toISOString();
-      user.name = name;
-      user.rut = formatRut(rutInput);
-      user.phone = phone;
-      user.club = String(req.body.club || user.club || "").trim();
-      user.vehicle = String(req.body.vehicle || user.vehicle || "").trim();
-      user.emailVerified = true;
-      user.profileStatus = "complete";
-      user.profileCompletedAt = user.profileCompletedAt || now;
-      user.updatedAt = now;
-
-      state.tickets
-        .filter((ticket) => ticket.orderId === order.id)
-        .forEach((ticket) => {
-          ticket.holderName = user.name;
-          ticket.holderRut = user.rut;
-          ticket.updatedAt = now;
-        });
-
-      order.profileRequired = false;
-      order.updatedAt = now;
-      paymentForFulfillment = order.payment || {
-        provider: order.paymentMode || "mercadopago",
-        paymentId: null,
-        status: "approved"
-      };
-
-      state.audit.push({
-        id: id("audit"),
-        type: "checkout_profile_completed",
-        orderId: order.id,
-        userId: user.id,
-        createdAt: now
-      });
-    });
-
-    const state = await readState();
-    const order = state.orders.find((candidate) => candidate.id === orderId);
-    if (!order || order.status !== "paid") {
-      res.json({ ok: true, order: publicOrder(order), profileCompleted: true });
-      return;
-    }
-
-    const result = await completeOrderPayment(orderId, {
-      provider: paymentForFulfillment?.provider || order.paymentMode || "mercadopago",
-      paymentId: paymentForFulfillment?.paymentId || null,
-      status: "approved",
-      statusDetail: paymentForFulfillment?.statusDetail || null
-    });
-
+    const result = await completeEnrollmentProfile(req, req.params.orderId);
     res.json({
       ok: true,
       order: publicOrder(result.order),
       user: publicUser(result.user),
-      tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
+      tickets: (result.tickets || []).map((ticket) => publicTicket(ticket, req)),
       invoice: result.invoice,
       profileCompleted: true
     });
@@ -1925,6 +2210,157 @@ app.get("/api/users/purchases", async (req, res, next) => {
       }));
 
     res.json({ ok: true, user: publicUser(user), orders });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/enrollment/login", async (req, res, next) => {
+  try {
+    const username = String(req.body.username || req.body.user || "").trim();
+    const password = requireString(req.body, "password", "Password");
+    const expected = enrollmentPortalCredentials();
+
+    if (!expected.password) {
+      const error = new Error("Portal privado sin credenciales configuradas");
+      error.status = 503;
+      throw error;
+    }
+
+    if (username !== expected.username || !safeEqualString(password, expected.password)) {
+      const error = new Error("Usuario o password incorrecto");
+      error.status = 401;
+      throw error;
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 12).toISOString();
+    const session = {
+      id: id("enroll_session"),
+      token: secureToken("portal"),
+      type: "enrollment_portal",
+      role: "enrollment_admin",
+      createdAt: now.toISOString(),
+      expiresAt
+    };
+
+    await updateState((state) => {
+      if (!state.sessions) state.sessions = [];
+      state.sessions = state.sessions.filter((item) => !item.expiresAt || Date.parse(item.expiresAt) > Date.now());
+      state.sessions.push(session);
+      state.audit.push({
+        id: id("audit"),
+        type: "enrollment_portal_login",
+        createdAt: session.createdAt
+      });
+    });
+
+    res.json({ ok: true, token: session.token, expiresAt, username: expected.username });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/enrollment/portal/orders", async (req, res, next) => {
+  try {
+    let state = await readState();
+    requireEnrollmentPortalSession(req, state);
+    let changed = false;
+
+    const orders = state.orders
+      .filter((order) => order.status === "paid" && order.profileRequired)
+      .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+
+    for (const order of orders) {
+      if (!order.enrollmentToken) {
+        ensureEnrollmentToken(order);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await writeState(state);
+      state = await readState();
+    }
+
+    res.json({
+      ok: true,
+      orders: state.orders
+        .filter((order) => order.status === "paid" && order.profileRequired)
+        .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
+        .map((order) => publicEnrollmentOrder({ state, order, req }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/enrollment/portal/orders/:orderId/send-link", async (req, res, next) => {
+  try {
+    const state = await readState();
+    requireEnrollmentPortalSession(req, state);
+    const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!order || order.status !== "paid" || !order.profileRequired) {
+      const error = new Error("Orden pendiente de enrolamiento no encontrada");
+      error.status = 404;
+      throw error;
+    }
+
+    const result = await sendEnrollmentInvitationEmail({ orderId: order.id, req, force: true });
+    res.json({ ok: result.ok, message: result.message, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/enrollment/:token/qr.svg", async (req, res, next) => {
+  try {
+    const state = await readState();
+    const order = findOrderByEnrollmentToken(state, req.params.token);
+    if (!order) {
+      res.status(404).type("text/plain").send("Token de enrolamiento no encontrado");
+      return;
+    }
+
+    const svg = await QRCode.toString(enrollmentUrlForToken(req, order.enrollmentToken), {
+      type: "svg",
+      margin: 1,
+      width: 220
+    });
+
+    res.type("image/svg+xml").send(svg);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/enrollment/:token", async (req, res, next) => {
+  try {
+    const state = await readState();
+    const order = findOrderByEnrollmentToken(state, req.params.token);
+    if (!order) {
+      const error = new Error("Token de enrolamiento invalido");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json({ ok: true, ...publicEnrollmentOrder({ state, order, req }) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/enrollment/orders/:orderId/profile", async (req, res, next) => {
+  try {
+    const result = await completeEnrollmentProfile(req, req.params.orderId);
+    res.json({
+      ok: true,
+      order: publicOrder(result.order),
+      user: publicUser(result.user),
+      tickets: (result.tickets || []).map((ticket) => publicTicket(ticket, req)),
+      invoice: result.invoice,
+      profileCompleted: true
+    });
   } catch (error) {
     next(error);
   }
@@ -2015,7 +2451,8 @@ app.post("/api/orders/:orderId/simulate-payment", async (req, res, next) => {
       ok: true,
       order: publicOrder(result.order),
       tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
-      invoice: result.invoice
+      invoice: result.invoice,
+      ...(result.order.profileRequired ? enrollmentLinks(result.order, req) : {})
     });
   } catch (error) {
     next(error);
@@ -2694,6 +3131,7 @@ const pageRoutes = {
   "/carrito": "carrito.html",
   "/mis-compras": "mis-compras.html",
   "/validar": "validar.html",
+  "/enrolamiento": "enrolamiento.html",
   "/backoffice-hfc": "backoffice.html"
 };
 
