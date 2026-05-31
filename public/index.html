@@ -233,10 +233,19 @@
 
     <dialog class="gallery-dialog" id="galleryDialog" aria-label="Vista ampliada de galeria">
       <button class="icon-button gallery-dialog-close" type="button" aria-label="Cerrar galeria">&times;</button>
-      <img alt="" />
-      <div>
+      <div class="gallery-dialog-media">
+        <img alt="" draggable="false" />
+        <img class="gallery-dialog-watermark" src="/logo-hfc.avif" alt="" width="175" height="117" draggable="false" />
+      </div>
+      <div class="gallery-dialog-body">
         <h2></h2>
         <p></p>
+        <div class="gallery-dialog-actions">
+          <button class="gallery-share-button" type="button" data-gallery-action="download">Descargar con logo</button>
+          <button class="gallery-share-button gallery-share-button--primary" type="button" data-gallery-action="story">
+            Publicar historia
+          </button>
+        </div>
       </div>
     </dialog>
 

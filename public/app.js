@@ -681,8 +681,7 @@ function canShareFile(file) {
 }
 
 async function handleGalleryAssetAction(action, button) {
-  const items = filteredGalleryItems();
-  const item = items[state.gallery.activeIndex];
+  const item = activeGalleryItem();
   if (!item) return;
 
   const mode = action === "story" ? "story" : "download";
@@ -740,9 +739,10 @@ function gallerySlide(item, index, total) {
       <span aria-hidden="true">&lsaquo;</span>
     </button>
     <figure class="gallery-slide">
-      <a
+      <button
         class="gallery-image-link gallery-slide__image"
-        href="${escapeHtml(src)}"
+        type="button"
+        data-gallery-src="${escapeHtml(src)}"
         data-gallery-title="${escapeHtml(title)}"
         data-gallery-description="${escapeHtml(description)}"
       >
@@ -754,13 +754,15 @@ function gallerySlide(item, index, total) {
           height="${height}"
           loading="eager"
           decoding="async"
+          draggable="false"
         />
-      </a>
+      </button>
       <figcaption class="gallery-slide__caption">
         <span class="gallery-slide__counter">${index + 1} / ${total}</span>
         <strong>${escapeHtml(title)}</strong>
         ${renderGalleryTags(item)}
       </figcaption>
+      <img class="gallery-slide__watermark" src="${GALLERY_LOGO_SRC}" alt="" width="175" height="117" draggable="false" />
       <div class="gallery-slide__actions">
         <button class="gallery-share-button" type="button" data-gallery-action="download">Descargar con logo</button>
         <button class="gallery-share-button gallery-share-button--primary" type="button" data-gallery-action="story">Publicar historia</button>
@@ -790,6 +792,7 @@ function galleryThumb(item, index, active) {
         height="${item.height || 1365}"
         loading="${index < 12 ? "eager" : "lazy"}"
         decoding="async"
+        draggable="false"
       />
       <span>${escapeHtml(title)}</span>
     </button>
@@ -896,6 +899,11 @@ function changeGallerySlide(delta) {
   setGalleryIndex(state.gallery.activeIndex + delta);
 }
 
+function activeGalleryItem() {
+  const items = filteredGalleryItems();
+  return items[state.gallery.activeIndex] || null;
+}
+
 function initGalleryLightbox() {
   const dialog = $("#galleryDialog");
   if (!dialog) return;
@@ -911,11 +919,26 @@ function initGalleryLightbox() {
     if (!link || typeof dialog.showModal !== "function") return;
     event.preventDefault();
     const thumbnail = link.querySelector("img");
-    image.src = link.href;
+    image.src = link.dataset.gallerySrc || thumbnail?.src || "";
     image.alt = thumbnail?.alt || "";
     title.textContent = link.dataset.galleryTitle || thumbnail?.title || "Galeria Honda Fest Chile";
     description.textContent = link.dataset.galleryDescription || thumbnail?.alt || "";
     dialog.showModal();
+  });
+
+  dialog.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const actionButton = target?.closest("[data-gallery-action]");
+    if (!actionButton) return;
+    event.preventDefault();
+    handleGalleryAssetAction(actionButton.dataset.galleryAction, actionButton);
+  });
+
+  document.addEventListener("contextmenu", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    if (target?.closest(".gallery-slide__image, .gallery-dialog-media, .gallery-thumb")) {
+      event.preventDefault();
+    }
   });
 
   closeButton?.addEventListener("click", () => dialog.close());

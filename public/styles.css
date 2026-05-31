@@ -2576,15 +2576,39 @@ a:focus-visible {
   background: rgba(18, 20, 24, 0.72);
 }
 
-.gallery-dialog img {
+.gallery-dialog-media {
+  position: relative;
+  overflow: hidden;
+  background: #080a0d;
+}
+
+.gallery-dialog-media > img:not(.gallery-dialog-watermark) {
   display: block;
   width: 100%;
   max-height: min(72vh, 760px);
   object-fit: contain;
   background: #080a0d;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.gallery-dialog > div {
+.gallery-dialog-watermark {
+  position: absolute;
+  right: clamp(16px, 3vw, 34px);
+  bottom: clamp(16px, 3vw, 34px);
+  display: block;
+  width: clamp(92px, 15vw, 168px);
+  height: auto;
+  padding: clamp(8px, 1.2vw, 14px);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.34);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.gallery-dialog-body {
   padding: 18px 22px 22px;
 }
 
@@ -2597,6 +2621,13 @@ a:focus-visible {
   margin: 8px 0 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.gallery-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .gallery-dialog-close {
@@ -3049,8 +3080,14 @@ a:focus-visible {
   display: block;
   height: 100%;
   min-height: inherit;
+  width: 100%;
+  padding: 0;
+  border: 0;
   aspect-ratio: 16 / 9;
   border-radius: 8px;
+  cursor: zoom-in;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 #galerias .gallery-slide__image::after {
@@ -3070,6 +3107,8 @@ a:focus-visible {
   min-height: inherit;
   object-fit: cover;
   filter: saturate(1.02) contrast(1.03) brightness(0.92);
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 #galerias .gallery-slide__caption {
@@ -3143,6 +3182,22 @@ a:focus-visible {
   font-size: 0.62rem;
 }
 
+.gallery-slide__watermark {
+  position: absolute;
+  right: clamp(16px, 2.4vw, 30px);
+  bottom: clamp(16px, 2.4vw, 30px);
+  z-index: 2;
+  width: clamp(86px, 10vw, 148px);
+  height: auto;
+  padding: clamp(7px, 1vw, 12px);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 #galerias .gallery-slide__actions {
   position: absolute;
   top: clamp(12px, 2vw, 22px);
@@ -3155,7 +3210,8 @@ a:focus-visible {
   max-width: min(420px, calc(100% - 28px));
 }
 
-#galerias .gallery-share-button {
+#galerias .gallery-share-button,
+.gallery-dialog .gallery-share-button {
   min-height: 36px;
   padding: 8px 11px;
   color: #fffaf0;
@@ -3174,18 +3230,21 @@ a:focus-visible {
     background 180ms ease;
 }
 
-#galerias .gallery-share-button--primary {
+#galerias .gallery-share-button--primary,
+.gallery-dialog .gallery-share-button--primary {
   border-color: rgba(255, 107, 114, 0.52);
   background: rgba(216, 38, 47, 0.68);
 }
 
-#galerias .gallery-share-button:hover {
+#galerias .gallery-share-button:hover,
+.gallery-dialog .gallery-share-button:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.38);
   background: rgba(216, 38, 47, 0.72);
 }
 
-#galerias .gallery-share-button:disabled {
+#galerias .gallery-share-button:disabled,
+.gallery-dialog .gallery-share-button:disabled {
   cursor: wait;
   opacity: 0.72;
   transform: none;
@@ -3378,6 +3437,20 @@ a:focus-visible {
     min-height: 32px;
     padding: 7px 9px;
     font-size: 0.68rem;
+  }
+
+  #galerias .gallery-slide__watermark {
+    right: 12px;
+    bottom: 96px;
+    width: 72px;
+    padding: 6px;
+  }
+
+  .gallery-dialog-watermark {
+    right: 14px;
+    bottom: 14px;
+    width: 92px;
+    padding: 7px;
   }
 
   #galerias .gallery-slide__caption p {
