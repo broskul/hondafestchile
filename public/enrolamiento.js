@@ -44,6 +44,24 @@
   function profileForm(item, mode) {
     const order = item.order || {};
     const user = item.user || {};
+    const requiresPilotInfo = Boolean(
+      item.requiresPilotInfo ||
+        order.requiresPilotInfo ||
+        (order.items || []).some((orderItem) => orderItem.entryType === "pilot")
+    );
+    const pilotFields = requiresPilotInfo
+      ? `
+        <label>Patente
+          <input name="licensePlate" required value="${escapeHtml(user.licensePlate || "")}" placeholder="AB CD 12" />
+        </label>
+        <label>Auto
+          <input name="vehicle" required value="${escapeHtml(user.vehicle || "")}" placeholder="Civic, Integra, S2000..." />
+        </label>
+        <label>Club
+          <input name="club" required value="${escapeHtml(user.club || "")}" placeholder="Club, team o independiente" />
+        </label>
+      `
+      : "";
     return `
       <p class="section-kicker">${mode === "portal" ? "Edicion interna" : "Compra pagada"}</p>
       <h2>${escapeHtml(orderTitle(item))}</h2>
@@ -61,12 +79,7 @@
         <label>Telefono
           <input name="phone" autocomplete="tel" required value="${escapeHtml(user.phone || "")}" placeholder="+56 9 1234 5678" />
         </label>
-        <label>Vehiculo
-          <input name="vehicle" value="${escapeHtml(user.vehicle || "")}" placeholder="Civic, Integra, S2000..." />
-        </label>
-        <label>Club o equipo
-          <input name="club" value="${escapeHtml(user.club || "")}" placeholder="Club, team o independiente" />
-        </label>
+        ${pilotFields}
         <button class="button primary full" type="submit">Emitir entradas</button>
       </form>
     `;

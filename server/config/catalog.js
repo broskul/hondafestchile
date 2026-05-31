@@ -30,6 +30,7 @@ const ticketTypes = [
     id: "general",
     name: "Entrada General",
     description: "Acceso al recinto, paddock publico, exhibiciones, stands y food trucks.",
+    entryType: "attendee",
     price: 8000,
     maxQuantity: 6
   },
@@ -37,6 +38,7 @@ const ticketTypes = [
     id: "club",
     name: "Entrada Club",
     description: "Acceso general mas cupo para estacionamiento de exhibicion sujeto a validacion.",
+    entryType: "attendee",
     price: 12000,
     maxQuantity: 4
   },
@@ -44,6 +46,7 @@ const ticketTypes = [
     id: "piloto-track",
     name: "Piloto Track Day",
     description: "Inscripcion de piloto, briefing, numero de participante y acceso a manga asignada.",
+    entryType: "pilot",
     price: 45000,
     maxQuantity: 1
   },
@@ -51,6 +54,7 @@ const ticketTypes = [
     id: "stand",
     name: "Stand Emprendedor",
     description: "Reserva inicial de stand; produccion confirmara metraje y requerimientos.",
+    entryType: "attendee",
     price: 60000,
     maxQuantity: 2
   }

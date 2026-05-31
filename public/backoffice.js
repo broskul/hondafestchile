@@ -76,6 +76,23 @@ function optionList(items, selected) {
     .join("");
 }
 
+const ENTRY_TYPE_OPTIONS = [
+  { id: "attendee", name: "Asistente" },
+  { id: "pilot", name: "Piloto" },
+  { id: "guest", name: "Invitado (organizacion)" }
+];
+
+function normalizeEntryType(value) {
+  return ENTRY_TYPE_OPTIONS.some((option) => option.id === value) ? value : "attendee";
+}
+
+function entryTypeOptions(selected) {
+  const value = normalizeEntryType(selected);
+  return ENTRY_TYPE_OPTIONS.map(
+    (option) => `<option value="${option.id}" ${option.id === value ? "selected" : ""}>${escapeHtml(option.name)}</option>`
+  ).join("");
+}
+
 function phaseBadge(phase) {
   const limit = phase.quota ? `${phase.quota} cupos` : "sin limite";
   const pricing = phasePricing(phase);
@@ -149,6 +166,7 @@ function newTicketDraft() {
     price: 0,
     netPrice: 0,
     pricing: HFC.priceBreakdownFromNet(0),
+    entryType: "attendee",
     maxQuantity: 6,
     eventIds: [],
     active: true
@@ -217,6 +235,7 @@ function renderTicketing(data) {
   const events = data.ticketing.events || [];
   const ticketTypes = (data.ticketing.ticketTypes || []).map((ticket) => ({
     ...ticket,
+    entryType: normalizeEntryType(ticket.entryType),
     phases: ensureTicketPhases(ticket)
   }));
   return `
@@ -272,6 +291,7 @@ function renderTicketing(data) {
                   </div>
                   <div class="form-grid">
                     <label>Nombre <input data-ticket-field="name" value="${escapeHtml(ticket.name)}" /></label>
+                    <label>Tipo de entrada <select data-ticket-field="entryType">${entryTypeOptions(ticket.entryType)}</select></label>
                     <label>Max. por compra <input data-ticket-field="maxQuantity" type="number" min="1" value="${ticket.maxQuantity}" /></label>
                     <label class="full">Descripcion <input data-ticket-field="description" value="${escapeHtml(ticket.description || "")}" /></label>
                     <fieldset class="full admin-check-list">
@@ -374,6 +394,7 @@ function collectTicketingForm(form) {
         id: card.dataset.ticketCard,
         name: card.querySelector('[data-ticket-field="name"]').value.trim(),
         description: card.querySelector('[data-ticket-field="description"]').value.trim(),
+        entryType: normalizeEntryType(card.querySelector('[data-ticket-field="entryType"]')?.value),
         price: general?.price || 0,
         netPrice: general?.netPrice || 0,
         pricing: general?.pricing || HFC.priceBreakdownFromNet(general?.netPrice || 0),
@@ -619,7 +640,7 @@ function renderTickets(data) {
       <h2>Entradas emitidas</h2>
       <div class="table-scroll">
         <table class="admin-table">
-          <thead><tr><th>Codigo</th><th>Evento</th><th>Tipo</th><th>Asistente</th><th>RUT</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Codigo</th><th>Evento</th><th>Tipo</th><th>Asistente</th><th>RUT</th><th>Piloto</th><th>Estado</th></tr></thead>
           <tbody>
             ${data.tickets
               .map(
@@ -627,9 +648,10 @@ function renderTickets(data) {
                   <tr>
                     <td><code>${escapeHtml(ticket.code)}</code></td>
                     <td>${escapeHtml(ticket.eventName || "")}</td>
-                    <td>${escapeHtml(ticket.ticketTypeName || "")}<br /><small>${escapeHtml(ticket.salePhaseName || "")}</small></td>
+                    <td>${escapeHtml(ticket.ticketTypeName || "")}<br /><small>${escapeHtml(ticket.entryTypeLabel || ticket.salePhaseName || "")}</small></td>
                     <td>${escapeHtml(ticket.holderName || "")}</td>
                     <td>${escapeHtml(ticket.holderRut || "")}</td>
+                    <td>${ticket.entryType === "pilot" ? `${escapeHtml(ticket.holderLicensePlate || "")}<br /><small>${escapeHtml([ticket.holderVehicle, ticket.holderClub].filter(Boolean).join(" - "))}</small>` : ""}</td>
                     <td>${escapeHtml(ticket.status || "")}</td>
                   </tr>
                 `

@@ -325,7 +325,7 @@
       .map((item) => {
         const event = catalog.events.find((candidate) => candidate.id === item.eventId);
         const ticket = catalog.ticketTypes.find((candidate) => candidate.id === item.ticketTypeId);
-        if (!event || !ticket) return null;
+        if (!event || !ticket || ticket.entryType === "guest") return null;
         const availability = ticketAvailability(ticket, event.id);
         const maxQuantity = availability.maxQuantity || ticket.maxQuantity;
         const pricing = priceBreakdownFromAvailability(availability);
@@ -615,7 +615,7 @@
         : "";
       setStatus(
         statusElement,
-        `<strong>Pago recibido.</strong><br />Te enviamos un correo con el boton y QR para completar los datos del asistente.
+        `<strong>Pago recibido.</strong><br />Te enviamos un correo con el boton y QR para completar los datos de enrolamiento.
         ${enrollmentAction}`
       );
       return;

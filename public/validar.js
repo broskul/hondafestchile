@@ -2,6 +2,19 @@ let stream = null;
 let scanTimer = null;
 let barcodeDetector = null;
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[char];
+  });
+}
+
 async function validateTicket(code, action = "lookup") {
   const result = HFC.$("#validationResult");
   HFC.setStatus(result, "Consultando ticket...");
@@ -13,18 +26,27 @@ async function validateTicket(code, action = "lookup") {
     });
 
     const checked = data.ticket.status === "checked_in";
+    const pilotRows =
+      data.ticket.entryType === "pilot"
+        ? `
+        <dt>Patente</dt><dd>${escapeHtml(data.ticket.holderLicensePlate || "")}</dd>
+        <dt>Auto</dt><dd>${escapeHtml(data.ticket.holderVehicle || "")}</dd>
+        <dt>Club</dt><dd>${escapeHtml(data.ticket.holderClub || "")}</dd>
+      `
+        : "";
     HFC.setStatus(
       result,
       `<div class="validation-state ${checked ? "checked" : "valid"}">
         <strong>${checked ? "Entrada ya validada" : "Entrada valida"}</strong>
-        <span>${data.ticket.code}</span>
+        <span>${escapeHtml(data.ticket.code)}</span>
       </div>
       <dl class="detail-list">
-        <dt>Asistente</dt><dd>${data.ticket.holderName}</dd>
-        <dt>RUT</dt><dd>${data.ticket.holderRut}</dd>
-        <dt>Evento</dt><dd>${data.ticket.eventName || ""}</dd>
-        <dt>Entrada</dt><dd>${data.ticket.ticketTypeName || ""}</dd>
-        <dt>Estado</dt><dd>${data.ticket.status}</dd>
+        <dt>Asistente</dt><dd>${escapeHtml(data.ticket.holderName)}</dd>
+        <dt>RUT</dt><dd>${escapeHtml(data.ticket.holderRut)}</dd>
+        <dt>Evento</dt><dd>${escapeHtml(data.ticket.eventName || "")}</dd>
+        <dt>Entrada</dt><dd>${escapeHtml(data.ticket.ticketTypeName || "")}</dd>
+        ${pilotRows}
+        <dt>Estado</dt><dd>${escapeHtml(data.ticket.status)}</dd>
       </dl>
       ${
         data.ticket.status === "valid"

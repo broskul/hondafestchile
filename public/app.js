@@ -14,6 +14,7 @@ const state = {
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const ALL_GALLERY_CATEGORY = "all";
+const GALLERY_LOGO_SRC = "/logo-hfc.avif";
 let galleryRevealObserver = null;
 
 function escapeHtml(value) {
@@ -31,6 +32,13 @@ function escapeHtml(value) {
 
 function mediaPath(key) {
   return `/media/${String(key || "")
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/")}`;
+}
+
+function mediaSourcePath(key) {
+  return `/media-source/${String(key || "")
     .split("/")
     .map((part) => encodeURIComponent(part))
     .join("/")}`;
@@ -503,6 +511,214 @@ function renderGalleryTags(item) {
   return `<small>${tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}</small>`;
 }
 
+function galleryDownloadName(item, mode) {
+  const slug =
+    normalizeSearch(humanGalleryTitle(item))
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 72) || "foto";
+  return `honda-fest-chile-${slug}-${mode}.jpg`;
+}
+
+function loadCanvasImage(src) {
+  return fetch(src, { cache: "force-cache" })
+    .then((response) => {
+      if (!response.ok) throw new Error("No se pudo preparar la imagen.");
+      return response.blob();
+    })
+    .then(
+      (blob) =>
+        new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(blob);
+          const image = new Image();
+          image.onload = () => resolve({ image, revoke: () => URL.revokeObjectURL(url) });
+          image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("No se pudo preparar la imagen."));
+          };
+          image.src = url;
+        })
+    );
+}
+
+function roundedRect(ctx, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.lineTo(x + width - safeRadius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  ctx.lineTo(x + width, y + height - safeRadius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  ctx.lineTo(x + safeRadius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  ctx.lineTo(x, y + safeRadius);
+  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+  ctx.closePath();
+}
+
+function drawCoverImage(ctx, image, x, y, width, height) {
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const targetRatio = width / height;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+
+  if (imageRatio > targetRatio) {
+    sourceWidth = image.naturalHeight * targetRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / targetRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function drawContainImage(ctx, image, x, y, width, height) {
+  const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  const drawX = x + (width - drawWidth) / 2;
+  const drawY = y + (height - drawHeight) / 2;
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  return { x: drawX, y: drawY, width: drawWidth, height: drawHeight };
+}
+
+function drawGalleryLogo(ctx, logo, canvasWidth, canvasHeight, story = false) {
+  const logoWidth = Math.round(Math.min(canvasWidth * (story ? 0.24 : 0.18), story ? 250 : 220));
+  const logoHeight = Math.round(logoWidth * (logo.naturalHeight / logo.naturalWidth));
+  const padding = Math.round(Math.max(canvasWidth * 0.012, story ? 20 : 14));
+  const margin = Math.round(Math.max(canvasWidth * 0.024, story ? 48 : 22));
+  const panelWidth = logoWidth + padding * 2;
+  const panelHeight = logoHeight + padding * 2;
+  const x = canvasWidth - panelWidth - margin;
+  const y = canvasHeight - panelHeight - margin;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.32)";
+  ctx.shadowBlur = story ? 24 : 18;
+  ctx.shadowOffsetY = story ? 8 : 5;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+  roundedRect(ctx, x, y, panelWidth, panelHeight, Math.max(12, padding * 0.7));
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.drawImage(logo, x + padding, y + padding, logoWidth, logoHeight);
+  ctx.restore();
+}
+
+function canvasToJpegBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("No se pudo preparar la imagen."));
+    }, "image/jpeg", 0.92);
+  });
+}
+
+async function createBrandedGalleryBlob(item, mode = "download") {
+  const [photoAsset, logoAsset] = await Promise.all([loadCanvasImage(mediaSourcePath(item.r2Key)), loadCanvasImage(GALLERY_LOGO_SRC)]);
+  try {
+    const story = mode === "story";
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No se pudo preparar la imagen.");
+
+    if (story) {
+      canvas.width = 1080;
+      canvas.height = 1920;
+      ctx.fillStyle = "#050607";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.globalAlpha = 0.76;
+      ctx.filter = "blur(24px) saturate(1.08) brightness(0.58)";
+      drawCoverImage(ctx, photoAsset.image, -48, -48, canvas.width + 96, canvas.height + 96);
+      ctx.restore();
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.46)";
+      ctx.shadowBlur = 42;
+      ctx.shadowOffsetY = 18;
+      const photoFrame = drawContainImage(ctx, photoAsset.image, 72, 250, canvas.width - 144, 1220);
+      ctx.shadowColor = "transparent";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(photoFrame.x, photoFrame.y, photoFrame.width, photoFrame.height);
+      ctx.restore();
+      drawGalleryLogo(ctx, logoAsset.image, canvas.width, canvas.height, true);
+    } else {
+      const maxSide = 2200;
+      const scale = Math.min(1, maxSide / Math.max(photoAsset.image.naturalWidth, photoAsset.image.naturalHeight));
+      canvas.width = Math.round(photoAsset.image.naturalWidth * scale);
+      canvas.height = Math.round(photoAsset.image.naturalHeight * scale);
+      ctx.drawImage(photoAsset.image, 0, 0, canvas.width, canvas.height);
+      drawGalleryLogo(ctx, logoAsset.image, canvas.width, canvas.height, false);
+    }
+
+    return canvasToJpegBlob(canvas);
+  } finally {
+    photoAsset.revoke();
+    logoAsset.revoke();
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+}
+
+function canShareFile(file) {
+  try {
+    return Boolean(navigator.canShare?.({ files: [file] }));
+  } catch {
+    return false;
+  }
+}
+
+async function handleGalleryAssetAction(action, button) {
+  const items = filteredGalleryItems();
+  const item = items[state.gallery.activeIndex];
+  if (!item) return;
+
+  const mode = action === "story" ? "story" : "download";
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "Preparando";
+
+  try {
+    const blob = await createBrandedGalleryBlob(item, mode);
+    const filename = galleryDownloadName(item, mode === "story" ? "historia" : "logo");
+
+    if (mode === "story") {
+      const file = new File([blob], filename, { type: "image/jpeg" });
+      if (navigator.share && canShareFile(file)) {
+        await navigator.share({
+          files: [file],
+          title: humanGalleryTitle(item),
+          text: "Honda Fest Chile"
+        });
+        toast("Imagen lista para publicar.");
+      } else {
+        downloadBlob(blob, filename);
+        toast("Imagen de historia descargada.");
+      }
+    } else {
+      downloadBlob(blob, filename);
+      toast("Imagen con logo descargada.");
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") toast(error.message || "No se pudo preparar la imagen.");
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
 function gallerySlide(item, index, total) {
   if (!item) {
     return `
@@ -545,6 +761,10 @@ function gallerySlide(item, index, total) {
         <strong>${escapeHtml(title)}</strong>
         ${renderGalleryTags(item)}
       </figcaption>
+      <div class="gallery-slide__actions">
+        <button class="gallery-share-button" type="button" data-gallery-action="download">Descargar con logo</button>
+        <button class="gallery-share-button gallery-share-button--primary" type="button" data-gallery-action="story">Publicar historia</button>
+      </div>
     </figure>
     <button class="gallery-nav gallery-nav--next" type="button" data-gallery-next aria-label="Foto siguiente">
       <span aria-hidden="true">&rsaquo;</span>
@@ -724,6 +944,12 @@ async function init() {
   });
   $("#galleryViewer")?.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const actionButton = target?.closest("[data-gallery-action]");
+    if (actionButton) {
+      event.preventDefault();
+      handleGalleryAssetAction(actionButton.dataset.galleryAction, actionButton);
+      return;
+    }
     if (target?.closest("[data-gallery-prev]")) changeGallerySlide(-1);
     if (target?.closest("[data-gallery-next]")) changeGallerySlide(1);
   });

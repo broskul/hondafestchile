@@ -69,6 +69,13 @@ function normalizePhone(phone = "") {
   return String(phone || "").replace(/[^\d+]/g, "");
 }
 
+function normalizeLicensePlate(value = "") {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, " ");
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -78,6 +85,12 @@ const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
 const TICKET_SERVICE_CHARGE_RATE = 0.12;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
+const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
+const TICKET_ENTRY_TYPE_LABELS = {
+  attendee: "Asistente",
+  pilot: "Piloto",
+  guest: "Invitado"
+};
 const DATA_TERMS_VERSION = "datos-personales-cl-2026-12";
 
 function roundCurrency(value) {
@@ -108,6 +121,30 @@ function inferNetPriceFromGross(grossPrice) {
 function explicitNetPrice(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function normalizeTicketEntryType(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const aliases = {
+    assistant: "attendee",
+    asistencia: "attendee",
+    asistente: "attendee",
+    attendee: "attendee",
+    general: "attendee",
+    pilot: "pilot",
+    piloto: "pilot",
+    driver: "pilot",
+    guest: "guest",
+    invitado: "guest",
+    invitada: "guest",
+    cortesia: "guest"
+  };
+  const entryType = aliases[normalized] || normalized;
+  return TICKET_ENTRY_TYPES.has(entryType) ? entryType : "attendee";
 }
 
 function defaultTicketPhases(ticket) {
@@ -220,6 +257,11 @@ function normalizeTicket(ticket = {}) {
     price: pricing.total,
     netPrice: pricing.netPrice,
     pricing,
+    entryType: normalizeTicketEntryType(ticket.entryType || ticket.ticketType || ticket.kind || base.entryType),
+    entryTypeLabel:
+      TICKET_ENTRY_TYPE_LABELS[
+        normalizeTicketEntryType(ticket.entryType || ticket.ticketType || ticket.kind || base.entryType)
+      ],
     maxQuantity: Math.max(1, Math.floor(Number(ticket.maxQuantity ?? base.maxQuantity ?? 1))),
     active: ticket.active !== false,
     eventIds: Array.isArray(ticket.eventIds) ? ticket.eventIds.map(String).filter(Boolean) : []
@@ -381,6 +423,7 @@ function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
 function activePhaseForTicket(state, eventOrId, ticket, now = new Date()) {
   const event = typeof eventOrId === "string" ? findEvent(state, eventOrId) : eventOrId;
   if (!event || !ticketAvailableForEvent(ticket, event.id)) return null;
+  if (normalizeTicketEntryType(ticket.entryType) === "guest") return null;
 
   const phases = (ticket.phases || []).sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
   const phasesByKind = (kind) => phases.filter((phase) => String(phase.kind || phase.id || "").toLowerCase() === kind);
@@ -641,6 +684,7 @@ function publicUser(user) {
     phone: user.phone,
     club: user.club,
     vehicle: user.vehicle,
+    licensePlate: user.licensePlate || "",
     profileComplete: userProfileComplete(user),
     profileStatus: user.profileStatus || (userProfileComplete(user) ? "complete" : "pending"),
     emailVerified: Boolean(user.emailVerified)
@@ -668,6 +712,7 @@ function publicOrder(order) {
     invoiceStatus: order.invoiceStatus,
     fulfillmentStatus: order.fulfillmentStatus || null,
     profileRequired: Boolean(order.profileRequired),
+    requiresPilotInfo: Boolean(order.requiresPilotInfo),
     createdAt: order.createdAt
   };
 }
@@ -682,11 +727,16 @@ function publicTicket(ticket, req) {
     ticketTypeId: ticket.ticketTypeId,
     eventName: ticket.eventName,
     ticketTypeName: ticket.ticketTypeName,
+    entryType: normalizeTicketEntryType(ticket.entryType),
+    entryTypeLabel: TICKET_ENTRY_TYPE_LABELS[normalizeTicketEntryType(ticket.entryType)],
     salePhaseName: ticket.salePhaseName || null,
     salePhaseKind: ticket.salePhaseKind || null,
     code: ticket.code,
     holderName: ticket.holderName,
     holderRut: ticket.holderRut,
+    holderLicensePlate: ticket.holderLicensePlate || "",
+    holderVehicle: ticket.holderVehicle || "",
+    holderClub: ticket.holderClub || "",
     status: ticket.status,
     validatedAt: ticket.validatedAt || null,
     createdAt: ticket.createdAt,
@@ -844,6 +894,22 @@ async function proxyR2Object(req, res, key) {
   res.send(Buffer.from(await response.arrayBuffer()));
 }
 
+async function proxyPublicAssetObject(res, key) {
+  const publicBase = assetBaseUrl();
+  if (!publicBase) return false;
+
+  const response = await fetch(`${publicBase}/${encodeR2Key(key)}`);
+  if (!response.ok) {
+    res.status(response.status).type("text/plain").send("No se pudo leer el recurso");
+    return true;
+  }
+
+  res.set("Cache-Control", "public, max-age=31536000, immutable");
+  res.set("Content-Type", response.headers.get("content-type") || "application/octet-stream");
+  res.send(Buffer.from(await response.arrayBuffer()));
+  return true;
+}
+
 function requireString(body, field, label) {
   const value = String(body[field] || "").trim();
   if (!value) {
@@ -916,6 +982,37 @@ function userProfileComplete(user) {
   );
 }
 
+function pilotProfileComplete(user) {
+  return Boolean(
+    userProfileComplete(user) &&
+      normalizeLicensePlate(user.licensePlate || user.patent || user.plate).trim() &&
+      String(user.vehicle || "").trim() &&
+      String(user.club || "").trim()
+  );
+}
+
+function orderItemsRequirePilotInfo(items = [], state = null) {
+  return items.some((item) => {
+    const ticketType = state && item.ticketTypeId ? findTicketType(state, item.ticketTypeId) : null;
+    return normalizeTicketEntryType(item.entryType || item.ticketEntryType || ticketType?.entryType) === "pilot";
+  });
+}
+
+function orderRequiresPilotInfo(order, state = null) {
+  if (!order) return false;
+  return orderItemsRequirePilotInfo(getOrderItems(order, state), state);
+}
+
+function userProfileCompleteForItems(user, items = [], state = null) {
+  if (orderItemsRequirePilotInfo(items, state)) return pilotProfileComplete(user);
+  return userProfileComplete(user);
+}
+
+function userProfileCompleteForOrder(user, order, state = null) {
+  if (orderRequiresPilotInfo(order, state)) return pilotProfileComplete(user);
+  return userProfileComplete(user);
+}
+
 function nameFromEmail(email) {
   const local = String(email || "").split("@")[0] || "Asistente";
   return local
@@ -967,14 +1064,16 @@ function findOrderByEnrollmentToken(state, token) {
 
 function publicEnrollmentOrder({ state, order, req, includeLinks = true }) {
   const user = order ? state.users.find((candidate) => candidate.id === order.userId) : null;
+  const requiresPilotInfo = orderRequiresPilotInfo(order, state);
   const tickets = order
     ? state.tickets.filter((ticket) => ticket.orderId === order.id).map((ticket) => publicTicket(ticket, req))
     : [];
 
   return {
-    order: publicOrder(order),
+    order: publicOrder(order ? { ...order, requiresPilotInfo } : order),
     user: publicUser(user),
     tickets,
+    requiresPilotInfo,
     invoice: order ? state.invoices.find((invoice) => invoice.orderId === order.id) || null : null,
     ...(includeLinks ? enrollmentLinks(order, req) : {})
   };
@@ -1077,6 +1176,7 @@ function upsertCheckoutUser(state, identity, body = {}, sessionUser = null) {
     phone: identity.phone,
     club: "",
     vehicle: "",
+    licensePlate: "",
     interests: [],
     emailVerified: true,
     emailVerificationMode: "checkout_inline",
@@ -1126,6 +1226,13 @@ function buildOrderItems(state, itemsInput) {
       throw error;
     }
 
+    const entryType = normalizeTicketEntryType(ticketType.entryType);
+    if (entryType === "guest") {
+      const error = new Error("Las entradas de invitado se emiten desde el backoffice");
+      error.status = 400;
+      throw error;
+    }
+
     const phase = activePhaseForTicket(state, event.id, ticketType);
     if (!phase) {
       const error = new Error(`${ticketType.name} no tiene una etapa de venta activa`);
@@ -1148,6 +1255,8 @@ function buildOrderItems(state, itemsInput) {
       eventName: event.name,
       ticketTypeId: ticketType.id,
       ticketTypeName: ticketType.name,
+      entryType,
+      entryTypeLabel: TICKET_ENTRY_TYPE_LABELS[entryType],
       description: ticketType.description,
       salePhaseId: phase.id,
       salePhaseName: phase.name,
@@ -1162,11 +1271,22 @@ function buildOrderItems(state, itemsInput) {
 }
 
 function getOrderItems(order, state = null) {
-  if (order.items?.length) return order.items;
+  if (order.items?.length) {
+    return order.items.map((item) => {
+      const ticketType = state && item.ticketTypeId ? findTicketType(state, item.ticketTypeId) : null;
+      const entryType = normalizeTicketEntryType(item.entryType || item.ticketEntryType || ticketType?.entryType);
+      return {
+        ...item,
+        entryType,
+        entryTypeLabel: TICKET_ENTRY_TYPE_LABELS[entryType]
+      };
+    });
+  }
 
   const event = state ? findEvent(state, order.eventId) : findDefaultEvent(order.eventId);
   const ticketType = state ? findTicketType(state, order.ticketTypeId) : findDefaultTicketType(order.ticketTypeId);
   if (!event || !ticketType) return [];
+  const entryType = normalizeTicketEntryType(order.entryType || ticketType.entryType);
 
   return [
     {
@@ -1175,6 +1295,8 @@ function getOrderItems(order, state = null) {
       eventName: event.name,
       ticketTypeId: ticketType.id,
       ticketTypeName: ticketType.name,
+      entryType,
+      entryTypeLabel: TICKET_ENTRY_TYPE_LABELS[entryType],
       description: ticketType.description,
       salePhaseId: order.salePhaseId || "general",
       salePhaseName: order.salePhaseName || "Venta general",
@@ -1190,6 +1312,8 @@ function createTickets({ order, user, items }) {
   const tickets = [];
 
   for (const item of items) {
+    const entryType = normalizeTicketEntryType(item.entryType);
+    const isPilot = entryType === "pilot";
     for (let index = 0; index < item.quantity; index += 1) {
       tickets.push({
         id: id("ticket"),
@@ -1200,12 +1324,17 @@ function createTickets({ order, user, items }) {
         ticketTypeId: item.ticketTypeId,
         eventName: item.eventName,
         ticketTypeName: item.ticketTypeName,
+        entryType,
+        entryTypeLabel: TICKET_ENTRY_TYPE_LABELS[entryType],
         salePhaseId: item.salePhaseId,
         salePhaseName: item.salePhaseName,
         salePhaseKind: item.salePhaseKind,
         code: `HFC-${new Date().getFullYear()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}-${index + 1}`,
         holderName: user.name,
         holderRut: user.rut,
+        holderLicensePlate: isPilot ? normalizeLicensePlate(user.licensePlate || user.patent || user.plate) : "",
+        holderVehicle: isPilot ? String(user.vehicle || "").trim() : "",
+        holderClub: isPilot ? String(user.club || "").trim() : "",
         status: "valid",
         createdAt: new Date().toISOString()
       });
@@ -1429,7 +1558,8 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     ...paymentData,
     status: paymentData.status || "approved"
   });
-  const profileReady = userProfileComplete(user);
+  const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
+  const profileReady = userProfileCompleteForItems(user, items, state);
 
   if (!profileReady) {
     ensureEnrollmentToken(order);
@@ -1438,6 +1568,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
       paidAt: new Date().toISOString()
     });
     order.profileRequired = true;
+    order.requiresPilotInfo = requiresPilotInfo;
     order.fulfillmentStatus = "profile_pending";
     order.invoiceStatus = "profile_pending";
     order.enrollmentEmailStatus = order.enrollmentEmailSentAt ? "sent" : "pending";
@@ -1467,6 +1598,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
       paidAt: new Date().toISOString()
     });
     order.profileRequired = false;
+    order.requiresPilotInfo = requiresPilotInfo;
     order.fulfillmentStatus = "fulfilled";
 
     if (!tickets.length) {
@@ -1484,6 +1616,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     }
     order.payment = orderPaymentSummary(paymentRecord, order.payment);
     order.profileRequired = false;
+    order.requiresPilotInfo = requiresPilotInfo;
     order.fulfillmentStatus = "fulfilled";
     order.updatedAt = new Date().toISOString();
     await writeState(state);
@@ -1856,6 +1989,41 @@ app.get("/media/*", async (req, res, next) => {
   }
 });
 
+app.get("/media-source/*", async (req, res, next) => {
+  try {
+    const key = String(req.params[0] || "").replace(/^\/+/, "");
+
+    if (!key || key.includes("..") || key.includes("\\")) {
+      res.status(400).type("text/plain").send("Recurso invalido");
+      return;
+    }
+
+    if (allowedAssetKeys.size && !allowedAssetKeys.has(key)) {
+      res.status(404).type("text/plain").send("Recurso no encontrado");
+      return;
+    }
+
+    const localRoot = path.resolve(process.cwd(), "HFC_R2_upload_ready");
+    const localFile = path.resolve(localRoot, ...key.split("/"));
+    if (localFile.startsWith(localRoot) && fs.existsSync(localFile)) {
+      res.set("Cache-Control", "public, max-age=31536000, immutable");
+      res.sendFile(localFile);
+      return;
+    }
+
+    if (await proxyPublicAssetObject(res, key)) return;
+
+    if (r2CredentialsConfigured()) {
+      await proxyR2Object(req, res, key);
+      return;
+    }
+
+    res.status(404).type("text/plain").send("Configura R2_PUBLIC_BASE_URL para servir imagenes publicas");
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/auth/register", async (req, res, next) => {
   try {
     const name = requireString(req.body, "name", "Nombre");
@@ -1914,6 +2082,7 @@ app.post("/api/auth/register", async (req, res, next) => {
         phone,
         club: String(req.body.club || "").trim(),
         vehicle: String(req.body.vehicle || "").trim(),
+        licensePlate: normalizeLicensePlate(req.body.licensePlate),
         interests: Array.isArray(req.body.interests) ? req.body.interests : [],
         passwordHash: hashPassword(password),
         emailVerified: false,
@@ -2069,6 +2238,7 @@ async function createOrderFromItems({ req, user, items, state }) {
   const firstItem = items[0];
   const event = findEvent(state, firstItem.eventId);
   const ticketType = findTicketType(state, firstItem.ticketTypeId);
+  const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
 
   const order = {
     id: id("order"),
@@ -2086,7 +2256,8 @@ async function createOrderFromItems({ req, user, items, state }) {
     paymentMode: paymentModeForClient(),
     invoiceStatus: "not_started",
     fulfillmentStatus: "not_started",
-    profileRequired: !userProfileComplete(user),
+    profileRequired: !userProfileCompleteForItems(user, items, state),
+    requiresPilotInfo,
     source: user.source === "checkout_fast" ? "checkout_fast" : "registered",
     createdAt: now,
     updatedAt: now
@@ -2392,6 +2563,12 @@ async function completeEnrollmentProfile(req, orderId) {
       throw error;
     }
 
+    const items = getOrderItems(order, state);
+    const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
+    const licensePlate = requiresPilotInfo ? normalizeLicensePlate(requireString(req.body, "licensePlate", "Patente")) : "";
+    const vehicle = requiresPilotInfo ? requireString(req.body, "vehicle", "Auto") : "";
+    const club = requiresPilotInfo ? requireString(req.body, "club", "Club") : "";
+
     const normalizedRut = cleanRut(rutInput);
     const rutOwner = state.users.find(
       (candidate) => candidate.id !== user.id && cleanRut(candidate.rut) === normalizedRut
@@ -2406,23 +2583,35 @@ async function completeEnrollmentProfile(req, orderId) {
     user.name = name;
     user.rut = formatRut(rutInput);
     user.phone = phone;
-    user.club = String(req.body.club || user.club || "").trim();
-    user.vehicle = String(req.body.vehicle || user.vehicle || "").trim();
+    if (requiresPilotInfo) {
+      user.licensePlate = licensePlate;
+      user.vehicle = vehicle;
+      user.club = club;
+    }
     user.namePending = false;
     user.emailVerified = true;
     user.profileStatus = "complete";
     user.profileCompletedAt = user.profileCompletedAt || now;
     user.updatedAt = now;
 
+    const itemById = new Map(items.map((item) => [item.id, item]));
     state.tickets
       .filter((ticket) => ticket.orderId === order.id)
       .forEach((ticket) => {
+        const item = itemById.get(ticket.lineItemId) || items.find((candidate) => candidate.ticketTypeId === ticket.ticketTypeId);
+        const entryType = normalizeTicketEntryType(ticket.entryType || item?.entryType);
         ticket.holderName = user.name;
         ticket.holderRut = user.rut;
+        ticket.entryType = entryType;
+        ticket.entryTypeLabel = TICKET_ENTRY_TYPE_LABELS[entryType];
+        ticket.holderLicensePlate = entryType === "pilot" ? user.licensePlate : "";
+        ticket.holderVehicle = entryType === "pilot" ? user.vehicle : "";
+        ticket.holderClub = entryType === "pilot" ? user.club : "";
         ticket.updatedAt = now;
       });
 
     order.profileRequired = false;
+    order.requiresPilotInfo = requiresPilotInfo;
     order.enrollmentCompletedAt = order.enrollmentCompletedAt || now;
     order.enrollmentCompletedBy = access.type;
     order.enrollmentTokenConsumedAt = now;
@@ -3130,6 +3319,7 @@ app.post("/api/backoffice/guests", async (req, res, next) => {
           phone: String(req.body.phone || "").trim(),
           club: "Invitado",
           vehicle: "",
+          licensePlate: "",
           interests: [],
           passwordHash: "",
           source: "guest",
@@ -3154,6 +3344,8 @@ app.post("/api/backoffice/guests", async (req, res, next) => {
           eventName: event.name,
           ticketTypeId: ticketType.id,
           ticketTypeName: ticketType.name,
+          entryType: "guest",
+          entryTypeLabel: TICKET_ENTRY_TYPE_LABELS.guest,
           description: ticketType.description,
           salePhaseId: "guest",
           salePhaseName: "Invitado",
@@ -3179,6 +3371,8 @@ app.post("/api/backoffice/guests", async (req, res, next) => {
         source: "guest",
         paymentMode: "guest",
         invoiceStatus: "not_required",
+        profileRequired: false,
+        requiresPilotInfo: false,
         note: String(req.body.note || "").trim(),
         createdAt: now,
         updatedAt: now

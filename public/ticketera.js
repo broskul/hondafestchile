@@ -6,7 +6,9 @@ async function renderProducts() {
     .map(
       (event) => {
         const tickets = catalog.ticketTypes.filter(
-          (ticket) => !Array.isArray(ticket.eventIds) || !ticket.eventIds.length || ticket.eventIds.includes(event.id)
+          (ticket) =>
+            ticket.entryType !== "guest" &&
+            (!Array.isArray(ticket.eventIds) || !ticket.eventIds.length || ticket.eventIds.includes(event.id))
         );
         return `
           <section class="event-products">
