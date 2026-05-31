@@ -3,7 +3,8 @@ const crypto = require("crypto");
 const MERCADOPAGO_API_BASE = "https://api.mercadopago.com";
 
 function cleanEnv(name) {
-  return String(process.env[name] || "").trim();
+  const value = String(process.env[name] || "").trim();
+  return value === "\"\"" || value === "''" ? "" : value;
 }
 
 function envFlag(name) {
