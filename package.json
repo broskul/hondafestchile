@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server/index.js",
     "start": "node server/index.js",
-    "check": "node --check server/index.js && node --check server/config/catalog.js && node --check server/lib/emailTemplates.js && node --check server/lib/mailer.js && node --check server/lib/mercadopago.js && node --check server/lib/openfactura.js && node --check server/lib/rut.js && node --check server/lib/storage.js && node --check public/app.js && node --check public/shared.js && node --check public/test-mode.js && node --check public/ticketera.js && node --check public/carrito.js && node --check public/mis-compras.js && node --check public/validar.js && node --check public/enrolamiento.js && node --check public/backoffice.js && node --check scripts/check-supabase.js && node --check scripts/build-gallery-data.js",
+    "check": "node --check server/index.js && node --check server/config/catalog.js && node --check server/lib/emailTemplates.js && node --check server/lib/mailer.js && node --check server/lib/mercadopago.js && node --check server/lib/openfactura.js && node --check server/lib/rut.js && node --check server/lib/storage.js && node --check public/app.js && node --check public/shared.js && node --check public/test-mode.js && node --check public/ticketera.js && node --check public/carrito.js && node --check public/mis-compras.js && node --check public/mi-pit-lane.js && node --check public/validar.js && node --check public/enrolamiento.js && node --check public/backoffice.js && node --check scripts/check-supabase.js && node --check scripts/build-gallery-data.js",
     "gallery:build": "node scripts/build-gallery-data.js",
     "supabase:check": "node scripts/check-supabase.js"
   },

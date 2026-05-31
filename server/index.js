@@ -61,6 +61,14 @@ function normalizeEmail(email = "") {
   return String(email).trim().toLowerCase();
 }
 
+function validEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
+function normalizePhone(phone = "") {
+  return String(phone || "").replace(/[^\d+]/g, "");
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -70,6 +78,7 @@ const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
 const TICKET_SERVICE_CHARGE_RATE = 0.12;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
+const DATA_TERMS_VERSION = "datos-personales-cl-2026-12";
 
 function roundCurrency(value) {
   return Math.max(0, Math.round(Number(value || 0)));
@@ -845,17 +854,60 @@ function requireString(body, field, label) {
   return value;
 }
 
+function bearerToken(req) {
+  return String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+}
+
+function currentSessionFromRequest(req, state, type = null) {
+  const token = bearerToken(req);
+  if (!token) return null;
+  const now = Date.now();
+  return (
+    (state.sessions || []).find((session) => {
+      if (!safeEqualString(session.token, token)) return false;
+      if (type && session.type !== type) return false;
+      if (session.expiresAt && Date.parse(session.expiresAt) <= now) return false;
+      return true;
+    }) || null
+  );
+}
+
+function accountUserFromRequest(req, state) {
+  const session = currentSessionFromRequest(req, state, "account");
+  return session ? state.users.find((candidate) => candidate.id === session.userId) || null : null;
+}
+
 function findUserByEmailRut(state, email, rutInput) {
   return state.users.find(
     (candidate) => candidate.email === email && cleanRut(candidate.rut) === cleanRut(rutInput)
   );
 }
 
+function findUserByRutContact(state, rutInput, contactInput) {
+  const normalizedRut = cleanRut(rutInput);
+  if (!normalizedRut) return null;
+  const email = normalizeEmail(contactInput);
+  const phone = normalizePhone(contactInput);
+  return state.users.find((candidate) => {
+    if (cleanRut(candidate.rut) !== normalizedRut) return false;
+    const emails = [candidate.email, ...(candidate.emailAliases || [])].map(normalizeEmail).filter(Boolean);
+    if (validEmail(email) && emails.includes(email)) return true;
+    return phone && normalizePhone(candidate.phone) === phone;
+  });
+}
+
 function findUserByEmail(state, email) {
   return state.users.find((candidate) => candidate.email === email);
 }
 
+function findUserByRut(state, rutInput) {
+  const normalizedRut = cleanRut(rutInput);
+  if (!normalizedRut) return null;
+  return state.users.find((candidate) => cleanRut(candidate.rut) === normalizedRut);
+}
+
 function userProfileComplete(user) {
+  if (user?.profileStatus === "pending" || user?.namePending) return false;
   return Boolean(
     user &&
       String(user.name || "").trim() &&
@@ -928,14 +980,88 @@ function publicEnrollmentOrder({ state, order, req, includeLinks = true }) {
   };
 }
 
-function upsertCheckoutUser(state, email, body = {}) {
+function checkoutIdentityFromBody(body = {}, fallbackUser = null, options = {}) {
+  const email = normalizeEmail(body.email || fallbackUser?.email || "");
+  const rutInput = String(body.rut || fallbackUser?.rut || "").trim();
+  const phone = String(body.phone || fallbackUser?.phone || "").trim();
+
+  if (!validEmail(email)) {
+    const error = new Error("El correo no tiene un formato valido");
+    error.status = 400;
+    throw error;
+  }
+
+  if (rutInput && !validateRut(rutInput)) {
+    const error = new Error("El RUT no es valido");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!rutInput && !options.rutOptional) {
+    const error = new Error("El RUT es obligatorio");
+    error.status = 400;
+    throw error;
+  }
+
+  if (normalizePhone(phone).length < 8) {
+    const error = new Error("Ingresa un telefono valido para recuperar tu cuenta si el correo falla");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!body.termsAccepted && !fallbackUser?.termsAcceptedAt) {
+    const error = new Error("Debes aceptar los terminos de uso de datos personales para continuar");
+    error.status = 400;
+    throw error;
+  }
+
+  return {
+    email,
+    rut: rutInput ? formatRut(rutInput) : "",
+    normalizedRut: cleanRut(rutInput),
+    phone,
+    emailSuggestion: emailSuggestion(email)
+  };
+}
+
+function rememberPreviousEmail(user, email) {
+  if (!user.email || user.email === email) return;
+  user.emailAliases = Array.from(new Set([...(user.emailAliases || []), user.email].filter(Boolean)));
+}
+
+function upsertCheckoutUser(state, identity, body = {}, sessionUser = null) {
   const now = new Date().toISOString();
-  const existing = findUserByEmail(state, email);
+  const rutOwner = findUserByRut(state, identity.rut);
+  const emailOwner = findUserByEmail(state, identity.email);
+  const contactOwner = findUserByRutContact(state, identity.rut, identity.phone);
+  const existing = sessionUser || rutOwner || emailOwner || contactOwner;
 
   if (existing) {
+    if (emailOwner && emailOwner.id !== existing.id) {
+      const error = new Error("Ese correo ya esta asociado a otra cuenta. Ingresa con tu RUT y telefono o revisa el correo.");
+      error.status = 409;
+      throw error;
+    }
+    if (
+      !sessionUser &&
+      emailOwner &&
+      identity.normalizedRut &&
+      cleanRut(emailOwner.rut) &&
+      cleanRut(emailOwner.rut) !== identity.normalizedRut
+    ) {
+      const error = new Error("Ese correo existe con otro RUT. Usa el RUT correcto o recupera con telefono.");
+      error.status = 409;
+      throw error;
+    }
+    rememberPreviousEmail(existing, identity.email);
+    existing.email = identity.email;
+    if (identity.rut) existing.rut = identity.rut;
+    existing.phone = identity.phone;
     existing.emailVerified = true;
     existing.emailVerificationMode = existing.emailVerificationMode || "checkout_inline";
     existing.termsAcceptedAt = existing.termsAcceptedAt || now;
+    existing.termsAcceptedVersion = existing.termsAcceptedVersion || DATA_TERMS_VERSION;
+    existing.termsAcceptedSource = existing.termsAcceptedSource || "checkout";
     existing.profileStatus = userProfileComplete(existing) ? "complete" : "pending";
     existing.updatedAt = now;
     return existing;
@@ -943,10 +1069,12 @@ function upsertCheckoutUser(state, email, body = {}) {
 
   const user = {
     id: id("user"),
-    name: nameFromEmail(email),
-    email,
-    rut: "",
-    phone: "",
+    name: String(body.name || "").trim() || nameFromEmail(identity.email),
+    namePending: !String(body.name || "").trim(),
+    email: identity.email,
+    emailAliases: [],
+    rut: identity.rut,
+    phone: identity.phone,
     club: "",
     vehicle: "",
     interests: [],
@@ -955,6 +1083,8 @@ function upsertCheckoutUser(state, email, body = {}) {
     profileStatus: "pending",
     source: "checkout_fast",
     termsAcceptedAt: now,
+    termsAcceptedVersion: DATA_TERMS_VERSION,
+    termsAcceptedSource: "checkout",
     createdAt: now,
     updatedAt: now
   };
@@ -964,7 +1094,8 @@ function upsertCheckoutUser(state, email, body = {}) {
     id: id("audit"),
     type: "checkout_user_created",
     userId: user.id,
-    email,
+    email: identity.email,
+    rut: identity.rut,
     createdAt: now
   });
 
@@ -1198,6 +1329,38 @@ function paymentDataFromMercadoPago(payment) {
     paidAt: payment.date_approved,
     raw: payment
   };
+}
+
+function paymentRutFromFormData(formData = {}) {
+  const payer = formData.payer || {};
+  const identification = payer.identification || {};
+  const number = String(identification.number || formData.identificationNumber || "").trim();
+  return validateRut(number) ? formatRut(number) : "";
+}
+
+async function attachPaymentRutToOrderUser(orderId, formData = {}) {
+  const paymentRut = paymentRutFromFormData(formData);
+  if (!paymentRut) return null;
+
+  await updateState((state) => {
+    const order = state.orders.find((candidate) => candidate.id === orderId);
+    const user = order ? state.users.find((candidate) => candidate.id === order.userId) : null;
+    if (!order || !user) return;
+
+    order.paymentRut = paymentRut;
+    if (!user.rut) {
+      user.rut = paymentRut;
+      user.updatedAt = new Date().toISOString();
+      return;
+    }
+
+    if (cleanRut(user.rut) !== cleanRut(paymentRut)) {
+      order.paymentRutMismatch = true;
+      order.accountRut = user.rut;
+    }
+  });
+
+  return paymentRut;
 }
 
 async function requireCheckoutStorage() {
@@ -1719,6 +1882,12 @@ app.post("/api/auth/register", async (req, res, next) => {
       throw error;
     }
 
+    if (!req.body.termsAccepted) {
+      const error = new Error("Debes aceptar los terminos de uso de datos personales para crear tu cuenta");
+      error.status = 400;
+      throw error;
+    }
+
     const formattedRut = formatRut(rutInput);
     const normalizedRut = cleanRut(rutInput);
     const verificationToken = id("verify");
@@ -1739,6 +1908,7 @@ app.post("/api/auth/register", async (req, res, next) => {
       createdUser = {
         id: id("user"),
         name,
+        namePending: false,
         email,
         rut: formattedRut,
         phone,
@@ -1747,8 +1917,12 @@ app.post("/api/auth/register", async (req, res, next) => {
         interests: Array.isArray(req.body.interests) ? req.body.interests : [],
         passwordHash: hashPassword(password),
         emailVerified: false,
+        profileStatus: "complete",
         verificationToken,
         verificationSentAt: now,
+        termsAcceptedAt: now,
+        termsAcceptedVersion: DATA_TERMS_VERSION,
+        termsAcceptedSource: "register",
         createdAt: now,
         updatedAt: now
       };
@@ -1946,37 +2120,37 @@ async function createOrderFromItems({ req, user, items, state }) {
 
 app.post("/api/orders", async (req, res, next) => {
   try {
-    const email = normalizeEmail(requireString(req.body, "email", "Correo"));
     const eventId = requireString(req.body, "eventId", "Evento");
     const ticketTypeId = requireString(req.body, "ticketTypeId", "Entrada");
     const quantity = Number(req.body.quantity || 1);
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      const error = new Error("El correo no tiene un formato valido");
-      error.status = 400;
-      throw error;
-    }
-
-    if (!req.body.termsAccepted) {
-      const error = new Error("Debes aceptar terminos y condiciones para continuar");
-      error.status = 400;
-      throw error;
-    }
-
     await requireCheckoutStorage();
 
-    await updateState((state) => {
-      upsertCheckoutUser(state, email, req.body);
+    const initialState = await readState();
+    const sessionUser = accountUserFromRequest(req, initialState);
+    const identity = checkoutIdentityFromBody(req.body, sessionUser, {
+      rutOptional: mercadoPagoInternalCheckoutEnabled()
+    });
+
+    const user = await updateState((state) => {
+      const freshSessionUser = sessionUser ? state.users.find((candidate) => candidate.id === sessionUser.id) || null : null;
+      return upsertCheckoutUser(state, identity, req.body, freshSessionUser);
     });
 
     const state = await readState();
     const items = buildOrderItems(state, [{ eventId, ticketTypeId, quantity }]);
-    const user = findUserByEmail(state, email);
-    const { order, preference } = await createOrderFromItems({ req, user, items, state });
+    const freshUser = state.users.find((candidate) => candidate.id === user.id);
+    const { order, preference } = await createOrderFromItems({ req, user: freshUser, items, state });
+    const accountSession = createAccountSessionRecord(freshUser);
+    await updateState((nextState) => {
+      nextState.sessions.push(accountSession);
+    });
 
     res.status(201).json({
       ok: true,
       order: publicOrder(order),
+      user: publicUser(freshUser),
+      accountToken: accountSession.token,
       checkoutUrl: preference.checkoutUrl,
       paymentMode: preference.mode,
       mercadoPagoPublicKey: mercadoPagoInternalCheckoutEnabled() ? mercadoPagoPublicKey() : null
@@ -1988,34 +2162,33 @@ app.post("/api/orders", async (req, res, next) => {
 
 app.post("/api/orders/from-cart", async (req, res, next) => {
   try {
-    const email = normalizeEmail(requireString(req.body, "email", "Correo"));
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      const error = new Error("El correo no tiene un formato valido");
-      error.status = 400;
-      throw error;
-    }
-
-    if (!req.body.termsAccepted) {
-      const error = new Error("Debes aceptar terminos y condiciones para continuar");
-      error.status = 400;
-      throw error;
-    }
-
     await requireCheckoutStorage();
 
-    await updateState((state) => {
-      upsertCheckoutUser(state, email, req.body);
+    const initialState = await readState();
+    const sessionUser = accountUserFromRequest(req, initialState);
+    const identity = checkoutIdentityFromBody(req.body, sessionUser, {
+      rutOptional: mercadoPagoInternalCheckoutEnabled()
+    });
+
+    const user = await updateState((state) => {
+      const freshSessionUser = sessionUser ? state.users.find((candidate) => candidate.id === sessionUser.id) || null : null;
+      return upsertCheckoutUser(state, identity, req.body, freshSessionUser);
     });
 
     const state = await readState();
     const items = buildOrderItems(state, req.body.items);
-    const user = findUserByEmail(state, email);
-    const { order, preference } = await createOrderFromItems({ req, user, items, state });
+    const freshUser = state.users.find((candidate) => candidate.id === user.id);
+    const { order, preference } = await createOrderFromItems({ req, user: freshUser, items, state });
+    const accountSession = createAccountSessionRecord(freshUser);
+    await updateState((nextState) => {
+      nextState.sessions.push(accountSession);
+    });
 
     res.status(201).json({
       ok: true,
       order: publicOrder(order),
+      user: publicUser(freshUser),
+      accountToken: accountSession.token,
       checkoutUrl: preference.checkoutUrl,
       paymentMode: preference.mode,
       mercadoPagoPublicKey: mercadoPagoInternalCheckoutEnabled() ? mercadoPagoPublicKey() : null
@@ -2097,6 +2270,7 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       idempotencyKey: req.get("x-idempotency-key") || req.body.idempotencyKey
     });
     const paymentData = paymentDataFromMercadoPago(payment);
+    await attachPaymentRutToOrderUser(order.id, formData);
 
     if (payment.status === "approved") {
       const result = await completeOrderPayment(order.id, paymentData);
@@ -2148,22 +2322,8 @@ function enrollmentPortalCredentials() {
   };
 }
 
-function bearerToken(req) {
-  return String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
-}
-
 function currentEnrollmentPortalSession(req, state) {
-  const token = bearerToken(req);
-  if (!token) return null;
-  const now = Date.now();
-  return (
-    (state.sessions || []).find((session) => {
-      if (!safeEqualString(session.token, token)) return false;
-      if (session.type !== "enrollment_portal") return false;
-      if (session.expiresAt && Date.parse(session.expiresAt) <= now) return false;
-      return true;
-    }) || null
-  );
+  return currentSessionFromRequest(req, state, "enrollment_portal");
 }
 
 function requireEnrollmentPortalSession(req, state) {
@@ -2248,6 +2408,7 @@ async function completeEnrollmentProfile(req, orderId) {
     user.phone = phone;
     user.club = String(req.body.club || user.club || "").trim();
     user.vehicle = String(req.body.vehicle || user.vehicle || "").trim();
+    user.namePending = false;
     user.emailVerified = true;
     user.profileStatus = "complete";
     user.profileCompletedAt = user.profileCompletedAt || now;
@@ -2319,10 +2480,36 @@ app.post("/api/orders/:orderId/profile", async (req, res, next) => {
   }
 });
 
-app.get("/api/users/purchases", async (req, res, next) => {
+function accountOrdersForUser(state, user, req) {
+  return state.orders
+    .filter((order) => order.userId === user.id)
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+    .map((order) => ({
+      ...publicOrder(order),
+      tickets: state.tickets
+        .filter((ticket) => ticket.orderId === order.id)
+        .map((ticket) => publicTicket(ticket, req)),
+      invoice: state.invoices.find((invoice) => invoice.orderId === order.id) || null,
+      ...(order.profileRequired ? enrollmentLinks(order, req) : {})
+    }));
+}
+
+function createAccountSessionRecord(user) {
+  const now = new Date();
+  return {
+    id: id("session"),
+    token: secureToken("account"),
+    type: "account",
+    userId: user.id,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 90).toISOString()
+  };
+}
+
+app.post("/api/account/access", async (req, res, next) => {
   try {
-    const email = normalizeEmail(requireString(req.query, "email", "Correo"));
-    const rutInput = requireString(req.query, "rut", "RUT");
+    const rutInput = requireString(req.body, "rut", "RUT");
+    const contact = requireString(req.body, "contact", "Correo o telefono");
 
     if (!validateRut(rutInput)) {
       const error = new Error("El RUT no es valido");
@@ -2331,25 +2518,77 @@ app.get("/api/users/purchases", async (req, res, next) => {
     }
 
     const state = await readState();
-    const user = findUserByEmailRut(state, email, rutInput);
+    const user = findUserByRutContact(state, rutInput, contact);
+    if (!user) {
+      const error = new Error("No encontramos una cuenta con ese RUT y correo/telefono");
+      error.status = 404;
+      throw error;
+    }
+
+    const session = createAccountSessionRecord(user);
+    await updateState((nextState) => {
+      nextState.sessions.push(session);
+      nextState.audit.push({
+        id: id("audit"),
+        type: "account_session_started",
+        userId: user.id,
+        createdAt: session.createdAt
+      });
+    });
+
+    res.json({
+      ok: true,
+      user: publicUser(user),
+      token: session.token,
+      expiresAt: session.expiresAt,
+      orders: accountOrdersForUser(state, user, req)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/account/pit-lane", async (req, res, next) => {
+  try {
+    const state = await readState();
+    const user = accountUserFromRequest(req, state);
+    if (!user) {
+      const error = new Error("Sesion requerida");
+      error.status = 401;
+      throw error;
+    }
+
+    res.json({
+      ok: true,
+      user: publicUser(user),
+      orders: accountOrdersForUser(state, user, req)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/users/purchases", async (req, res, next) => {
+  try {
+    const email = normalizeEmail(requireString(req.query, "email", "Correo"));
+    const rutInput = requireString(req.query, "rut", "RUT");
+    const phone = String(req.query.phone || "").trim();
+
+    if (!validateRut(rutInput)) {
+      const error = new Error("El RUT no es valido");
+      error.status = 400;
+      throw error;
+    }
+
+    const state = await readState();
+    const user = findUserByEmailRut(state, email, rutInput) || (phone ? findUserByRutContact(state, rutInput, phone) : null);
     if (!user) {
       const error = new Error("No encontramos compras para ese correo y RUT");
       error.status = 404;
       throw error;
     }
 
-    const orders = state.orders
-      .filter((order) => order.userId === user.id)
-      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-      .map((order) => ({
-        ...publicOrder(order),
-        tickets: state.tickets
-          .filter((ticket) => ticket.orderId === order.id)
-          .map((ticket) => publicTicket(ticket, req)),
-        invoice: state.invoices.find((invoice) => invoice.orderId === order.id) || null
-      }));
-
-    res.json({ ok: true, user: publicUser(user), orders });
+    res.json({ ok: true, user: publicUser(user), orders: accountOrdersForUser(state, user, req) });
   } catch (error) {
     next(error);
   }
@@ -3269,7 +3508,9 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
 const pageRoutes = {
   "/ticketera": "ticketera.html",
   "/carrito": "carrito.html",
+  "/mi-pit-lane": "mi-pit-lane.html",
   "/mis-compras": "mis-compras.html",
+  "/terminos-datos-personales": "terminos-datos-personales.html",
   "/validar": "validar.html",
   "/enrolamiento": "enrolamiento.html",
   "/backoffice-hfc": "backoffice.html"

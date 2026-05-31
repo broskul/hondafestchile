@@ -37,6 +37,7 @@ function renderPurchases(data) {
               .join("")}
           </div>
           <div class="status-actions">
+            ${order.profileRequired && order.enrollmentUrl ? `<a class="button primary" href="${order.enrollmentUrl}">Enrolar pendiente</a>` : ""}
             ${order.invoice?.pdfUrl ? `<a class="button secondary" href="${order.invoice.pdfUrl}">Ver boleta</a>` : ""}
             <a class="button secondary" href="/validar?code=${encodeURIComponent(order.tickets[0]?.code || "")}">Probar QR</a>
           </div>
@@ -55,14 +56,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const status = HFC.$("#purchasesStatus");
     const query = new URLSearchParams({
       email: form.email.value,
-      rut: form.rut.value
+      rut: form.rut.value,
+      phone: form.phone.value
     });
 
     HFC.setStatus(status, "Buscando compras...");
 
     try {
       const data = await HFC.api(`/api/users/purchases?${query.toString()}`);
-      localStorage.setItem("hfc_buyer", JSON.stringify({ email: form.email.value, rut: form.rut.value }));
+      localStorage.setItem("hfc_buyer", JSON.stringify({ email: form.email.value, rut: form.rut.value, phone: form.phone.value }));
       HFC.setStatus(status, `<strong>${data.user.name}</strong><br />Compras encontradas: ${data.orders.length}`);
       renderPurchases(data);
     } catch (error) {

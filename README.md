@@ -23,13 +23,13 @@ Luego abre `http://localhost:3000`.
 ## Flujo principal
 
 1. El asistente agrega entradas al carrito lateral o al carrito completo.
-2. Para pagar solo ingresa correo y acepta terminos; el correo se valida en linea por formato.
-3. La app crea o reutiliza un usuario de checkout rapido y monta el pago interno de Mercado Pago.
-4. Mercado Pago JS tokeniza la tarjeta y el backend crea el pago con Checkout API.
-5. Si faltan nombre, RUT o telefono, el asistente completa esos datos despues del pago.
+2. Para pagar ingresa correo y telefono, acepta el uso de datos personales y, si no esta activo Checkout Bricks, tambien RUT.
+3. La app crea o reutiliza un usuario de checkout rapido; si hay sesion de Mi Pit Lane, la compra queda asociada a esa cuenta.
+4. Mercado Pago JS tokeniza la tarjeta y el backend crea el pago con Checkout API. En modo Brick, el RUT del pago se toma desde `payer.identification` para no duplicarlo en el formulario propio.
+5. Si faltan nombre real u otros datos de perfil, el asistente completa esos datos despues del pago.
 6. Con perfil completo y pago aprobado, se emiten tickets y se llama al adaptador de OpenFactura.
 7. El asistente recibe correo con tickets, QR y datos de boleta.
-8. En `mis-compras` puede recuperar compras por correo y RUT.
+8. En `/mi-pit-lane` puede iniciar con RUT y correo o telefono para ver compras, entradas historicas y enrolamientos pendientes.
 9. En `validar` se consulta o marca ingreso usando el codigo QR.
 
 ## Supabase

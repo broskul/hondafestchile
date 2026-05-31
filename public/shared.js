@@ -1,6 +1,8 @@
 (() => {
   const CART_KEY = "hfc_cart";
   const BUYER_KEY = "hfc_buyer";
+  const ACCOUNT_TOKEN_KEY = "hfc_account_token";
+  const ACCOUNT_USER_KEY = "hfc_account_user";
   const TICKET_VAT_RATE = 0.19;
   const TICKET_SERVICE_CHARGE_RATE = 0.12;
   const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
@@ -50,12 +52,18 @@
   }
 
   async function api(path, options = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    };
+    const accountToken = localStorage.getItem(ACCOUNT_TOKEN_KEY);
+    if (accountToken && !headers.Authorization) {
+      headers.Authorization = `Bearer ${accountToken}`;
+    }
+
     const response = await fetch(path, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
+      headers
     });
 
     const data = await response.json().catch(() => ({}));
@@ -181,6 +189,51 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
   }
 
+  function cleanRut(value) {
+    return String(value || "").replace(/[^0-9kK]/g, "").toUpperCase();
+  }
+
+  function validRut(value) {
+    const clean = cleanRut(value);
+    if (clean.length < 2) return false;
+    const body = clean.slice(0, -1);
+    const dv = clean.slice(-1);
+    let sum = 0;
+    let multiplier = 2;
+    for (let index = body.length - 1; index >= 0; index -= 1) {
+      sum += Number(body[index]) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+    const expected = 11 - (sum % 11);
+    const expectedDv = expected === 11 ? "0" : expected === 10 ? "K" : String(expected);
+    return dv === expectedDv;
+  }
+
+  function validPhone(value) {
+    return String(value || "").replace(/[^\d]/g, "").length >= 8;
+  }
+
+  function getAccountUser() {
+    try {
+      return JSON.parse(localStorage.getItem(ACCOUNT_USER_KEY) || "null");
+    } catch {
+      return null;
+    }
+  }
+
+  function saveAccountSession(data) {
+    if (data.token) localStorage.setItem(ACCOUNT_TOKEN_KEY, data.token);
+    if (data.user) localStorage.setItem(ACCOUNT_USER_KEY, JSON.stringify(data.user));
+    if (data.user) {
+      saveBuyer({
+        email: data.user.email || "",
+        rut: data.user.rut || "",
+        phone: data.user.phone || "",
+        termsAccepted: true
+      });
+    }
+  }
+
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (char) => {
       const entities = {
@@ -220,6 +273,24 @@
       form.email.addEventListener("blur", () => updateEmailCheck(form));
       updateEmailCheck(form);
     });
+  }
+
+  function applyCheckoutMode(root, catalog) {
+    const internalCheckout = catalog?.integrations?.paymentMode === "mercadopago_api";
+    $$("[data-checkout-form]", root).forEach((form) => {
+      const wrapper = $("[data-rut-wrapper]", form);
+      if (!wrapper || !form.rut) return;
+      wrapper.hidden = internalCheckout;
+      form.rut.required = !internalCheckout;
+    });
+  }
+
+  async function configureCheckoutForms(root = document) {
+    try {
+      applyCheckoutMode(root, await getCatalog());
+    } catch {
+      // El backend validara si no logramos leer el modo de pago.
+    }
   }
 
   function loadMercadoPagoSdk() {
@@ -366,6 +437,8 @@
   function buyerFromForm(form) {
     return {
       email: String(form.email.value || "").trim().toLowerCase(),
+      rut: String(form.rut?.value || "").trim(),
+      phone: String(form.phone?.value || "").trim(),
       termsAccepted: Boolean(form.termsAccepted?.checked)
     };
   }
@@ -392,8 +465,17 @@
       setStatus(statusElement, "Ingresa un correo valido para recibir tus entradas.", true);
       return;
     }
+    const rutRequired = catalog.integrations?.paymentMode !== "mercadopago_api";
+    if (rutRequired && !validRut(buyer.rut)) {
+      setStatus(statusElement, "Ingresa un RUT valido para asociar la compra a tu cuenta.", true);
+      return;
+    }
+    if (!validPhone(buyer.phone)) {
+      setStatus(statusElement, "Ingresa un telefono valido para recuperar tu cuenta si el correo falla.", true);
+      return;
+    }
     if (!buyer.termsAccepted) {
-      setStatus(statusElement, "Acepta terminos y condiciones para continuar.", true);
+      setStatus(statusElement, "Acepta los terminos de uso de datos personales para continuar.", true);
       return;
     }
     saveBuyer(buyer);
@@ -406,6 +488,9 @@
         items
       })
     });
+    if (data.accountToken || data.user) {
+      saveAccountSession({ token: data.accountToken, user: data.user });
+    }
 
     if (data.paymentMode === "mercadopago_api") {
       await renderInternalPayment(statusElement, data);
@@ -415,7 +500,7 @@
     if (data.paymentMode === "mercadopago") {
       setStatus(
         statusElement,
-        `<strong>Email verificado.</strong><br />Te llevamos a Mercado Pago. Los datos del asistente se completan despues del pago.
+        `<strong>Cuenta asociada.</strong><br />Te llevamos a Mercado Pago. Los datos del asistente se completan despues del pago.
         <div class="status-actions"><a class="button primary" href="${data.checkoutUrl}">Pagar</a></div>`
       );
       window.location.href = data.checkoutUrl;
@@ -455,7 +540,7 @@
       : "";
     setStatus(
       statusElement,
-      `<strong>Email verificado.</strong><br />Paga aqui mismo con tarjeta. Los datos del asistente se completan despues del pago.
+      `<strong>Cuenta asociada.</strong><br />Paga aqui mismo con tarjeta. Si Mercado Pago pide RUT, sera solo para procesar el pago.
       ${testModeNotice}
       <div class="internal-payment-shell">
         <div id="${containerId}" class="mp-card-brick"></div>
@@ -517,6 +602,7 @@
       saveBuyer({
         email: data.user.email,
         rut: data.user.rut || "",
+        phone: data.user.phone || "",
         termsAccepted: true
       });
     }
@@ -544,7 +630,7 @@
         `<strong>Compra confirmada.</strong><br />${tickets
           .map((ticket) => `<code>${ticket.code}</code>`)
           .join(" ")}
-        <div class="status-actions"><a class="button secondary" href="/mis-compras">Ver mis entradas</a></div>`
+        <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver mis entradas</a></div>`
       );
       return;
     }
@@ -572,10 +658,16 @@
   }
 
   function prefillBuyerForms() {
-    const buyer = getBuyer();
-    if (!buyer) return;
+    const buyer = getBuyer() || {};
+    const accountUser = getAccountUser();
+    if (!buyer.email && !accountUser) return;
     $$("[data-checkout-form]").forEach((form) => {
+      const source = accountUser || buyer;
       if (form.email) form.email.value = buyer.email || "";
+      if (source?.email && form.email) form.email.value = source.email || "";
+      if (source?.rut && form.rut) form.rut.value = source.rut || "";
+      if (source?.phone && form.phone) form.phone.value = source.phone || "";
+      if (form.termsAccepted) form.termsAccepted.checked = Boolean(buyer.termsAccepted);
       updateEmailCheck(form);
     });
   }
@@ -617,9 +709,17 @@
             Correo electronico
             <input name="email" type="email" required placeholder="tu@correo.cl" />
           </label>
+          <label data-rut-wrapper>
+            RUT
+            <input name="rut" required placeholder="12.345.678-5" />
+          </label>
+          <label>
+            Telefono
+            <input name="phone" type="tel" required placeholder="+56 9 1234 5678" />
+          </label>
           <label class="terms-check">
             <input name="termsAccepted" type="checkbox" required />
-            <span>Acepto terminos y condiciones</span>
+            <span>Acepto el <a href="/terminos-datos-personales" target="_blank" rel="noreferrer">uso de mis datos personales</a></span>
           </label>
           <div class="email-check" data-email-check hidden></div>
           <button class="button primary full" type="submit">Pagar ahora</button>
@@ -641,6 +741,7 @@
     });
     prefillBuyerForms();
     mountEmailChecks(drawer);
+    configureCheckoutForms(drawer);
     renderAllCarts();
   }
 
@@ -649,6 +750,7 @@
     updateCartBadge();
     prefillBuyerForms();
     mountEmailChecks();
+    configureCheckoutForms();
     inspectCheckoutReturn();
     $$("[data-cart-open]").forEach((button) => button.addEventListener("click", openCartDrawer));
   });
@@ -662,6 +764,7 @@
     checkoutCart,
     clearCart,
     formatCurrency,
+    getAccountUser,
     getCatalog,
     inferNetPriceFromGross,
     priceBreakdownFromAvailability,
@@ -671,6 +774,7 @@
     openCartDrawer,
     prefillBuyerForms,
     renderAllCarts,
+    saveAccountSession,
     setStatus,
     toast
   };

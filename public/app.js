@@ -384,7 +384,7 @@ async function inspectReturnParams() {
         }[payment] || payment;
       const nextAction =
         data.order.status === "paid"
-          ? `<div class="status-actions"><a class="button secondary" href="/mis-compras">Ver mis entradas</a></div>`
+          ? `<div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver mis entradas</a></div>`
           : "";
       if (data.order.status === "paid") {
         localStorage.removeItem("hfc_cart");

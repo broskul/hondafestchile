@@ -14,7 +14,7 @@
       <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Carrito</small></span></a>
       <nav class="main-nav" aria-label="Carrito">
         <a href="/ticketera">Ticketera</a>
-        <a href="/mis-compras">Mis compras</a>
+        <a href="/mi-pit-lane">Mi Pit Lane</a>
         <a href="/validar">Validar</a>
       </nav>
       <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
@@ -40,7 +40,9 @@
           <h2>Pago interno rapido</h2>
           <form class="form-grid stacked-form" id="checkoutForm" data-checkout-form>
             <label>Correo electronico <input name="email" type="email" required placeholder="tu@correo.cl" /></label>
-            <label class="terms-check"><input name="termsAccepted" type="checkbox" required /> <span>Acepto terminos y condiciones</span></label>
+            <label data-rut-wrapper>RUT <input name="rut" required placeholder="12.345.678-5" /></label>
+            <label>Telefono <input name="phone" type="tel" required placeholder="+56 9 1234 5678" /></label>
+            <label class="terms-check"><input name="termsAccepted" type="checkbox" required /> <span>Acepto el <a href="/terminos-datos-personales" target="_blank" rel="noreferrer">uso de mis datos personales</a></span></label>
             <div class="email-check" data-email-check hidden></div>
             <button class="button primary full" type="submit">Pagar ahora</button>
           </form>

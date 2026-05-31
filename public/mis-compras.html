@@ -25,7 +25,7 @@
         <div>
           <p class="section-kicker">Mis compras</p>
           <h1>Tus ordenes y entradas digitales.</h1>
-          <p>Ingresa el correo de compra y el RUT completado despues del pago para recuperar tus tickets con QR.</p>
+          <p>Tambien puedes usar Mi Pit Lane para entrar con RUT y correo o telefono.</p>
         </div>
       </section>
 
@@ -36,7 +36,9 @@
           <form id="purchasesForm" class="form-grid stacked-form" data-checkout-form>
             <label>Correo <input name="email" type="email" required placeholder="tu@correo.cl" /></label>
             <label>RUT <input name="rut" required placeholder="12.345.678-5" /></label>
+            <label>Telefono de respaldo <input name="phone" type="tel" placeholder="+56 9 1234 5678" /></label>
             <button class="button primary full" type="submit">Ver mis compras</button>
+            <a class="button secondary full" href="/mi-pit-lane">Abrir Mi Pit Lane</a>
           </form>
           <div class="status-box" id="purchasesStatus" hidden></div>
         </aside>

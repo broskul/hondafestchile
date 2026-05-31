@@ -29,7 +29,21 @@
     }
   }
 
+  function mountHelpButton() {
+    if (!document.body || document.querySelector("[data-help-whatsapp]")) return;
+    const link = document.createElement("a");
+    link.className = "floating-help";
+    link.dataset.helpWhatsapp = "true";
+    link.href = "https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra";
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.setAttribute("aria-label", "Necesitas ayuda por WhatsApp");
+    link.innerHTML = `<span>?</span><strong>Necesitas ayuda?</strong>`;
+    document.body.appendChild(link);
+  }
+
   document.addEventListener("DOMContentLoaded", async () => {
+    mountHelpButton();
     try {
       const catalog = await loadCatalog();
       if (!catalog?.integrations?.testMode) return;

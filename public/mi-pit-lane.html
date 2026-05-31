@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mi Pit Lane | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/test-mode.js"></script>
+    <script defer src="/shared.js"></script>
+    <script defer src="/mi-pit-lane.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Mi Pit Lane</small></span></a>
+      <nav class="main-nav" aria-label="Mi Pit Lane">
+        <a href="/ticketera">Ticketera</a>
+        <a href="/carrito">Carrito</a>
+        <a href="/validar">Validar QR</a>
+      </nav>
+      <button class="nav-cta" type="button" data-cart-open>Carrito <span data-cart-count>0</span></button>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero">
+        <div>
+          <p class="section-kicker">Cuenta</p>
+          <h1>Mi Pit Lane.</h1>
+          <p>Tu acceso a compras, entradas emitidas y enrolamientos pendientes.</p>
+        </div>
+      </section>
+
+      <section class="section split-section pit-lane-section">
+        <aside class="ticket-panel checkout-page">
+          <p class="section-kicker">Acceso</p>
+          <h2>Ingresa con RUT y correo o telefono</h2>
+          <form id="pitLaneLoginForm" class="form-grid stacked-form">
+            <label>RUT <input name="rut" required placeholder="12.345.678-5" /></label>
+            <label>Correo o telefono <input name="contact" required placeholder="tu@correo.cl o +56 9..." /></label>
+            <button class="button primary full" type="submit">Entrar a Mi Pit Lane</button>
+          </form>
+          <div class="status-box" id="pitLaneStatus" hidden></div>
+        </aside>
+
+        <div class="pit-lane-board">
+          <div class="pit-lane-user" id="pitLaneUser" hidden></div>
+          <div class="tabs pit-lane-tabs" role="tablist" aria-label="Compras">
+            <button class="tab active" type="button" data-pit-tab="pending">Pendientes</button>
+            <button class="tab" type="button" data-pit-tab="current">Entradas</button>
+            <button class="tab" type="button" data-pit-tab="history">Historial</button>
+          </div>
+          <div class="purchase-list" id="pitLaneList" aria-live="polite">
+            <div class="empty-state">Ingresa para ver tus compras.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

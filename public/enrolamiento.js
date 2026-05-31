@@ -92,7 +92,7 @@
           .join("")}
       </div>
       <div class="status-actions">
-        <a class="button secondary" href="/mis-compras">Ver mis entradas</a>
+        <a class="button secondary" href="/mi-pit-lane">Ver mis entradas</a>
         <a class="button ghost-light" href="/ticketera">Volver a ticketera</a>
       </div>
     `;
