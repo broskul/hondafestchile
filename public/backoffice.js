@@ -679,8 +679,9 @@ function attachBackofficeEvents() {
         method: "PUT",
         body: JSON.stringify({ ticketing: collectTicketingForm(event.currentTarget) })
       });
-      HFC.setStatus(status, "Entradas, valores y fechas guardadas.");
       await loadBackoffice();
+      HFC.setStatus(HFC.$("#ticketingStatus"), "Entradas, valores y fechas guardadas.");
+      HFC.toast("Entradas guardadas.");
     } catch (error) {
       HFC.setStatus(status, error.message, true);
     }
