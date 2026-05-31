@@ -28,19 +28,9 @@ async function renderProducts() {
                           <p>${ticket.description}</p>
                           <small>${availability.available ? availability.salePhaseName : "Venta no disponible"}</small>
                         </div>
-                        <div class="ticket-price-breakdown">
-                          <div>
-                            <span>Valor neto + IVA</span>
-                            <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
-                          </div>
-                          <div>
-                            <span>+ Cargo 12% (${HFC.formatCurrency(pricing.netWithVat)} x 12%)</span>
-                            <strong>${HFC.formatCurrency(pricing.serviceCharge)}</strong>
-                          </div>
-                          <div class="ticket-price-total">
-                            <span>Total</span>
-                            <strong>${HFC.formatCurrency(pricing.total)}</strong>
-                          </div>
+                        <div class="ticket-display-price">
+                          <span>Precio</span>
+                          <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
                         </div>
                         <label>
                           Cantidad

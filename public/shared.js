@@ -257,7 +257,9 @@
         if (!event || !ticket) return null;
         const availability = ticketAvailability(ticket, event.id);
         const maxQuantity = availability.maxQuantity || ticket.maxQuantity;
-        const unitPrice = availability.price ?? ticket.price;
+        const pricing = priceBreakdownFromAvailability(availability);
+        const unitPrice = pricing.netWithVat;
+        const paymentUnitPrice = pricing.total;
         const quantity = Math.min(Math.max(1, Number(item.quantity || 1)), maxQuantity);
         return {
           ...item,
@@ -266,8 +268,11 @@
           ticketTypeName: ticket.name,
           description: ticket.description,
           unitPrice,
-          pricing: priceBreakdownFromAvailability(availability),
-          total: unitPrice * quantity,
+          paymentUnitPrice,
+          pricing,
+          subtotal: unitPrice * quantity,
+          serviceCharge: pricing.serviceCharge * quantity,
+          total: paymentUnitPrice * quantity,
           maxQuantity
         };
       })
@@ -284,6 +289,8 @@
   async function renderCart(container, options = {}) {
     if (!container) return;
     const details = await cartDetails();
+    const subtotal = details.reduce((sum, item) => sum + item.subtotal, 0);
+    const serviceCharge = details.reduce((sum, item) => sum + item.serviceCharge, 0);
     const total = details.reduce((sum, item) => sum + item.total, 0);
 
     if (!details.length) {
@@ -307,7 +314,7 @@
                   <input class="cart-qty" type="number" min="1" max="${item.maxQuantity}" value="${item.quantity}"
                     data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" />
                 </label>
-                <strong>${formatCurrency(item.total)}</strong>
+                <strong>${formatCurrency(item.subtotal)}</strong>
                 <button class="icon-button" type="button" data-cart-remove data-event-id="${item.eventId}"
                   data-ticket-type-id="${item.ticketTypeId}" aria-label="Quitar">x</button>
               </article>
@@ -315,9 +322,19 @@
           )
           .join("")}
       </div>
-      <div class="cart-total">
-        <span>Total</span>
-        <strong>${formatCurrency(total)}</strong>
+      <div class="cart-payment-summary">
+        <div>
+          <span>Precio</span>
+          <strong>${formatCurrency(subtotal)}</strong>
+        </div>
+        <div>
+          <span>Cargo (12%)</span>
+          <strong>${formatCurrency(serviceCharge)}</strong>
+        </div>
+        <div class="cart-total">
+          <span>Total pago</span>
+          <strong>${formatCurrency(total)}</strong>
+        </div>
       </div>
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;

@@ -91,11 +91,16 @@ function ticketAvailability(ticket, eventId) {
   return (
     ticket?.availabilityByEvent?.[eventId] || {
       price: ticket?.price || 0,
+      pricing: ticket?.pricing || null,
       maxQuantity: ticket?.maxQuantity || 1,
       salePhaseName: ticket?.salePhaseName || "No disponible",
       available: Boolean(ticket?.available)
     }
   );
+}
+
+function ticketDisplayPrice(availability = {}) {
+  return availability.pricing?.netWithVat ?? availability.price ?? 0;
 }
 
 function setStatus(element, html, isError = false) {
@@ -169,7 +174,7 @@ function populateSelects() {
     .map(
       (ticket) => {
         const availability = ticketAvailability(ticket, eventId);
-        return `<option value="${ticket.id}" ${availability.available ? "" : "disabled"}>${ticket.name} - ${formatCurrency(availability.price)} (${availability.available ? availability.salePhaseName : "no disponible"})</option>`;
+        return `<option value="${ticket.id}" ${availability.available ? "" : "disabled"}>${ticket.name} - ${formatCurrency(ticketDisplayPrice(availability))} (${availability.available ? availability.salePhaseName : "no disponible"})</option>`;
       }
     )
     .join("");
@@ -193,7 +198,7 @@ function updateTotal() {
   }
 
   const safeQuantity = Math.max(1, Number(quantityInput.value || 1));
-  $("#totalOutput").textContent = formatCurrency((availability.price || 0) * safeQuantity);
+  $("#totalOutput").textContent = formatCurrency(ticketDisplayPrice(availability) * safeQuantity);
 }
 
 function switchTab(tabName) {

@@ -1388,36 +1388,27 @@ a:focus-visible {
   gap: 16px;
 }
 
-.ticket-price-breakdown {
+.ticket-display-price {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: baseline;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8f9f6;
 }
 
-.ticket-price-breakdown div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
-}
-
-.ticket-price-breakdown span {
+.ticket-display-price span {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 800;
   line-height: 1.35;
 }
 
-.ticket-price-breakdown strong {
+.ticket-display-price strong {
+  font-size: 1.28rem;
   white-space: nowrap;
-}
-
-.ticket-price-total {
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
 }
 
 .product-card h4,
@@ -1537,10 +1528,21 @@ a:focus-visible {
   min-height: 38px;
 }
 
-.cart-total {
+.cart-payment-summary {
+  display: grid;
+  gap: 8px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.cart-payment-summary div {
   display: flex;
   justify-content: space-between;
-  padding: 18px 0;
+  gap: 16px;
+}
+
+.cart-total {
+  padding-top: 10px;
   border-top: 1px solid var(--line);
   font-size: 1.2rem;
 }
