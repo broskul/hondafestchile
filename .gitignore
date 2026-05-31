@@ -6,3 +6,9 @@ npm-debug.log*
 *.local
 
 .vercel
+
+# Carpetas locales de fotos y recursos pesados
+HFC Recursos 2026/
+HFC_R2_upload_ready/
+_hfc_asset_review/
+.DS_Store
