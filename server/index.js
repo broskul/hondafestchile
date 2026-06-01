@@ -294,6 +294,51 @@ function normalizeEvent(event = {}) {
   };
 }
 
+const SPANISH_MONTH_INDEX = {
+  enero: 0,
+  febrero: 1,
+  marzo: 2,
+  abril: 3,
+  mayo: 4,
+  junio: 5,
+  julio: 6,
+  agosto: 7,
+  septiembre: 8,
+  setiembre: 8,
+  octubre: 9,
+  noviembre: 10,
+  diciembre: 11
+};
+
+function dateFromEventLabel(value = "") {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const match = normalized.match(/\b(\d{1,2})(?:\s*(?:y|al|-)\s*\d{1,2})?\s+de\s+([a-z]+)\s+de\s+(\d{4})\b/);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = SPANISH_MONTH_INDEX[match[2]];
+  const year = Number(match[3]);
+  if (!Number.isInteger(day) || month === undefined || !Number.isInteger(year)) return null;
+  return Date.UTC(year, month, day);
+}
+
+function eventSortValue(event) {
+  const explicitDate = Date.parse(event.eventDate || "");
+  if (Number.isFinite(explicitDate)) return explicitDate;
+  const labelDate = dateFromEventLabel(event.dateLabel);
+  return Number.isFinite(labelDate) ? labelDate : Number.MAX_SAFE_INTEGER;
+}
+
+function sortEventsByDate(events) {
+  return events
+    .map((event, index) => ({ event, index, sortValue: eventSortValue(event) }))
+    .sort((left, right) => left.sortValue - right.sortValue || left.index - right.index)
+    .map(({ event }) => event);
+}
+
 function normalizeTicketingConfig(config = {}) {
   const defaults = defaultTicketingConfig();
   const hasEvents = Object.prototype.hasOwnProperty.call(config, "events");
@@ -302,7 +347,7 @@ function normalizeTicketingConfig(config = {}) {
   const ticketTypes = hasTicketTypes && Array.isArray(config.ticketTypes) ? config.ticketTypes : defaults.ticketTypes;
 
   return {
-    events: events.map(normalizeEvent).filter((event) => event.active !== false),
+    events: sortEventsByDate(events.map(normalizeEvent).filter((event) => event.active !== false)),
     ticketTypes: ticketTypes.map(normalizeTicket).filter((ticket) => ticket.active !== false)
   };
 }

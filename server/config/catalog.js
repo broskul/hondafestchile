@@ -4,6 +4,7 @@ const events = [
     name: "Honda Fest Chile",
     eyebrow: "Proximo evento",
     dateLabel: "28 y 29 de noviembre de 2026",
+    eventDate: "2026-11-28T00:00",
     venue: "Autodromo Huachalalume",
     city: "La Serena",
     summary:
@@ -16,6 +17,7 @@ const events = [
     name: "Japon Fest Chile",
     eyebrow: "Cultura japonesa y comunidad",
     dateLabel: "19 de julio de 2026",
+    eventDate: "2026-07-19T00:00",
     venue: "Recinto por confirmar",
     city: "Chile",
     summary:
