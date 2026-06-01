@@ -1,27 +1,27 @@
 const events = [
   {
+    id: "honda-fest-chile-2026",
+    name: "Honda Fest Chile",
+    eyebrow: "Proximo evento",
+    dateLabel: "28 y 29 de noviembre de 2026",
+    venue: "Autodromo Huachalalume",
+    city: "La Serena",
+    summary:
+      "Honda Fest Chile vuelve a La Serena con pista, exhibiciones, comunidad Honda y experiencia familiar en el Autodromo Huachalalume.",
+    highlights: ["28 y 29 noviembre", "Autodromo Huachalalume", "La Serena", "Track day y comunidad"],
+    accent: "honda"
+  },
+  {
     id: "japon-fest-chile-2026",
     name: "Japon Fest Chile",
-    eyebrow: "Proximo evento",
+    eyebrow: "Cultura japonesa y comunidad",
     dateLabel: "19 de julio de 2026",
     venue: "Recinto por confirmar",
     city: "Chile",
     summary:
-      "Una jornada para celebrar cultura japonesa, autos preparados, clubes, cosplay, musica, stands y gastronomia el 19 de julio.",
-    highlights: ["19 de julio", "Exhibicion de clubes", "Stands y cultura japonesa", "Show & shine"],
+      "Una jornada para celebrar cultura japonesa, autos preparados, clubes, cosplay, musica, stands y gastronomia.",
+    highlights: ["Cultura japonesa", "Exhibicion de clubes", "Stands y comunidad", "Show & shine"],
     accent: "japon"
-  },
-  {
-    id: "honda-fest-chile-2026",
-    name: "Honda Fest Chile",
-    eyebrow: "Track day, comunidad y competencia",
-    dateLabel: "Temporada 2026",
-    venue: "Circuito por confirmar",
-    city: "Chile",
-    summary:
-      "El punto de encuentro para pilotos, equipos, clubes y fanaticos Honda con pista, exhibiciones y experiencia familiar.",
-    highlights: ["Carreras y track day", "Grilla de pilotos", "Zona paddock", "Experiencia familiar"],
-    accent: "honda"
   }
 ];
 

@@ -432,10 +432,15 @@ function filteredGalleryItems() {
         item.keywords,
         item.category,
         item.collection,
+        item.album,
+        item.eventName,
+        item.eventDateLabel,
+        item.venue,
+        item.city,
         item.capturedAt
       ].join(" ")
     );
-    return haystack.includes(query);
+    return query.split(/\s+/).filter(Boolean).every((token) => haystack.includes(token));
   });
 }
 
