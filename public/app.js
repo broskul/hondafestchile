@@ -17,7 +17,6 @@ const ALL_GALLERY_CATEGORY = "all";
 const GALLERY_LOGO_SRC = "/logo-hfc.avif";
 let galleryRevealObserver = null;
 let galleryCornerLogoSrc = GALLERY_LOGO_SRC;
-let gallerySignatureLogoSrc = GALLERY_LOGO_SRC;
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => {
@@ -572,7 +571,7 @@ function drawContainImage(ctx, image, x, y, width, height) {
   return { x: drawX, y: drawY, width: drawWidth, height: drawHeight };
 }
 
-function processedLogoCanvas(logo, width, mode = "color") {
+function processedLogoCanvas(logo, width) {
   const canvas = document.createElement("canvas");
   const height = Math.max(1, Math.round(width * (logo.naturalHeight / logo.naturalWidth)));
   canvas.width = Math.max(1, Math.round(width));
@@ -599,33 +598,24 @@ function processedLogoCanvas(logo, width, mode = "color") {
       continue;
     }
 
-    if (mode === "signature") {
-      data[index] = 246;
-      data[index + 1] = 250;
-      data[index + 2] = 255;
-      data[index + 3] = Math.round(alpha * 0.72);
-    } else {
-      data[index + 3] = Math.round(alpha * 0.9);
-    }
+    data[index + 3] = Math.round(alpha * 0.9);
   }
 
   ctx.putImageData(imageData, 0, 0);
   return canvas;
 }
 
-function processedLogoDataUrl(logo, width, mode) {
-  return processedLogoCanvas(logo, width, mode).toDataURL("image/png");
+function processedLogoDataUrl(logo, width) {
+  return processedLogoCanvas(logo, width).toDataURL("image/png");
 }
 
 async function initGalleryLogoAssets() {
   try {
     const logoAsset = await loadCanvasImage(GALLERY_LOGO_SRC);
-    galleryCornerLogoSrc = processedLogoDataUrl(logoAsset.image, 420, "color");
-    gallerySignatureLogoSrc = processedLogoDataUrl(logoAsset.image, 1100, "signature");
+    galleryCornerLogoSrc = processedLogoDataUrl(logoAsset.image, 420);
     logoAsset.revoke();
   } catch {
     galleryCornerLogoSrc = GALLERY_LOGO_SRC;
-    gallerySignatureLogoSrc = GALLERY_LOGO_SRC;
   }
 }
 
@@ -633,27 +623,54 @@ function applyGalleryLogoSources(root = document) {
   root.querySelectorAll("[data-gallery-corner-logo]").forEach((image) => {
     image.src = galleryCornerLogoSrc;
   });
-  root.querySelectorAll("[data-gallery-signature-logo]").forEach((image) => {
-    image.src = gallerySignatureLogoSrc;
-  });
 }
 
-function drawSignatureLogo(ctx, logo, bounds) {
-  const logoWidth = Math.round(bounds.width * 0.75);
-  const mark = processedLogoCanvas(logo, logoWidth, "signature");
-  const x = bounds.x + (bounds.width - mark.width) / 2;
-  const y = bounds.y + (bounds.height - mark.height) / 2;
+function fitCanvasText(ctx, text, maxWidth, initialSize, fontFamily, style = "") {
+  let size = initialSize;
+  do {
+    ctx.font = `${style}${Math.round(size)}px ${fontFamily}`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size *= 0.94;
+  } while (size > 18);
+  return size;
+}
+
+function drawSignatureMark(ctx, bounds) {
+  const markWidth = bounds.width * 0.75;
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  const fontFamily = '"Arial Black", Impact, Arial, sans-serif';
+  const mainSize = fitCanvasText(ctx, "HONDA FEST", markWidth, Math.min(bounds.width * 0.128, bounds.height * 0.18), fontFamily, "italic 900 ");
+  const subSize = fitCanvasText(ctx, "CHILE", markWidth * 0.42, mainSize * 0.34, fontFamily, "900 ");
+  const lineHeight = mainSize * 0.82;
 
   ctx.save();
-  ctx.globalAlpha = 0.18;
+  ctx.translate(centerX, centerY);
+  ctx.rotate(-0.045);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
   ctx.globalCompositeOperation = "screen";
-  ctx.drawImage(mark, x, y);
+
+  ctx.font = `italic 900 ${Math.round(mainSize)}px ${fontFamily}`;
+  ctx.lineWidth = Math.max(2, mainSize * 0.036);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.055)";
+  ctx.strokeText("HONDA FEST", 0, -lineHeight * 0.12);
+  ctx.fillText("HONDA FEST", 0, -lineHeight * 0.12);
+
+  ctx.font = `900 ${Math.round(subSize)}px ${fontFamily}`;
+  ctx.lineWidth = Math.max(1.2, subSize * 0.045);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.26)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.045)";
+  ctx.strokeText("CHILE", 0, lineHeight * 0.66);
+  ctx.fillText("CHILE", 0, lineHeight * 0.66);
   ctx.restore();
 }
 
 function drawCornerLogo(ctx, logo, bounds, story = false) {
   const logoWidth = Math.round(Math.min(bounds.width * (story ? 0.18 : 0.14), story ? 190 : 210));
-  const mark = processedLogoCanvas(logo, logoWidth, "color");
+  const mark = processedLogoCanvas(logo, logoWidth);
   const margin = Math.round(Math.max(bounds.width * 0.026, story ? 22 : 18));
   const x = bounds.x + bounds.width - mark.width - margin;
   const y = bounds.y + bounds.height - mark.height - margin;
@@ -708,7 +725,7 @@ async function createBrandedGalleryBlob(item, mode = "download") {
       canvas.height = Math.round(photoAsset.image.naturalHeight * scale);
       ctx.drawImage(photoAsset.image, 0, 0, canvas.width, canvas.height);
       const photoBounds = { x: 0, y: 0, width: canvas.width, height: canvas.height };
-      drawSignatureLogo(ctx, logoAsset.image, photoBounds);
+      drawSignatureMark(ctx, photoBounds);
       drawCornerLogo(ctx, logoAsset.image, photoBounds, false);
     }
 
@@ -820,15 +837,10 @@ function gallerySlide(item, index, total) {
         <strong>${escapeHtml(title)}</strong>
         ${renderGalleryTags(item)}
       </figcaption>
-      <img
-        class="gallery-slide__signature"
-        src="${escapeHtml(gallerySignatureLogoSrc)}"
-        alt=""
-        width="900"
-        height="602"
-        draggable="false"
-        data-gallery-signature-logo
-      />
+      <div class="gallery-slide__signature" aria-hidden="true">
+        <span>Honda Fest</span>
+        <small>Chile</small>
+      </div>
       <img
         class="gallery-slide__watermark"
         src="${escapeHtml(galleryCornerLogoSrc)}"
@@ -930,6 +942,8 @@ function renderGallery() {
   `;
   viewer.innerHTML = gallerySlide(activeItem, state.gallery.activeIndex, items.length);
   applyGalleryLogoSources(viewer);
+  requestAnimationFrame(() => positionSlideWatermarks(viewer));
+  viewer.querySelector(".gallery-slide__image img")?.addEventListener("load", () => positionSlideWatermarks(viewer), { once: true });
   thumbs.innerHTML = items.map((item, index) => galleryThumb(item, index, index === state.gallery.activeIndex)).join("");
   thumbs.querySelector(".gallery-thumb.is-active")?.scrollIntoView({
     behavior: "smooth",
@@ -980,6 +994,34 @@ function activeGalleryItem() {
   return items[state.gallery.activeIndex] || null;
 }
 
+function setSignatureMarkSize(signature, content) {
+  const mainSize = Math.max(30, Math.min(132, Math.min(content.width * 0.112, content.height * 0.19)));
+  signature.style.setProperty("--gallery-signature-main", `${mainSize}px`);
+  signature.style.setProperty("--gallery-signature-sub", `${Math.max(14, Math.min(52, mainSize * 0.34))}px`);
+}
+
+function positionSlideWatermarks(root = document) {
+  const slide = root.querySelector(".gallery-slide");
+  const imageFrame = root.querySelector(".gallery-slide__image");
+  const signature = root.querySelector(".gallery-slide__signature");
+  if (!slide || !imageFrame || !signature) return;
+
+  const slideBox = slide.getBoundingClientRect();
+  const frameBox = imageFrame.getBoundingClientRect();
+  const content = {
+    left: frameBox.left - slideBox.left,
+    top: frameBox.top - slideBox.top,
+    width: frameBox.width,
+    height: frameBox.height
+  };
+
+  signature.style.width = `${content.width * 0.75}px`;
+  signature.style.left = `${content.left + content.width / 2}px`;
+  signature.style.top = `${content.top + content.height / 2}px`;
+  signature.style.transform = "translate(-50%, -50%) rotate(-2.5deg)";
+  setSignatureMarkSize(signature, content);
+}
+
 function imageContentBox(image) {
   const box = image.getBoundingClientRect();
   if (!image.naturalWidth || !image.naturalHeight || !box.width || !box.height) return box;
@@ -1024,7 +1066,8 @@ function positionDialogWatermarks(dialog) {
   signature.style.width = `${signatureWidth}px`;
   signature.style.left = `${left + content.width / 2}px`;
   signature.style.top = `${top + content.height / 2}px`;
-  signature.style.transform = "translate(-50%, -50%)";
+  signature.style.transform = "translate(-50%, -50%) rotate(-2.5deg)";
+  setSignatureMarkSize(signature, content);
 
   corner.style.width = `${cornerWidth}px`;
   corner.style.left = `${left + content.width - cornerWidth - margin}px`;
@@ -1080,6 +1123,7 @@ function initGalleryLightbox() {
     }
   });
   window.addEventListener("resize", () => {
+    positionSlideWatermarks($("#galleryViewer") || document);
     if (dialog.open) positionDialogWatermarks(dialog);
   });
 }
