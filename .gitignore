@@ -6,6 +6,7 @@ npm-debug.log*
 *.local
 
 .vercel
+.codex-temp/
 
 # Carpetas locales de fotos y recursos pesados
 HFC Recursos 2026/

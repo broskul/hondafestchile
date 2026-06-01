@@ -140,6 +140,19 @@
     return `${item.eventId}::${item.ticketTypeId}`;
   }
 
+  function normalizeCartItem(item) {
+    const quantity = Math.floor(Number(item.quantity || 1));
+    return {
+      eventId: String(item.eventId || ""),
+      ticketTypeId: String(item.ticketTypeId || ""),
+      quantity: Number.isFinite(quantity) ? Math.max(1, quantity) : 1
+    };
+  }
+
+  function sameCartPayload(left, right) {
+    return JSON.stringify(left.map(normalizeCartItem)) === JSON.stringify(right.map(normalizeCartItem));
+  }
+
   function addToCart(item) {
     const cart = readCart();
     const existing = cart.find((candidate) => lineKey(candidate) === lineKey(item));
@@ -319,35 +332,87 @@
     window.__hfcCardPaymentBrickController = null;
   }
 
-  async function cartDetails() {
+  function cleanCartWithCatalog(catalog) {
+    const rawItems = readCart();
+    const detailsByKey = new Map();
+    let removedCount = 0;
+    let changed = false;
+
+    rawItems.forEach((rawItem) => {
+      const item = normalizeCartItem(rawItem);
+      const event = catalog.events.find((candidate) => candidate.id === item.eventId);
+      const ticket = catalog.ticketTypes.find((candidate) => candidate.id === item.ticketTypeId);
+
+      if (!event || !ticket || ticket.entryType === "guest") {
+        removedCount += item.quantity;
+        changed = true;
+        return;
+      }
+
+      const availability = ticketAvailability(ticket, event.id);
+      if (!availability.available) {
+        removedCount += item.quantity;
+        changed = true;
+        return;
+      }
+
+      const maxQuantity = Math.max(1, Number(availability.maxQuantity || ticket.maxQuantity || 1));
+      const pricing = priceBreakdownFromAvailability(availability);
+      const unitPrice = pricing.netWithVat;
+      const paymentUnitPrice = pricing.total;
+      const key = lineKey(item);
+      const existing = detailsByKey.get(key);
+      const quantity = Math.min((existing?.quantity || 0) + item.quantity, maxQuantity);
+
+      if (existing) {
+        changed = true;
+        existing.quantity = quantity;
+        existing.subtotal = unitPrice * quantity;
+        existing.serviceCharge = pricing.serviceCharge * quantity;
+        existing.total = paymentUnitPrice * quantity;
+        return;
+      }
+
+      if (item.quantity > maxQuantity) changed = true;
+      detailsByKey.set(key, {
+        eventId: item.eventId,
+        ticketTypeId: item.ticketTypeId,
+        quantity,
+        eventName: event.name,
+        ticketTypeName: ticket.name,
+        description: ticket.description,
+        unitPrice,
+        paymentUnitPrice,
+        pricing,
+        subtotal: unitPrice * quantity,
+        serviceCharge: pricing.serviceCharge * quantity,
+        total: paymentUnitPrice * quantity,
+        maxQuantity
+      });
+    });
+
+    const details = Array.from(detailsByKey.values());
+    const items = details.map((item) => ({
+      eventId: item.eventId,
+      ticketTypeId: item.ticketTypeId,
+      quantity: item.quantity
+    }));
+
+    if (!sameCartPayload(rawItems, items) || changed) {
+      saveCart(items);
+    }
+
+    return { details, items, removedCount };
+  }
+
+  async function cleanCart() {
     const catalog = await getCatalog();
-    return readCart()
-      .map((item) => {
-        const event = catalog.events.find((candidate) => candidate.id === item.eventId);
-        const ticket = catalog.ticketTypes.find((candidate) => candidate.id === item.ticketTypeId);
-        if (!event || !ticket || ticket.entryType === "guest") return null;
-        const availability = ticketAvailability(ticket, event.id);
-        const maxQuantity = availability.maxQuantity || ticket.maxQuantity;
-        const pricing = priceBreakdownFromAvailability(availability);
-        const unitPrice = pricing.netWithVat;
-        const paymentUnitPrice = pricing.total;
-        const quantity = Math.min(Math.max(1, Number(item.quantity || 1)), maxQuantity);
-        return {
-          ...item,
-          quantity,
-          eventName: event.name,
-          ticketTypeName: ticket.name,
-          description: ticket.description,
-          unitPrice,
-          paymentUnitPrice,
-          pricing,
-          subtotal: unitPrice * quantity,
-          serviceCharge: pricing.serviceCharge * quantity,
-          total: paymentUnitPrice * quantity,
-          maxQuantity
-        };
-      })
-      .filter(Boolean);
+    return cleanCartWithCatalog(catalog);
+  }
+
+  async function cartDetails() {
+    const cart = await cleanCart();
+    return cart.details;
   }
 
   function updateCartBadge() {
@@ -359,17 +424,21 @@
 
   async function renderCart(container, options = {}) {
     if (!container) return;
-    const details = await cartDetails();
+    const { details, removedCount } = await cleanCart();
     const subtotal = details.reduce((sum, item) => sum + item.subtotal, 0);
     const serviceCharge = details.reduce((sum, item) => sum + item.serviceCharge, 0);
     const total = details.reduce((sum, item) => sum + item.total, 0);
+    const cleanupNotice = removedCount
+      ? `<div class="status-box">Actualizamos tu carrito porque una entrada ya no esta disponible.</div>`
+      : "";
 
     if (!details.length) {
-      container.innerHTML = `<div class="empty-state">Tu carrito esta vacio.</div>`;
+      container.innerHTML = `${cleanupNotice}<div class="empty-state">Tu carrito esta vacio.</div>`;
       return;
     }
 
     container.innerHTML = `
+      ${cleanupNotice}
       <div class="cart-lines">
         ${details
           .map(
@@ -444,13 +513,20 @@
   }
 
   async function checkoutCart(form, statusElement) {
-    const items = readCart();
+    const catalog = await getCatalog();
+    const cart = cleanCartWithCatalog(catalog);
+    const items = cart.items;
+
+    if (cart.removedCount) {
+      await renderAllCarts();
+      setStatus(statusElement, "Actualizamos tu carrito porque una entrada ya no esta disponible. Continuaremos solo con las entradas vigentes.");
+    }
+
     if (!items.length) {
-      setStatus(statusElement, "Agrega al menos una entrada al carrito.", true);
+      setStatus(statusElement, "El carrito no tiene entradas disponibles. Vuelve a la ticketera y elige una entrada vigente.", true);
       return;
     }
 
-    const catalog = await getCatalog();
     if (catalog.integrations?.paymentMode !== "demo" && catalog.integrations?.checkoutStorageReady === false) {
       setStatus(
         statusElement,
