@@ -1484,6 +1484,43 @@ function orderStatusForPaymentStatus(status) {
   return "payment_review";
 }
 
+function checkoutReturnStatus(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z_ -]/g, "")
+    .replace(/\s+/g, "_");
+}
+
+function checkoutReturnIsFailed(status) {
+  return [
+    "failure",
+    "failed",
+    "rejected",
+    "cancelled",
+    "canceled",
+    "cancelled_by_user",
+    "canceled_by_user",
+    "refunded",
+    "charged_back"
+  ].includes(checkoutReturnStatus(status));
+}
+
+function checkoutReturnIsPending(status) {
+  return ["success", "approved", "pending", "in_process", "authorized", "null"].includes(checkoutReturnStatus(status));
+}
+
+function retryCheckoutUrl(order, req = null) {
+  return order?.checkoutUrl || `${configuredBaseUrl(req).replace(/\/$/, "")}/carrito`;
+}
+
+function supportWhatsappUrl(order = null) {
+  const message = order?.id
+    ? `Hola, necesito ayuda con mi compra Honda Fest Chile. Orden ${order.id}.`
+    : "Hola, necesito ayuda con mi compra Honda Fest Chile.";
+  return `https://wa.me/56972934950?text=${encodeURIComponent(message)}`;
+}
+
 function paymentModeForClient() {
   if (mercadoPagoInternalCheckoutEnabled()) return "mercadopago_api";
   return mercadoPagoConfigured() ? "mercadopago" : "demo";
@@ -1947,6 +1984,121 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
     });
 
     return { ok: false, message: error.message, ...links };
+  }
+}
+
+async function sendPaymentRetryEmail({ orderId, req = null, reason = "", force = false }) {
+  let state = await readState();
+  let order = state.orders.find((candidate) => candidate.id === orderId);
+  if (!order) {
+    const error = new Error("Orden no encontrada");
+    error.status = 404;
+    throw error;
+  }
+
+  const user = state.users.find((candidate) => candidate.id === order.userId);
+  const items = getOrderItems(order, state);
+  const firstItem = items[0];
+  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
+
+  if (!user) {
+    const error = new Error("Usuario no encontrado para enviar recuperacion de pago");
+    error.status = 409;
+    throw error;
+  }
+
+  if (!force && order.paymentRetryEmailSentAt) {
+    return {
+      ok: true,
+      skipped: true,
+      retryUrl: retryCheckoutUrl(order, req),
+      whatsappUrl: supportWhatsappUrl(order)
+    };
+  }
+
+  const retryUrl = retryCheckoutUrl(order, req);
+  const whatsappUrl = supportWhatsappUrl(order);
+  const itemRows = orderItemsTemplateRows(items);
+  const template = findTemplate(state.emailTemplates, "payment_failed_retry");
+  const rendered = renderTemplate(template, {
+    name: user.name || nameFromEmail(user.email),
+    email: user.email,
+    event_name: orderEventName(order, event),
+    order_id: order.id,
+    order_total: order.total,
+    order_total_label: formatCurrencyLabel(order.total || 0),
+    order_items_text: itemRows.text,
+    order_items_html: itemRows.html,
+    retry_url: retryUrl,
+    checkout_url: retryUrl,
+    whatsapp_url: whatsappUrl,
+    payment_status: reason
+  });
+
+  if (!rendered.text.includes(retryUrl)) {
+    rendered.text = `${rendered.text}\nIntentar nuevamente: ${retryUrl}`.trim();
+  }
+  if (!rendered.text.includes(whatsappUrl)) {
+    rendered.text = `${rendered.text}\nWhatsApp: ${whatsappUrl}`.trim();
+  }
+  if (!rendered.html.includes(retryUrl) || !rendered.html.includes(whatsappUrl)) {
+    rendered.html = `${rendered.html}
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212;margin-top:18px">
+        <p><a href="${htmlEscape(retryUrl)}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Intentar nuevamente</a></p>
+        <p><a href="${htmlEscape(whatsappUrl)}" style="color:#1b5e20;font-weight:bold;text-decoration:none">Necesito ayuda por WhatsApp</a></p>
+      </div>`;
+  }
+
+  try {
+    const result = await sendMail({
+      to: user.email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html
+    });
+
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      if (freshOrder) {
+        freshOrder.paymentRetryEmailSentAt = new Date().toISOString();
+        freshOrder.paymentRetryEmailStatus = "sent";
+        freshOrder.paymentRetryEmailError = null;
+        freshOrder.updatedAt = freshOrder.paymentRetryEmailSentAt;
+      }
+      logEmailResult(nextState, {
+        type: "payment_failed_retry",
+        templateId: template?.id || "payment_failed_retry",
+        to: user.email,
+        userId: user.id,
+        orderId: order.id,
+        status: "sent",
+        mode: result.mode,
+        subject: rendered.subject
+      });
+    });
+
+    return { ok: true, mode: result.mode, retryUrl, whatsappUrl };
+  } catch (error) {
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      if (freshOrder) {
+        freshOrder.paymentRetryEmailStatus = "failed";
+        freshOrder.paymentRetryEmailError = error.message;
+        freshOrder.updatedAt = new Date().toISOString();
+      }
+      logEmailResult(nextState, {
+        type: "payment_failed_retry",
+        templateId: template?.id || "payment_failed_retry",
+        to: user.email,
+        userId: user.id,
+        orderId: order.id,
+        status: "failed",
+        error: error.message,
+        subject: rendered.subject
+      });
+    });
+
+    return { ok: false, message: error.message, retryUrl, whatsappUrl };
   }
 }
 
@@ -2435,6 +2587,79 @@ app.get("/api/orders/:orderId", async (req, res, next) => {
   }
 });
 
+app.post("/api/orders/:orderId/checkout-return", async (req, res, next) => {
+  try {
+    await requireCheckoutStorage();
+
+    const rawStatus =
+      req.body.payment ||
+      req.body.status ||
+      req.body.collectionStatus ||
+      req.body.collection_status ||
+      req.query.payment ||
+      req.query.status ||
+      req.query.collection_status ||
+      "";
+    const normalizedStatus = checkoutReturnStatus(rawStatus);
+    let state = await readState();
+    let order = state.orders.find((candidate) => candidate.id === req.params.orderId);
+
+    if (!order) {
+      res.status(404).json({ ok: false, message: "Orden no encontrada" });
+      return;
+    }
+
+    if (order.status !== "paid" && checkoutReturnIsFailed(normalizedStatus)) {
+      await updateOrderPaymentStatus(order.id, {
+        provider: "mercadopago",
+        paymentId: `checkout_return_${order.id}`,
+        status: normalizedStatus === "failure" || normalizedStatus === "failed" ? "cancelled" : normalizedStatus,
+        statusDetail: "checkout_return_without_payment_id",
+        preferenceId: order.preferenceId,
+        externalReference: order.id,
+        transactionAmount: order.total
+      });
+      await sendPaymentRetryEmail({ orderId: order.id, req, reason: normalizedStatus });
+    } else if (
+      order.status === "created" &&
+      checkoutReturnIsPending(normalizedStatus) &&
+      normalizedStatus !== "approved"
+    ) {
+      await updateOrderPaymentStatus(order.id, {
+        provider: "mercadopago",
+        paymentId: `checkout_return_${order.id}`,
+        status: "pending",
+        statusDetail: "checkout_return_waiting_confirmation",
+        preferenceId: order.preferenceId,
+        externalReference: order.id,
+        transactionAmount: order.total
+      });
+    }
+
+    state = await readState();
+    order = state.orders.find((candidate) => candidate.id === req.params.orderId) || order;
+    const user = order ? state.users.find((candidate) => candidate.id === order.userId) : null;
+    const tickets = state.tickets
+      .filter((ticket) => ticket.orderId === req.params.orderId)
+      .map((ticket) => publicTicket(ticket, req));
+    const invoice = state.invoices.find((candidate) => candidate.orderId === req.params.orderId) || null;
+
+    res.json({
+      ok: true,
+      order: publicOrder(order),
+      user: publicUser(user),
+      tickets,
+      invoice,
+      retryUrl: retryCheckoutUrl(order, req),
+      whatsappUrl: supportWhatsappUrl(order),
+      paymentReturnStatus: normalizedStatus,
+      ...(order?.status === "paid" && order?.profileRequired ? enrollmentLinks(order, req) : {})
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
   try {
     await requireCheckoutStorage();
@@ -2458,6 +2683,9 @@ app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
       payment.status === "approved"
         ? await completeOrderPayment(req.params.orderId, { ...paymentData, status: "approved" })
         : await updateOrderPaymentStatus(req.params.orderId, paymentData);
+    if (payment.status !== "approved" && result.order?.status === "payment_failed") {
+      await sendPaymentRetryEmail({ orderId: req.params.orderId, req, reason: payment.status });
+    }
     const state = await readState();
     const order = state.orders.find((candidate) => candidate.id === req.params.orderId) || result.order;
     const user = order ? state.users.find((candidate) => candidate.id === order.userId) : null;
@@ -2556,6 +2784,9 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
     }
 
     const result = await updateOrderPaymentStatus(order.id, paymentData);
+    if (result.order?.status === "payment_failed") {
+      await sendPaymentRetryEmail({ orderId: order.id, req, reason: payment.status });
+    }
     const currentState = await readState();
     const currentUser = currentState.users.find((candidate) => candidate.id === result.order.userId);
     res.json({
@@ -3784,7 +4015,10 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
         status: "approved"
       });
     } else {
-      await updateOrderPaymentStatus(payment.external_reference, paymentData);
+      const result = await updateOrderPaymentStatus(payment.external_reference, paymentData);
+      if (result.order?.status === "payment_failed") {
+        await sendPaymentRetryEmail({ orderId: payment.external_reference, req, reason: payment.status });
+      }
     }
 
     res.json({ ok: true });

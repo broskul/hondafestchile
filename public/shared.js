@@ -683,7 +683,7 @@
       });
     }
 
-    if (order.profileRequired) {
+    if (order.status === "paid" && order.profileRequired) {
       clearCart();
       await renderAllCarts();
       const enrollmentAction = data.enrollmentUrl
@@ -691,7 +691,7 @@
         : "";
       setStatus(
         statusElement,
-        `<strong>Pago recibido.</strong><br />Te enviamos un correo con el boton y QR para completar los datos de enrolamiento.
+        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el boton y QR para completar los datos de enrolamiento.
         ${enrollmentAction}`
       );
       return;
@@ -711,8 +711,31 @@
       return;
     }
 
-    const label = order.status === "payment_failed" ? "Pago rechazado" : "Pago pendiente";
-    setStatus(statusElement, `<strong>${label}.</strong><br />Orden ${order.id}: ${order.status}.`, order.status === "payment_failed");
+    const retryUrl = data.retryUrl || order.checkoutUrl || "/carrito";
+    const whatsappUrl =
+      data.whatsappUrl ||
+      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra Honda Fest Chile. Orden ${order.id}.`)}`;
+    if (order.status === "payment_failed") {
+      setStatus(
+        statusElement,
+        `<strong>Compra no finalizada.</strong><br />Te enviamos un correo para que puedas intentar nuevamente o hablarnos por WhatsApp.
+        <div class="status-actions">
+          <a class="button primary" href="${escapeHtml(retryUrl)}">Intentar nuevamente</a>
+          <a class="button secondary" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
+        </div>`,
+        true
+      );
+      return;
+    }
+
+    setStatus(
+      statusElement,
+      `<strong>Estamos comprobando la transaccion.</strong><br />Apenas Mercado Pago confirme el pago, te enviaremos el correo de confirmacion. Si cancelaste o no pudiste pagar, puedes intentarlo nuevamente o hablarnos por WhatsApp.
+      <div class="status-actions">
+        <a class="button secondary" href="${escapeHtml(retryUrl)}">Intentar nuevamente</a>
+        <a class="button ghost-light" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
+      </div>`
+    );
   }
 
   async function inspectCheckoutReturn() {
@@ -733,7 +756,14 @@
               method: "POST",
               body: JSON.stringify({ paymentId })
             })
-          : await api(`/api/orders/${orderId}`);
+          : await api(`/api/orders/${orderId}/checkout-return`, {
+              method: "POST",
+              body: JSON.stringify({
+                payment,
+                status: params.get("status"),
+                collectionStatus: params.get("collection_status")
+              })
+            });
       await renderOrderResult(statusElement, data);
     } catch (error) {
       setStatus(statusElement, error.message, true);
