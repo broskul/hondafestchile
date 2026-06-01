@@ -2435,6 +2435,55 @@ app.get("/api/orders/:orderId", async (req, res, next) => {
   }
 });
 
+app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
+  try {
+    await requireCheckoutStorage();
+    const paymentId =
+      String(req.body.paymentId || req.body.payment_id || req.body.collection_id || req.query.payment_id || "").trim();
+    if (!paymentId || paymentId === "null") {
+      const error = new Error("Mercado Pago no entrego identificador de pago");
+      error.status = 400;
+      throw error;
+    }
+
+    const payment = await getPayment(paymentId);
+    if (String(payment.external_reference || "") !== String(req.params.orderId)) {
+      const error = new Error("El pago no corresponde a esta orden");
+      error.status = 409;
+      throw error;
+    }
+
+    const paymentData = paymentDataFromMercadoPago(payment);
+    const result =
+      payment.status === "approved"
+        ? await completeOrderPayment(req.params.orderId, { ...paymentData, status: "approved" })
+        : await updateOrderPaymentStatus(req.params.orderId, paymentData);
+    const state = await readState();
+    const order = state.orders.find((candidate) => candidate.id === req.params.orderId) || result.order;
+    const user = order ? state.users.find((candidate) => candidate.id === order.userId) : null;
+    const tickets = state.tickets
+      .filter((ticket) => ticket.orderId === req.params.orderId)
+      .map((ticket) => publicTicket(ticket, req));
+    const invoice = state.invoices.find((candidate) => candidate.orderId === req.params.orderId) || null;
+
+    res.json({
+      ok: true,
+      order: publicOrder(order),
+      user: publicUser(user),
+      tickets,
+      invoice,
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        statusDetail: payment.status_detail
+      },
+      ...(order?.profileRequired ? enrollmentLinks(order, req) : {})
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/orders/:orderId/pay", async (req, res, next) => {
   try {
     if (!mercadoPagoInternalCheckoutEnabled()) {

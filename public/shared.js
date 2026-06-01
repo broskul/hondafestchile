@@ -650,7 +650,14 @@
 
     setStatus(statusElement, "Consultando estado de la orden...");
     try {
-      const data = await api(`/api/orders/${orderId}`);
+      const paymentId = params.get("payment_id") || params.get("collection_id");
+      const data =
+        paymentId && paymentId !== "null"
+          ? await api(`/api/orders/${orderId}/sync-payment`, {
+              method: "POST",
+              body: JSON.stringify({ paymentId })
+            })
+          : await api(`/api/orders/${orderId}`);
       await renderOrderResult(statusElement, data);
     } catch (error) {
       setStatus(statusElement, error.message, true);

@@ -11,16 +11,41 @@ function envFlag(name) {
   return /^(1|true|yes|si|sí)$/i.test(cleanEnv(name));
 }
 
-function mercadoPagoConfigured() {
+function mercadoPagoApiAccessToken() {
+  return cleanEnv("MERCADOPAGO_ACCESS_TOKEN");
+}
+
+function mercadoPagoCheckoutProAccessToken() {
+  return cleanEnv("MERCADOPAGO_CHECKOUTPRO_ACCESS_TOKEN") || mercadoPagoApiAccessToken();
+}
+
+function mercadoPagoApiConfigured() {
   return Boolean(cleanEnv("MERCADOPAGO_ACCESS_TOKEN"));
+}
+
+function mercadoPagoCheckoutProConfigured() {
+  return Boolean(mercadoPagoCheckoutProAccessToken());
+}
+
+function mercadoPagoConfigured() {
+  return mercadoPagoApiConfigured() || mercadoPagoCheckoutProConfigured();
 }
 
 function mercadoPagoPublicKey() {
   return cleanEnv("MERCADOPAGO_PUBLIC_KEY");
 }
 
+function mercadoPagoCheckoutProPublicKey() {
+  return cleanEnv("MERCADOPAGO_CHECKOUTPRO_PUBLIC_KEY");
+}
+
+function mercadoPagoCheckoutProPrimary() {
+  return mercadoPagoCheckoutProConfigured() && envFlag("MERCADOPAGO_CHECKOUTPRO_PRIMARY");
+}
+
 function mercadoPagoInternalCheckoutEnabled() {
-  if (!mercadoPagoConfigured() || !mercadoPagoPublicKey()) return false;
+  if (mercadoPagoCheckoutProPrimary()) return false;
+  if (!mercadoPagoApiConfigured() || !mercadoPagoPublicKey()) return false;
   if (/^(0|false|no)$/i.test(cleanEnv("MERCADOPAGO_INTERNAL_CHECKOUT"))) return false;
   return true;
 }
@@ -38,7 +63,8 @@ function getBaseUrl(req) {
 }
 
 async function createPreference({ req, order, user, event, ticketType }) {
-  if (!mercadoPagoConfigured()) {
+  const accessToken = mercadoPagoCheckoutProAccessToken();
+  if (!accessToken) {
     return {
       mode: "demo",
       checkoutUrl: `/?checkout=demo&order=${order.id}`,
@@ -101,7 +127,7 @@ async function createPreference({ req, order, user, event, ticketType }) {
   const response = await fetch(`${MERCADOPAGO_API_BASE}/checkout/preferences`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${cleanEnv("MERCADOPAGO_ACCESS_TOKEN")}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify(body)
@@ -123,13 +149,16 @@ async function createPreference({ req, order, user, event, ticketType }) {
 }
 
 async function getPayment(paymentId) {
-  if (!mercadoPagoConfigured()) {
+  const accessToken = mercadoPagoCheckoutProPrimary()
+    ? mercadoPagoCheckoutProAccessToken()
+    : mercadoPagoApiAccessToken() || mercadoPagoCheckoutProAccessToken();
+  if (!accessToken) {
     throw new Error("Mercado Pago no esta configurado");
   }
 
   const response = await fetch(`${MERCADOPAGO_API_BASE}/v1/payments/${paymentId}`, {
     headers: {
-      Authorization: `Bearer ${cleanEnv("MERCADOPAGO_ACCESS_TOKEN")}`
+      Authorization: `Bearer ${accessToken}`
     }
   });
 
@@ -164,7 +193,8 @@ function paymentNumber(value, fallback = 0) {
 }
 
 async function createCardPayment({ req, order, user, formData = {}, idempotencyKey }) {
-  if (!mercadoPagoConfigured()) {
+  const accessToken = mercadoPagoApiAccessToken();
+  if (!accessToken) {
     throw new Error("Mercado Pago no esta configurado");
   }
 
@@ -221,7 +251,7 @@ async function createCardPayment({ req, order, user, formData = {}, idempotencyK
   const response = await fetch(`${MERCADOPAGO_API_BASE}/v1/payments`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${cleanEnv("MERCADOPAGO_ACCESS_TOKEN")}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
       "X-Idempotency-Key":
         cleanValue(idempotencyKey) ||
@@ -327,6 +357,7 @@ function verifyWebhookSignature(req) {
 
 function mercadoPagoRuntimeStatus(req) {
   const configured = mercadoPagoConfigured();
+  const checkoutProPrimary = mercadoPagoCheckoutProPrimary();
   const baseUrl = req ? getBaseUrl(req) : cleanEnv("PUBLIC_BASE_URL");
   const notificationUrl =
     cleanEnv("MERCADOPAGO_NOTIFICATION_URL") ||
@@ -336,6 +367,9 @@ function mercadoPagoRuntimeStatus(req) {
     configured,
     mode: configured ? (mercadoPagoInternalCheckoutEnabled() ? "mercadopago_api" : "mercadopago") : "demo",
     publicKeyConfigured: Boolean(mercadoPagoPublicKey()),
+    checkoutProConfigured: mercadoPagoCheckoutProConfigured(),
+    checkoutProPublicKeyConfigured: Boolean(mercadoPagoCheckoutProPublicKey()),
+    checkoutProPrimary,
     internalCheckoutConfigured: mercadoPagoInternalCheckoutEnabled(),
     webhookSignatureConfigured: mercadoPagoWebhookSignatureConfigured(),
     notificationUrlConfigured: Boolean(notificationUrl),

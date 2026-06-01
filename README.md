@@ -48,7 +48,7 @@ En produccion, el checkout real exige base persistente disponible. En desarrollo
 
 ## Integraciones
 
-- Mercado Pago: por defecto usa Card Payment Brick y `POST https://api.mercadopago.com/v1/payments`; Checkout Pro queda como fallback.
+- Mercado Pago: por defecto usa Card Payment Brick y `POST https://api.mercadopago.com/v1/payments`; Checkout Pro queda como fallback. Para dejar Checkout Pro como principal temporal, configura `MERCADOPAGO_CHECKOUTPRO_ACCESS_TOKEN` y `MERCADOPAGO_CHECKOUTPRO_PRIMARY=true`.
 - Webhook Mercado Pago: `POST /api/webhooks/mercadopago`. Si configuras `MERCADOPAGO_WEBHOOK_SECRET`, la app valida `x-signature` y `x-request-id` antes de consultar el pago.
 - OpenFactura: `server/lib/openfactura.js` centraliza la llamada. Requiere `OPENFACTURA_API_KEY` y `OPENFACTURA_ENDPOINT`; el payload puede requerir ajuste segun la documentacion entregada por la cuenta OpenFactura/Haulmer.
 - Email: Microsoft Graph con `MS_TENANT_ID`, `MS_CLIENT_ID` y `MS_CLIENT_SECRET`; SMTP queda como fallback. Sin proveedor, los enlaces se muestran en consola para desarrollo.
@@ -62,6 +62,9 @@ Completa estas variables en `.env.local` para activar el pago interno:
 ```env
 MERCADOPAGO_ACCESS_TOKEN=
 MERCADOPAGO_PUBLIC_KEY=
+MERCADOPAGO_CHECKOUTPRO_ACCESS_TOKEN=
+MERCADOPAGO_CHECKOUTPRO_PUBLIC_KEY=
+MERCADOPAGO_CHECKOUTPRO_PRIMARY=false
 MERCADOPAGO_WEBHOOK_SECRET=
 MERCADOPAGO_INTERNAL_CHECKOUT=true
 ```
