@@ -2582,7 +2582,7 @@ a:focus-visible {
   background: #080a0d;
 }
 
-.gallery-dialog-media > img:not(.gallery-dialog-watermark) {
+.gallery-dialog-media > img:not(.gallery-dialog-watermark):not(.gallery-dialog-signature) {
   display: block;
   width: 100%;
   max-height: min(72vh, 760px);
@@ -2597,10 +2597,10 @@ a:focus-visible {
   top: 50%;
   left: 50%;
   display: block;
-  width: min(75%, 760px);
+  width: min(75%, 620px);
   height: auto;
-  opacity: 0.18;
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.22));
+  opacity: 0.16;
+  filter: none;
   mix-blend-mode: screen;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -2615,7 +2615,7 @@ a:focus-visible {
   display: block;
   width: clamp(80px, 12vw, 132px);
   height: auto;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.48));
+  filter: none;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
@@ -3202,8 +3202,8 @@ a:focus-visible {
   z-index: 2;
   width: min(75%, 880px);
   height: auto;
-  opacity: 0.18;
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.24));
+  opacity: 0.16;
+  filter: none;
   mix-blend-mode: screen;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -3218,7 +3218,7 @@ a:focus-visible {
   z-index: 2;
   width: clamp(70px, 8vw, 118px);
   height: auto;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.42));
+  filter: none;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;

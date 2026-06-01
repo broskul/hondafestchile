@@ -647,12 +647,7 @@ function drawSignatureLogo(ctx, logo, bounds) {
   ctx.save();
   ctx.globalAlpha = 0.18;
   ctx.globalCompositeOperation = "screen";
-  ctx.filter = `drop-shadow(0 0 ${Math.round(bounds.width * 0.018)}px rgba(255,255,255,0.34))`;
   ctx.drawImage(mark, x, y);
-  ctx.globalAlpha = 0.08;
-  ctx.globalCompositeOperation = "overlay";
-  ctx.filter = "none";
-  ctx.drawImage(mark, x - 2, y - 2);
   ctx.restore();
 }
 
@@ -664,9 +659,6 @@ function drawCornerLogo(ctx, logo, bounds, story = false) {
   const y = bounds.y + bounds.height - mark.height - margin;
 
   ctx.save();
-  ctx.shadowColor = "rgba(0, 0, 0, 0.42)";
-  ctx.shadowBlur = story ? 22 : 18;
-  ctx.shadowOffsetY = story ? 7 : 5;
   ctx.drawImage(mark, x, y);
   ctx.restore();
 }
@@ -988,6 +980,59 @@ function activeGalleryItem() {
   return items[state.gallery.activeIndex] || null;
 }
 
+function imageContentBox(image) {
+  const box = image.getBoundingClientRect();
+  if (!image.naturalWidth || !image.naturalHeight || !box.width || !box.height) return box;
+
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const boxRatio = box.width / box.height;
+  if (boxRatio > imageRatio) {
+    const width = box.height * imageRatio;
+    return {
+      left: box.left + (box.width - width) / 2,
+      top: box.top,
+      width,
+      height: box.height
+    };
+  }
+
+  const height = box.width / imageRatio;
+  return {
+    left: box.left,
+    top: box.top + (box.height - height) / 2,
+    width: box.width,
+    height
+  };
+}
+
+function positionDialogWatermarks(dialog) {
+  const media = dialog.querySelector(".gallery-dialog-media");
+  const image = dialog.querySelector(".gallery-dialog-media > img:not(.gallery-dialog-watermark):not(.gallery-dialog-signature)");
+  const signature = dialog.querySelector(".gallery-dialog-signature");
+  const corner = dialog.querySelector(".gallery-dialog-watermark");
+  if (!media || !image || !signature || !corner || !image.naturalWidth) return;
+
+  const mediaBox = media.getBoundingClientRect();
+  const content = imageContentBox(image);
+  const left = content.left - mediaBox.left;
+  const top = content.top - mediaBox.top;
+  const signatureWidth = content.width * 0.75;
+  const cornerWidth = Math.min(content.width * 0.14, 132);
+  const cornerHeight = cornerWidth * (corner.naturalHeight || 117) / (corner.naturalWidth || 175);
+  const margin = Math.max(content.width * 0.026, 14);
+
+  signature.style.width = `${signatureWidth}px`;
+  signature.style.left = `${left + content.width / 2}px`;
+  signature.style.top = `${top + content.height / 2}px`;
+  signature.style.transform = "translate(-50%, -50%)";
+
+  corner.style.width = `${cornerWidth}px`;
+  corner.style.left = `${left + content.width - cornerWidth - margin}px`;
+  corner.style.top = `${top + content.height - cornerHeight - margin}px`;
+  corner.style.right = "auto";
+  corner.style.bottom = "auto";
+}
+
 function initGalleryLightbox() {
   const dialog = $("#galleryDialog");
   if (!dialog) return;
@@ -1008,6 +1053,9 @@ function initGalleryLightbox() {
     title.textContent = link.dataset.galleryTitle || thumbnail?.title || "Galeria Honda Fest Chile";
     description.textContent = link.dataset.galleryDescription || thumbnail?.alt || "";
     dialog.showModal();
+    const updateMarks = () => positionDialogWatermarks(dialog);
+    if (image.complete) requestAnimationFrame(updateMarks);
+    else image.addEventListener("load", updateMarks, { once: true });
   });
 
   dialog.addEventListener("click", (event) => {
@@ -1030,6 +1078,9 @@ function initGalleryLightbox() {
     if (event.target === dialog) {
       dialog.close();
     }
+  });
+  window.addEventListener("resize", () => {
+    if (dialog.open) positionDialogWatermarks(dialog);
   });
 }
 
