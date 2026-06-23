@@ -70,7 +70,37 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
     montoItem: item.total
   }));
 
+  const encabezado = {
+    IdDoc: {
+      TipoDTE: tipoDte,
+      FchEmis: fechaEmision
+    },
+    Emisor: {
+      RUTEmisor: rutEmisor,
+      RznSoc: razonSocial,
+      GiroEmis: giroEmisor,
+      DirOrigen: direccionEmisor,
+      CmnaOrigen: comunaEmisor,
+      CiudadOrigen: ciudadEmisor,
+      CorreoEmisor: correoEmisor
+    },
+    Receptor: {
+      RUTRecep: rutReceptor,
+      RznSocRecep: razonSocialReceptor,
+      CorreoRecep: user.email
+    },
+    Totales: {
+      MntTotal: order.total
+    }
+  };
+  const documento = {
+    Encabezado: encabezado,
+    Detalle: detalle
+  };
   const dte = {
+    Documento: documento,
+    Encabezado: encabezado,
+    Detalle: detalle,
     TipoDTE: tipoDte,
     FchEmis: fechaEmision,
     RUTEmisor: rutEmisor,
@@ -84,30 +114,6 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
     RznSocRecep: razonSocialReceptor,
     CorreoRecep: user.email,
     MntTotal: order.total,
-    Encabezado: {
-      IdDoc: {
-        TipoDTE: tipoDte,
-        FchEmis: fechaEmision
-      },
-      Emisor: {
-        RUTEmisor: rutEmisor,
-        RznSoc: razonSocial,
-        GiroEmis: giroEmisor,
-        DirOrigen: direccionEmisor,
-        CmnaOrigen: comunaEmisor,
-        CiudadOrigen: ciudadEmisor,
-        CorreoEmisor: correoEmisor
-      },
-      Receptor: {
-        RUTRecep: rutReceptor,
-        RznSocRecep: razonSocialReceptor,
-        CorreoRecep: user.email
-      },
-      Totales: {
-        MntTotal: order.total
-      }
-    },
-    Detalle: detalle,
     tipoDTE: tipoDte,
     fechaEmision,
     emisor: {
