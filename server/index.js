@@ -526,7 +526,8 @@ function catalogForClient(state) {
           ];
         })
       );
-      const primary = availabilityByEvent[primaryEventId] || Object.values(availabilityByEvent)[0] || null;
+      const ticketPrimaryEventId = Array.isArray(ticket.eventIds) && ticket.eventIds.length ? ticket.eventIds[0] : primaryEventId;
+      const primary = availabilityByEvent[ticketPrimaryEventId] || availabilityByEvent[primaryEventId] || Object.values(availabilityByEvent)[0] || null;
       return {
         ...ticket,
         price: primary?.price ?? ticket.price,
@@ -1515,9 +1516,10 @@ function retryCheckoutUrl(order, req = null) {
 }
 
 function supportWhatsappUrl(order = null) {
+  const eventName = orderEventName(order);
   const message = order?.id
-    ? `Hola, necesito ayuda con mi compra Honda Fest Chile. Orden ${order.id}.`
-    : "Hola, necesito ayuda con mi compra Honda Fest Chile.";
+    ? `Hola, necesito ayuda con mi compra ${eventName}. Orden ${order.id}.`
+    : `Hola, necesito ayuda con mi compra ${eventName}.`;
   return `https://wa.me/56972934950?text=${encodeURIComponent(message)}`;
 }
 
@@ -1806,6 +1808,11 @@ async function resendOrderEmail(orderId) {
 
 function orderEventName(order, event) {
   if (order?.items?.length === 1) return order.items[0].eventName || event?.name || "Honda Fest Chile";
+  const eventNames = Array.from(
+    new Set((order?.items || []).map((item) => String(item.eventName || "").trim()).filter(Boolean))
+  );
+  if (eventNames.length === 1) return eventNames[0];
+  if (eventNames.length > 1) return eventNames.join(" y ");
   return event?.name || "Honda Fest Chile";
 }
 

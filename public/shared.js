@@ -712,9 +712,10 @@
     }
 
     const retryUrl = data.retryUrl || order.checkoutUrl || "/carrito";
+    const supportEventName = orderEventNameForSupport(order);
     const whatsappUrl =
       data.whatsappUrl ||
-      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra Honda Fest Chile. Orden ${order.id}.`)}`;
+      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra ${supportEventName}. Orden ${order.id}.`)}`;
     if (order.status === "payment_failed") {
       setStatus(
         statusElement,
@@ -736,6 +737,15 @@
         <a class="button ghost-light" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
       </div>`
     );
+  }
+
+  function orderEventNameForSupport(order) {
+    const eventNames = Array.from(
+      new Set((order?.items || []).map((item) => String(item.eventName || "").trim()).filter(Boolean))
+    );
+    if (eventNames.length === 1) return eventNames[0];
+    if (eventNames.length > 1) return eventNames.join(" y ");
+    return "Honda Fest Chile";
   }
 
   async function inspectCheckoutReturn() {

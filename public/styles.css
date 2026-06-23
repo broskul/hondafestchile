@@ -1411,6 +1411,34 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+.participation-ticket-card {
+  border-color: rgba(216, 38, 47, 0.26);
+  background: #fffdf9;
+}
+
+.ticket-participation-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 8px;
+  color: var(--red-dark);
+  border: 1px solid rgba(216, 38, 47, 0.18);
+  border-radius: 8px;
+  background: rgba(216, 38, 47, 0.06);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ticket-display-price--contact {
+  border-color: rgba(31, 143, 77, 0.2);
+  background: rgba(31, 143, 77, 0.06);
+}
+
+.ticket-display-price--contact strong {
+  color: var(--forest);
+}
+
 .product-card h4,
 .purchase-card h3 {
   margin: 0;
@@ -1597,36 +1625,105 @@ a:focus-visible {
   background: rgba(215, 25, 32, 0.05);
 }
 
-.floating-help {
+.floating-actions {
   position: fixed;
   right: clamp(14px, 3vw, 24px);
   bottom: clamp(14px, 3vw, 24px);
   z-index: 80;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: calc(100vw - 28px);
+}
+
+.floating-action {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: 48px;
-  padding: 10px 16px 10px 10px;
+  max-width: calc(100vw - 28px);
+  padding: 9px 15px 9px 10px;
   border-radius: 999px;
-  background: #1f8f4d;
   color: #fff;
   text-decoration: none;
   box-shadow: 0 14px 34px rgba(20, 40, 28, 0.28);
+  transition:
+    width 180ms ease,
+    max-width 180ms ease,
+    padding 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
 }
 
-.floating-help span {
+.floating-action:hover {
+  transform: translateY(-2px);
+}
+
+.floating-action span:first-child {
   display: inline-grid;
   place-items: center;
   width: 28px;
   height: 28px;
+  flex: 0 0 28px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   font-weight: 950;
 }
 
-.floating-help strong {
+.floating-action strong {
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+.floating-action-copy {
+  display: grid;
+  gap: 1px;
+  line-height: 1.05;
+}
+
+.floating-action-copy small {
+  font-size: 0.68rem;
+  font-weight: 800;
+  opacity: 0.84;
+  white-space: nowrap;
+}
+
+.floating-action--participate {
+  background: var(--red);
+}
+
+.floating-action--participate:hover {
+  background: var(--red-dark);
+}
+
+.floating-action--help {
+  width: 48px;
+  overflow: hidden;
+  padding-right: 10px;
+  background: #1f8f4d;
+}
+
+.floating-action--help strong {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 180ms ease,
+    opacity 140ms ease;
+}
+
+.floating-action--help:hover,
+.floating-action--help:focus-visible {
+  width: 178px;
+  padding-right: 16px;
+  background: #166f3b;
+}
+
+.floating-action--help:hover strong,
+.floating-action--help:focus-visible strong {
+  max-width: 126px;
+  opacity: 1;
 }
 
 .internal-payment-shell {
@@ -2231,6 +2328,20 @@ a:focus-visible {
     display: none;
   }
 
+  .floating-actions {
+    right: 10px;
+    bottom: 10px;
+    gap: 6px;
+  }
+
+  .floating-action--participate {
+    padding-right: 12px;
+  }
+
+  .floating-action-copy small {
+    display: none;
+  }
+
   .hero-content {
     padding-bottom: 58px;
   }
@@ -2326,6 +2437,15 @@ a:focus-visible {
 
   .hero-car-path {
     transform: translate(-50%, 0) scale(0.9);
+  }
+
+  .floating-action,
+  .floating-action--help strong {
+    transition: none;
+  }
+
+  .floating-action:hover {
+    transform: none;
   }
 }
 
