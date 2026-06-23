@@ -9,6 +9,26 @@ function openFacturaConfigured() {
   );
 }
 
+function responseErrorDetail(payload) {
+  const candidates = [
+    payload?.message,
+    payload?.error,
+    payload?.errors,
+    payload?.detail,
+    payload?.details,
+    payload?.title,
+    payload?.mensaje,
+    payload?.descripcion
+  ].filter((value) => value !== undefined && value !== null && value !== "");
+  const first = candidates[0] || payload;
+  if (typeof first === "string") return first;
+  try {
+    return JSON.stringify(first);
+  } catch {
+    return "No se pudo emitir la boleta";
+  }
+}
+
 function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, items = [] }) {
   const detailItems = items.length
     ? items
@@ -94,7 +114,7 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
 
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const detail = result?.message || result?.error || "No se pudo emitir la boleta";
+    const detail = responseErrorDetail(result);
     throw new Error(`OpenFactura: ${detail}`);
   }
 
