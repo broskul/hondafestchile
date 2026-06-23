@@ -1,5 +1,12 @@
+function cleanEnv(name) {
+  return String(process.env[name] || "").trim();
+}
+
 function openFacturaConfigured() {
-  return Boolean(process.env.OPENFACTURA_API_KEY && process.env.OPENFACTURA_ENDPOINT);
+  return Boolean(
+    cleanEnv("OPENFACTURA_ENDPOINT") &&
+      (cleanEnv("OPENFACTURA_API_KEY") || cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY"))
+  );
 }
 
 function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, items = [] }) {
@@ -18,11 +25,11 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
 
   return {
     documento: {
-      tipoDTE: Number(process.env.OPENFACTURA_DTE_TYPE || 39),
+      tipoDTE: Number(cleanEnv("OPENFACTURA_DTE_TYPE") || 39),
       fechaEmision: new Date().toISOString().slice(0, 10),
       emisor: {
-        rut: process.env.OPENFACTURA_COMPANY_RUT,
-        razonSocial: process.env.OPENFACTURA_COMPANY_NAME || "Honda Fest Chile"
+        rut: cleanEnv("OPENFACTURA_COMPANY_RUT"),
+        razonSocial: cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile"
       },
       receptor: {
         rut: user.rut,
@@ -64,13 +71,22 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
     };
   }
 
-  const response = await fetch(process.env.OPENFACTURA_ENDPOINT, {
+  const subscriptionKey = cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY") || cleanEnv("OPENFACTURA_API_KEY");
+  const bearerToken = cleanEnv("OPENFACTURA_BEARER_TOKEN") || cleanEnv("OPENFACTURA_ACCESS_TOKEN");
+  const headers = {
+    "Content-Type": "application/json",
+    "Idempotency-Key": order.id,
+    "Ocp-Apim-Subscription-Key": subscriptionKey
+  };
+  if (bearerToken) {
+    headers.Authorization = `Bearer ${bearerToken}`;
+  } else if (/^bearer$/i.test(cleanEnv("OPENFACTURA_AUTH_SCHEME"))) {
+    headers.Authorization = `Bearer ${cleanEnv("OPENFACTURA_API_KEY")}`;
+  }
+
+  const response = await fetch(cleanEnv("OPENFACTURA_ENDPOINT"), {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENFACTURA_API_KEY}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": order.id
-    },
+    headers,
     body: JSON.stringify(payload)
   });
 
