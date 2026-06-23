@@ -756,6 +756,7 @@ function publicOrder(order) {
     paymentId: order.payment?.paymentId || null,
     checkoutUrl: order.checkoutUrl,
     invoiceStatus: order.invoiceStatus,
+    invoiceError: order.invoiceError || null,
     fulfillmentStatus: order.fulfillmentStatus || null,
     profileRequired: Boolean(order.profileRequired),
     requiresPilotInfo: Boolean(order.requiresPilotInfo),
@@ -789,6 +790,16 @@ function publicTicket(ticket, req) {
     verifyUrl,
     qrUrl: `/api/tickets/${encodeURIComponent(ticket.code)}/qr.svg`
   };
+}
+
+function invoiceLooksDemo(invoice) {
+  if (!invoice) return false;
+  return (
+    invoice.mode === "demo" ||
+    String(invoice.id || "").startsWith("dte_demo_") ||
+    String(invoice.folio || "").startsWith("DEMO-") ||
+    String(invoice.providerId || "").startsWith("OF-DEMO-")
+  );
 }
 
 function baseUrl(req) {
@@ -1804,6 +1815,166 @@ async function resendOrderEmail(orderId) {
   });
 
   return { order, user, tickets, invoice };
+}
+
+async function reissueOrderDte({ orderId, req = null, resendEmail = true, force = false }) {
+  if (!openFacturaConfigured()) {
+    const error = new Error("OpenFactura no esta configurado; no se emitira otro DTE demo");
+    error.status = 503;
+    throw error;
+  }
+
+  let state = await readState();
+  let order = state.orders.find((candidate) => candidate.id === orderId);
+  if (!order) {
+    const error = new Error("Orden no encontrada");
+    error.status = 404;
+    throw error;
+  }
+
+  if (order.status !== "paid") {
+    const error = new Error("Solo se puede emitir DTE para ordenes pagadas");
+    error.status = 409;
+    throw error;
+  }
+
+  const user = state.users.find((candidate) => candidate.id === order.userId);
+  const items = getOrderItems(order, state);
+  const firstItem = items[0];
+  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
+  const ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
+  const tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
+  const currentInvoice = state.invoices.find((candidate) => candidate.orderId === order.id) || null;
+
+  if (!user || !items.length || !event || !ticketType) {
+    const error = new Error("La orden no tiene datos suficientes para emitir DTE");
+    error.status = 409;
+    throw error;
+  }
+
+  if (!tickets.length) {
+    const error = new Error("La orden aun no tiene tickets emitidos; completa el enrolamiento antes de emitir DTE");
+    error.status = 409;
+    throw error;
+  }
+
+  if (currentInvoice && !invoiceLooksDemo(currentInvoice) && !force) {
+    return {
+      skipped: true,
+      reason: "already_real_invoice",
+      order,
+      user,
+      tickets,
+      invoice: currentInvoice
+    };
+  }
+
+  const invoice = await issueBoleta({ order, user, event, ticketType, tickets, items });
+  if (invoiceLooksDemo(invoice)) {
+    const error = new Error("OpenFactura respondio en modo demo; revisa las credenciales antes de reemitir");
+    error.status = 503;
+    throw error;
+  }
+
+  await updateState((nextState) => {
+    const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+    if (freshOrder) {
+      freshOrder.invoiceStatus = "issued";
+      freshOrder.invoiceError = null;
+      freshOrder.updatedAt = new Date().toISOString();
+    }
+
+    const invoiceIndex = nextState.invoices.findIndex((candidate) => candidate.orderId === order.id);
+    const replacedInvoice = currentInvoice
+      ? {
+          id: currentInvoice.id,
+          providerId: currentInvoice.providerId,
+          folio: currentInvoice.folio,
+          mode: currentInvoice.mode,
+          createdAt: currentInvoice.createdAt
+        }
+      : null;
+    if (invoiceIndex >= 0) {
+      nextState.invoices[invoiceIndex] = {
+        ...nextState.invoices[invoiceIndex],
+        ...invoice,
+        replacedInvoice,
+        updatedAt: new Date().toISOString()
+      };
+    } else {
+      nextState.invoices.push(invoice);
+    }
+
+    nextState.audit.push({
+      id: id("audit"),
+      type: "dte_reissued",
+      orderId: order.id,
+      invoiceId: invoice.id,
+      previousInvoiceId: currentInvoice?.id || null,
+      createdAt: new Date().toISOString()
+    });
+  });
+
+  state = await readState();
+  order = state.orders.find((candidate) => candidate.id === orderId) || order;
+  const savedInvoice = state.invoices.find((candidate) => candidate.orderId === order.id) || invoice;
+  const savedTickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
+  let emailResult = null;
+
+  if (resendEmail) {
+    const template = findTemplate(state.emailTemplates, "payment");
+    try {
+      emailResult = await sendTicketEmail({
+        user,
+        order,
+        event,
+        ticketType,
+        tickets: savedTickets,
+        invoice: savedInvoice,
+        template,
+        baseUrl: configuredBaseUrl(req)
+      });
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+        if (freshOrder) {
+          freshOrder.ticketEmailSentAt = new Date().toISOString();
+          freshOrder.updatedAt = freshOrder.ticketEmailSentAt;
+        }
+        logEmailResult(nextState, {
+          type: "dte_reissued",
+          templateId: template?.id || "payment",
+          to: user.email,
+          userId: user.id,
+          orderId: order.id,
+          status: "sent",
+          mode: emailResult.mode,
+          subject: `Tus entradas para ${orderEventName(order, event)}`
+        });
+      });
+    } catch (error) {
+      emailResult = { ok: false, message: error.message };
+      await updateState((nextState) => {
+        logEmailResult(nextState, {
+          type: "dte_reissued",
+          templateId: template?.id || "payment",
+          to: user.email,
+          userId: user.id,
+          orderId: order.id,
+          status: "failed",
+          error: error.message
+        });
+      });
+    }
+  }
+
+  return {
+    skipped: false,
+    order,
+    user,
+    tickets: savedTickets,
+    invoice: savedInvoice,
+    email: emailResult
+  };
 }
 
 function orderEventName(order, event) {
@@ -3930,6 +4101,77 @@ app.post("/api/backoffice/email/send", async (req, res, next) => {
       sent: results.filter((result) => result.ok).length,
       failed: results.filter((result) => !result.ok).length,
       results
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/orders/reissue-demo-dtes", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const state = await readState();
+    const candidates = state.orders
+      .filter((order) => order.status === "paid")
+      .filter((order) => {
+        const invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+        return invoiceLooksDemo(invoice);
+      })
+      .filter((order) => state.tickets.some((ticket) => ticket.orderId === order.id));
+
+    const results = [];
+    for (const order of candidates) {
+      try {
+        const result = await reissueOrderDte({
+          orderId: order.id,
+          req,
+          resendEmail: req.body.resendEmail !== false,
+          force: true
+        });
+        results.push({
+          orderId: order.id,
+          ok: true,
+          skipped: result.skipped,
+          folio: result.invoice?.folio || null,
+          providerId: result.invoice?.providerId || null,
+          pdfUrl: result.invoice?.pdfUrl || null,
+          email: result.email
+        });
+      } catch (error) {
+        results.push({ orderId: order.id, ok: false, message: error.message });
+      }
+    }
+
+    res.json({
+      ok: true,
+      processed: results.length,
+      issued: results.filter((result) => result.ok && !result.skipped).length,
+      failed: results.filter((result) => !result.ok).length,
+      results
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/orders/:orderId/reissue-dte", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const result = await reissueOrderDte({
+      orderId: req.params.orderId,
+      req,
+      resendEmail: req.body.resendEmail !== false,
+      force: Boolean(req.body.force)
+    });
+    res.json({
+      ok: true,
+      skipped: result.skipped,
+      reason: result.reason,
+      order: publicOrder(result.order),
+      user: publicUser(result.user),
+      tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
+      invoice: result.invoice,
+      email: result.email
     });
   } catch (error) {
     next(error);

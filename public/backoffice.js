@@ -602,9 +602,28 @@ function renderTemplates(data) {
 }
 
 function renderOrders(data) {
+  const dteLabel = (order) => {
+    const label = order.invoice?.folio || order.invoice?.providerId || order.invoiceStatus || "";
+    const error = order.invoiceError ? `<br /><small>${escapeHtml(order.invoiceError)}</small>` : "";
+    return `${escapeHtml(label)}${error}`;
+  };
+  const canReissueDte = (order) => {
+    const invoice = order.invoice || {};
+    return (
+      order.status === "paid" &&
+      order.tickets.length > 0 &&
+      (String(invoice.folio || "").startsWith("DEMO-") ||
+        String(invoice.providerId || "").startsWith("OF-DEMO-") ||
+        order.invoiceStatus === "failed")
+    );
+  };
+
   return `
     <section class="admin-table-section">
-      <h2>Ventas</h2>
+      <div class="admin-toolbar">
+        <h2>Ventas</h2>
+        <button class="button secondary" type="button" data-reissue-demo-dtes>Reemitir DTE demo</button>
+      </div>
       <div class="table-scroll">
         <table class="admin-table">
           <thead>
@@ -621,8 +640,15 @@ function renderOrders(data) {
                     <td>${escapeHtml(order.status)}</td>
                     <td>${escapeHtml(order.salePhaseName || order.source || "")}</td>
                     <td>${order.tickets.length}</td>
-                    <td>${escapeHtml(order.invoice?.folio || order.invoice?.providerId || order.invoiceStatus || "")}</td>
-                    <td><button class="button secondary" type="button" data-resend="${escapeHtml(order.id)}">Reenviar</button></td>
+                    <td>${dteLabel(order)}</td>
+                    <td>
+                      <button class="button secondary" type="button" data-resend="${escapeHtml(order.id)}">Reenviar</button>
+                      ${
+                        canReissueDte(order)
+                          ? `<button class="button ghost-light" type="button" data-reissue-dte="${escapeHtml(order.id)}">Reemitir DTE</button>`
+                          : ""
+                      }
+                    </td>
                   </tr>
                 `
               )
@@ -921,6 +947,41 @@ function attachBackofficeEvents() {
           body: JSON.stringify({})
         });
         HFC.toast("Comprobante reenviado.");
+      } catch (error) {
+        HFC.toast(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+
+  HFC.$("[data-reissue-demo-dtes]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const result = await adminApi("/api/backoffice/orders/reissue-demo-dtes", {
+        method: "POST",
+        body: JSON.stringify({ resendEmail: true })
+      });
+      HFC.toast(`DTE emitidos: ${result.issued}. Fallidos: ${result.failed}.`);
+      await loadBackoffice();
+    } catch (error) {
+      HFC.toast(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  HFC.$$("[data-reissue-dte]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await adminApi(`/api/backoffice/orders/${button.dataset.reissueDte}/reissue-dte`, {
+          method: "POST",
+          body: JSON.stringify({ resendEmail: true, force: true })
+        });
+        HFC.toast("DTE reemitido y comprobante reenviado.");
+        await loadBackoffice();
       } catch (error) {
         HFC.toast(error.message);
       } finally {
