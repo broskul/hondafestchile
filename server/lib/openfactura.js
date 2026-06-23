@@ -43,33 +43,36 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
         }
       ];
 
-  return {
-    documento: {
-      tipoDTE: Number(cleanEnv("OPENFACTURA_DTE_TYPE") || 39),
-      fechaEmision: new Date().toISOString().slice(0, 10),
-      emisor: {
-        rut: cleanEnv("OPENFACTURA_COMPANY_RUT"),
-        razonSocial: cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile"
-      },
-      receptor: {
-        rut: user.rut,
-        razonSocial: user.name,
-        email: user.email
-      },
-      detalle: detailItems.map((item) => ({
-        nombre: `${item.ticketTypeName} - ${item.eventName}`,
-        descripcion: `Orden ${order.id}. Tickets: ${tickets
-          .filter((ticket) => !item.id || ticket.lineItemId === item.id)
-          .map((ticket) => ticket.code)
-          .join(", ")}`,
-        cantidad: item.quantity,
-        precioUnitario: item.unitPrice,
-        montoItem: item.total
-      })),
-      totales: {
-        montoTotal: order.total
-      }
+  const dte = {
+    tipoDTE: Number(cleanEnv("OPENFACTURA_DTE_TYPE") || 39),
+    fechaEmision: new Date().toISOString().slice(0, 10),
+    emisor: {
+      rut: cleanEnv("OPENFACTURA_COMPANY_RUT"),
+      razonSocial: cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile"
     },
+    receptor: {
+      rut: user.rut,
+      razonSocial: user.name,
+      email: user.email
+    },
+    detalle: detailItems.map((item) => ({
+      nombre: `${item.ticketTypeName} - ${item.eventName}`,
+      descripcion: `Orden ${order.id}. Tickets: ${tickets
+        .filter((ticket) => !item.id || ticket.lineItemId === item.id)
+        .map((ticket) => ticket.code)
+        .join(", ")}`,
+      cantidad: item.quantity,
+      precioUnitario: item.unitPrice,
+      montoItem: item.total
+    })),
+    totales: {
+      montoTotal: order.total
+    }
+  };
+
+  return {
+    dte,
+    documento: dte,
     referenciaExterna: order.id
   };
 }
