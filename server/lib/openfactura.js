@@ -57,121 +57,63 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
       ];
   const tipoDte = Number(cleanEnv("OPENFACTURA_DTE_TYPE") || 39);
   const fechaEmision = new Date().toISOString().slice(0, 10);
-  const rutEmisor = cleanEnv("OPENFACTURA_COMPANY_RUT");
-  const razonSocial = cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile";
-  const giroEmisor = cleanEnv("OPENFACTURA_COMPANY_GIRO") || "Servicios de produccion de obras de teatro";
+  const rutEmisor = cleanEnv("OPENFACTURA_COMPANY_RUT").replace(/[.\s]/g, "");
+  const razonSocial = (cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile").toUpperCase();
+  const giroEmisor = (
+    cleanEnv("OPENFACTURA_COMPANY_GIRO") || "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO"
+  ).toUpperCase();
   const direccionEmisor = cleanEnv("OPENFACTURA_COMPANY_ADDRESS") || "";
   const comunaEmisor = cleanEnv("OPENFACTURA_COMPANY_COMUNA") || "";
   const ciudadEmisor = cleanEnv("OPENFACTURA_COMPANY_CITY") || comunaEmisor;
-  const correoEmisor = cleanEnv("OPENFACTURA_COMPANY_EMAIL") || "contacto@hondafestchile.cl";
-  const rutReceptor = user.rut || "66666666-6";
+  const codigoSucursal = Number(cleanEnv("OPENFACTURA_COMPANY_BRANCH_CODE") || 90061542);
+  const rutReceptor = String(user.rut || "66666666-6").replace(/[.\s]/g, "");
   const razonSocialReceptor = user.name || "Consumidor final";
   const detalle = detailItems.map((item, index) => ({
     NroLinDet: index + 1,
     NmbItem: `${item.ticketTypeName} - ${item.eventName}`,
-    DscItem: `Orden ${order.id}. Tickets: ${tickets
-      .filter((ticket) => !item.id || ticket.lineItemId === item.id)
-      .map((ticket) => ticket.code)
-      .join(", ")}`,
     QtyItem: item.quantity,
     PrcItem: item.unitPrice,
-    MontoItem: item.total,
-    nombre: `${item.ticketTypeName} - ${item.eventName}`,
-    descripcion: `Orden ${order.id}`,
-    cantidad: item.quantity,
-    precioUnitario: item.unitPrice,
-    montoItem: item.total
+    MontoItem: item.total
   }));
+  const total = detalle.reduce((sum, item) => sum + Number(item.MontoItem || 0), 0);
+  const neto = Math.round(total / 1.19);
+  const iva = total - neto;
 
-  const encabezado = {
-    IdDoc: {
-      TipoDTE: tipoDte,
-      FchEmis: fechaEmision
-    },
-    Emisor: {
-      RUTEmisor: rutEmisor,
-      rutEmisor,
-      RUT: rutEmisor,
-      rut: rutEmisor,
-      RznSoc: razonSocial,
-      RazonSocial: razonSocial,
-      GiroEmis: giroEmisor,
-      giro: giroEmisor,
-      DirOrigen: direccionEmisor,
-      direccion: direccionEmisor,
-      CmnaOrigen: comunaEmisor,
-      comuna: comunaEmisor,
-      CiudadOrigen: ciudadEmisor,
-      ciudad: ciudadEmisor,
-      CorreoEmisor: correoEmisor
-    },
-    Receptor: {
-      RUTRecep: rutReceptor,
-      RznSocRecep: razonSocialReceptor,
-      CorreoRecep: user.email
-    },
-    Totales: {
-      MntTotal: order.total
-    }
-  };
-  const documento = {
-    Encabezado: encabezado,
-    Detalle: detalle,
-    RUTEmisor: rutEmisor,
-    rutEmisor,
-    Emisor: encabezado.Emisor
-  };
   const dte = {
-    Documento: documento,
-    Encabezado: encabezado,
-    Emisor: encabezado.Emisor,
-    Detalle: detalle,
-    TipoDTE: tipoDte,
-    FchEmis: fechaEmision,
-    RUTEmisor: rutEmisor,
-    rutEmisor,
-    RUT: rutEmisor,
-    rut: rutEmisor,
-    RznSoc: razonSocial,
-    RazonSocial: razonSocial,
-    GiroEmis: giroEmisor,
-    giro: giroEmisor,
-    DirOrigen: direccionEmisor,
-    direccion: direccionEmisor,
-    CmnaOrigen: comunaEmisor,
-    comuna: comunaEmisor,
-    CiudadOrigen: ciudadEmisor,
-    ciudad: ciudadEmisor,
-    CorreoEmisor: correoEmisor,
-    RUTRecep: rutReceptor,
-    RznSocRecep: razonSocialReceptor,
-    CorreoRecep: user.email,
-    MntTotal: order.total,
-    tipoDTE: tipoDte,
-    fechaEmision,
-    emisor: {
-      rut: rutEmisor,
-      razonSocial,
-      giro: giroEmisor,
-      direccion: direccionEmisor,
-      comuna: comunaEmisor,
-      ciudad: ciudadEmisor,
-      email: correoEmisor
+    Encabezado: {
+      IdDoc: {
+        TipoDTE: tipoDte,
+        Folio: 0,
+        FchEmis: fechaEmision,
+        IndServicio: 3
+      },
+      Emisor: {
+        RUTEmisor: rutEmisor,
+        RznSocEmisor: razonSocial,
+        GiroEmisor: giroEmisor,
+        CdgSIISucur: codigoSucursal,
+        DirOrigen: direccionEmisor,
+        CmnaOrigen: comunaEmisor,
+        CiudadOrigen: ciudadEmisor
+      },
+      Receptor: {
+        RUTRecep: rutReceptor,
+        RznSocRecep: razonSocialReceptor,
+        DirRecep: user.address || direccionEmisor,
+        CmnaRecep: user.city || user.comuna || comunaEmisor
+      },
+      Totales: {
+        MntNeto: neto,
+        IVA: iva,
+        MntTotal: total
+      }
     },
-    receptor: {
-      rut: rutReceptor,
-      razonSocial: razonSocialReceptor,
-      email: user.email
-    },
-    detalle,
-    totales: {
-      montoTotal: order.total
-    }
+    Detalle: detalle
   };
 
   return {
+    response: ["XML", "PDF", "TIMBRE", "LOGO", "FOLIO", "RESOLUCION", tipoDte === 33 ? "LETTER" : "80MM"],
     dte,
-    documento: dte,
     referenciaExterna: order.id
   };
 }
