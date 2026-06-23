@@ -90,11 +90,19 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
     },
     Emisor: {
       RUTEmisor: rutEmisor,
+      rutEmisor,
+      RUT: rutEmisor,
+      rut: rutEmisor,
       RznSoc: razonSocial,
+      RazonSocial: razonSocial,
       GiroEmis: giroEmisor,
+      giro: giroEmisor,
       DirOrigen: direccionEmisor,
+      direccion: direccionEmisor,
       CmnaOrigen: comunaEmisor,
+      comuna: comunaEmisor,
       CiudadOrigen: ciudadEmisor,
+      ciudad: ciudadEmisor,
       CorreoEmisor: correoEmisor
     },
     Receptor: {
@@ -108,20 +116,32 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
   };
   const documento = {
     Encabezado: encabezado,
-    Detalle: detalle
+    Detalle: detalle,
+    RUTEmisor: rutEmisor,
+    rutEmisor,
+    Emisor: encabezado.Emisor
   };
   const dte = {
     Documento: documento,
     Encabezado: encabezado,
+    Emisor: encabezado.Emisor,
     Detalle: detalle,
     TipoDTE: tipoDte,
     FchEmis: fechaEmision,
     RUTEmisor: rutEmisor,
+    rutEmisor,
+    RUT: rutEmisor,
+    rut: rutEmisor,
     RznSoc: razonSocial,
+    RazonSocial: razonSocial,
     GiroEmis: giroEmisor,
+    giro: giroEmisor,
     DirOrigen: direccionEmisor,
+    direccion: direccionEmisor,
     CmnaOrigen: comunaEmisor,
+    comuna: comunaEmisor,
     CiudadOrigen: ciudadEmisor,
+    ciudad: ciudadEmisor,
     CorreoEmisor: correoEmisor,
     RUTRecep: rutReceptor,
     RznSocRecep: razonSocialReceptor,
