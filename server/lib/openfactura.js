@@ -46,6 +46,11 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
   const fechaEmision = new Date().toISOString().slice(0, 10);
   const rutEmisor = cleanEnv("OPENFACTURA_COMPANY_RUT");
   const razonSocial = cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile";
+  const giroEmisor = cleanEnv("OPENFACTURA_COMPANY_GIRO") || "Servicios de produccion de obras de teatro";
+  const direccionEmisor = cleanEnv("OPENFACTURA_COMPANY_ADDRESS") || "";
+  const comunaEmisor = cleanEnv("OPENFACTURA_COMPANY_COMUNA") || "";
+  const ciudadEmisor = cleanEnv("OPENFACTURA_COMPANY_CITY") || comunaEmisor;
+  const correoEmisor = cleanEnv("OPENFACTURA_COMPANY_EMAIL") || "contacto@hondafestchile.cl";
   const rutReceptor = user.rut || "66666666-6";
   const razonSocialReceptor = user.name || "Consumidor final";
   const detalle = detailItems.map((item, index) => ({
@@ -70,6 +75,11 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
     FchEmis: fechaEmision,
     RUTEmisor: rutEmisor,
     RznSoc: razonSocial,
+    GiroEmis: giroEmisor,
+    DirOrigen: direccionEmisor,
+    CmnaOrigen: comunaEmisor,
+    CiudadOrigen: ciudadEmisor,
+    CorreoEmisor: correoEmisor,
     RUTRecep: rutReceptor,
     RznSocRecep: razonSocialReceptor,
     CorreoRecep: user.email,
@@ -81,7 +91,12 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
       },
       Emisor: {
         RUTEmisor: rutEmisor,
-        RznSoc: razonSocial
+        RznSoc: razonSocial,
+        GiroEmis: giroEmisor,
+        DirOrigen: direccionEmisor,
+        CmnaOrigen: comunaEmisor,
+        CiudadOrigen: ciudadEmisor,
+        CorreoEmisor: correoEmisor
       },
       Receptor: {
         RUTRecep: rutReceptor,
@@ -97,7 +112,12 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
     fechaEmision,
     emisor: {
       rut: rutEmisor,
-      razonSocial
+      razonSocial,
+      giro: giroEmisor,
+      direccion: direccionEmisor,
+      comuna: comunaEmisor,
+      ciudad: ciudadEmisor,
+      email: correoEmisor
     },
     receptor: {
       rut: rutReceptor,
