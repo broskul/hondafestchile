@@ -1896,7 +1896,6 @@ async function reissueOrderDte({ orderId, req = null, resendEmail = true, force 
       : null;
     if (invoiceIndex >= 0) {
       nextState.invoices[invoiceIndex] = {
-        ...nextState.invoices[invoiceIndex],
         ...invoice,
         replacedInvoice,
         updatedAt: new Date().toISOString()

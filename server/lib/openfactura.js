@@ -42,6 +42,95 @@ function responseErrorDetail(payload) {
   }
 }
 
+function readPath(source, path) {
+  return path.split(".").reduce((value, key) => {
+    if (value === undefined || value === null) return undefined;
+    return value[key];
+  }, source);
+}
+
+function firstResponseValue(source, paths) {
+  for (const path of paths) {
+    const value = readPath(source, path);
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return null;
+}
+
+function normalizeFolio(value) {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value === "object") {
+    return (
+      firstResponseValue(value, ["folio", "Folio", "FOLIO", "number", "Numero", "NumeroDTE"]) ||
+      JSON.stringify(value)
+    );
+  }
+  return String(value);
+}
+
+function normalizePdfValue(value) {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value === "object") {
+    return firstResponseValue(value, ["url", "href", "pdfUrl", "urlPdf", "PDF", "base64"]) || null;
+  }
+  return String(value);
+}
+
+function normalizeHaulmerResult(result, orderId) {
+  const folio = normalizeFolio(
+    firstResponseValue(result, [
+      "folio",
+      "Folio",
+      "FOLIO",
+      "number",
+      "Numero",
+      "NumeroDTE",
+      "dte.folio",
+      "document.folio",
+      "response.folio",
+      "response.FOLIO",
+      "data.folio",
+      "data.FOLIO"
+    ])
+  );
+  const pdfUrl = normalizePdfValue(
+    firstResponseValue(result, [
+      "pdfUrl",
+      "urlPdf",
+      "representationUrl",
+      "PDF",
+      "pdf",
+      "document.pdfUrl",
+      "response.PDF",
+      "response.pdf",
+      "data.PDF",
+      "data.pdf"
+    ])
+  );
+  const providerId =
+    firstResponseValue(result, [
+      "id",
+      "documentId",
+      "trackId",
+      "track_id",
+      "TRACKID",
+      "codigo",
+      "Codigo",
+      "TED",
+      "TIMBRE",
+      "timbre",
+      "data.id",
+      "data.trackId",
+      "response.TRACKID"
+    ]) || (folio ? `HAULMER-${folio}` : orderId);
+
+  return {
+    providerId: String(providerId),
+    folio,
+    pdfUrl
+  };
+}
+
 function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, items = [] }) {
   const detailItems = items.length
     ? items
@@ -139,14 +228,11 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
     throw new Error("OpenFactura: falta OPENFACTURA_COMPANY_RUT para informar RUTEmisor");
   }
 
-  const subscriptionKey = cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY") || cleanEnv("OPENFACTURA_API_KEY");
+  const apiKey = cleanEnv("OPENFACTURA_API_KEY") || cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY");
   const bearerToken = cleanEnv("OPENFACTURA_BEARER_TOKEN") || cleanEnv("OPENFACTURA_ACCESS_TOKEN");
   const headers = {
     "Content-Type": "application/json",
-    "Idempotency-Key": order.id,
-    "Ocp-Apim-Subscription-Key": subscriptionKey,
-    apikey: subscriptionKey,
-    "x-api-key": subscriptionKey
+    apikey: apiKey
   };
   if (bearerToken) {
     headers.Authorization = `Bearer ${bearerToken}`;
@@ -165,15 +251,16 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
     const detail = responseErrorDetail(result);
     throw new Error(`OpenFactura: ${detail}`);
   }
+  const normalizedResult = normalizeHaulmerResult(result, order.id);
 
   return {
     id: `dte_${order.id}`,
     orderId: order.id,
     mode: "openfactura",
     provider: "openfactura",
-    providerId: result.id || result.documentId || result.trackId || order.id,
-    folio: result.folio || result.number || null,
-    pdfUrl: result.pdfUrl || result.urlPdf || result.representationUrl || null,
+    providerId: normalizedResult.providerId,
+    folio: normalizedResult.folio,
+    pdfUrl: normalizedResult.pdfUrl,
     raw: result,
     createdAt: new Date().toISOString()
   };
