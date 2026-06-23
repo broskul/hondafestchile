@@ -59,6 +59,51 @@ function recipientList(value) {
   return values.map((item) => String(item || "").trim()).filter(Boolean);
 }
 
+function graphAttachments(attachments = []) {
+  return attachments
+    .filter((attachment) => attachment?.contentBytes || attachment?.content)
+    .map((attachment) => ({
+      "@odata.type": "#microsoft.graph.fileAttachment",
+      name: attachment.filename || attachment.name || "archivo.pdf",
+      contentType: attachment.contentType || "application/octet-stream",
+      contentBytes: attachment.contentBytes || Buffer.from(attachment.content).toString("base64")
+    }));
+}
+
+function pdfBase64Value(value) {
+  if (!value) return "";
+  if (typeof value === "object") {
+    return (
+      pdfBase64Value(value.base64) ||
+      pdfBase64Value(value.PDF) ||
+      pdfBase64Value(value.pdf) ||
+      pdfBase64Value(value.contentBytes)
+    );
+  }
+  return String(value).replace(/^data:application\/pdf;base64,/i, "").replace(/\s+/g, "");
+}
+
+function invoiceAttachments(invoice) {
+  const pdfBase64 = pdfBase64Value(
+    invoice?.pdfBase64 ||
+      invoice?.raw?.PDF ||
+      invoice?.raw?.pdf ||
+      invoice?.raw?.response?.PDF ||
+      invoice?.raw?.response?.pdf ||
+      invoice?.raw?.data?.PDF ||
+      invoice?.raw?.data?.pdf
+  );
+  if (!pdfBase64) return [];
+  return [
+    {
+      filename: invoice.pdfFileName || `boleta-${invoice.folio || invoice.orderId || "hondafest"}.pdf`,
+      contentType: "application/pdf",
+      content: Buffer.from(pdfBase64, "base64"),
+      contentBytes: pdfBase64
+    }
+  ];
+}
+
 async function getGraphAccessToken() {
   if (graphTokenCache && graphTokenCache.expiresAt > Date.now() + 60000) {
     return graphTokenCache.accessToken;
@@ -118,7 +163,8 @@ async function sendWithGraph(mail) {
         })),
         bccRecipients: recipientList(mail.bcc).map((address) => ({
           emailAddress: { address }
-        }))
+        })),
+        attachments: graphAttachments(mail.attachments)
       },
       saveToSentItems: cleanEnv("MS_SAVE_TO_SENT_ITEMS") !== "false"
     })
@@ -190,14 +236,17 @@ async function sendVerificationEmail({ user, verificationUrl, template }) {
   });
 }
 
-async function sendTicketEmail({ user, order, event, ticketType, tickets, invoice, template, baseUrl }) {
+async function sendTicketEmail({ user, order, event, ticketType, tickets, invoice, template, baseUrl, to }) {
+  const recipient = to || user.email;
+  const attachments = invoiceAttachments(invoice);
   if (template) {
     const rendered = renderTemplate(template, ticketEmailVariables({ user, order, event, tickets, invoice, baseUrl }));
     return sendMail({
-      to: user.email,
+      to: recipient,
       subject: rendered.subject,
       text: rendered.text,
-      html: rendered.html
+      html: rendered.html,
+      attachments
     });
   }
 
@@ -225,7 +274,7 @@ async function sendTicketEmail({ user, order, event, ticketType, tickets, invoic
     : `Boleta: ${invoice?.folio || invoice?.providerId || "en proceso"}`;
 
   return sendMail({
-    to: user.email,
+    to: recipient,
     subject: `Tus entradas para ${eventName}`,
     text: [
       `Hola ${user.name}.`,
@@ -252,7 +301,8 @@ async function sendTicketEmail({ user, order, event, ticketType, tickets, invoic
             : invoice?.folio || invoice?.providerId || "en proceso"
         }</p>
       </div>
-    `
+    `,
+    attachments
   });
 }
 

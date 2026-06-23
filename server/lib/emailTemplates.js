@@ -235,7 +235,9 @@ function ticketEmailVariables({ user, order, event, tickets = [], invoice, baseU
         `<li><strong>${escapeHtml(ticket.code)}</strong><br /><a href="${escapeHtml(ticket.verifyUrl)}">${escapeHtml(ticket.verifyUrl)}</a><br /><img src="${escapeHtml(ticket.qrUrl)}" alt="QR ${escapeHtml(ticket.code)}" width="160" /></li>`
     )
     .join("")}</ul>`;
-  const invoiceLabel = invoice?.pdfUrl || invoice?.folio || invoice?.providerId || "en proceso";
+  const invoiceLabel = invoice?.pdfBase64
+    ? `PDF adjunto${invoice?.folio ? ` - folio ${invoice.folio}` : ""}`
+    : invoice?.pdfUrl || invoice?.folio || invoice?.providerId || "en proceso";
 
   return {
     name: user?.name || "Honda Fest",

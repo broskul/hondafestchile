@@ -68,12 +68,24 @@ function normalizeFolio(value) {
   return String(value);
 }
 
+function cleanBase64(value) {
+  if (!value) return null;
+  return String(value).replace(/^data:application\/pdf;base64,/i, "").replace(/\s+/g, "");
+}
+
 function normalizePdfValue(value) {
   if (value === undefined || value === null || value === "") return null;
   if (typeof value === "object") {
     return firstResponseValue(value, ["url", "href", "pdfUrl", "urlPdf", "PDF", "base64"]) || null;
   }
   return String(value);
+}
+
+function normalizePdfAttachment(value) {
+  const pdf = normalizePdfValue(value);
+  if (!pdf) return { pdfUrl: null, pdfBase64: null };
+  if (/^https?:\/\//i.test(pdf)) return { pdfUrl: pdf, pdfBase64: null };
+  return { pdfUrl: null, pdfBase64: cleanBase64(pdf) };
 }
 
 function normalizeHaulmerResult(result, orderId) {
@@ -93,7 +105,7 @@ function normalizeHaulmerResult(result, orderId) {
       "data.FOLIO"
     ])
   );
-  const pdfUrl = normalizePdfValue(
+  const pdf = normalizePdfAttachment(
     firstResponseValue(result, [
       "pdfUrl",
       "urlPdf",
@@ -127,7 +139,8 @@ function normalizeHaulmerResult(result, orderId) {
   return {
     providerId: String(providerId),
     folio,
-    pdfUrl
+    pdfUrl: pdf.pdfUrl,
+    pdfBase64: pdf.pdfBase64
   };
 }
 
@@ -261,6 +274,8 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
     providerId: normalizedResult.providerId,
     folio: normalizedResult.folio,
     pdfUrl: normalizedResult.pdfUrl,
+    pdfBase64: normalizedResult.pdfBase64,
+    pdfFileName: `boleta-${normalizedResult.folio || order.id}.pdf`,
     raw: result,
     createdAt: new Date().toISOString()
   };

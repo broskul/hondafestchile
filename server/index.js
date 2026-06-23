@@ -1817,7 +1817,7 @@ async function resendOrderEmail(orderId) {
   return { order, user, tickets, invoice };
 }
 
-async function reissueOrderDte({ orderId, req = null, resendEmail = true, force = false }) {
+async function reissueOrderDte({ orderId, req = null, resendEmail = true, force = false, emailTo = "" }) {
   if (!openFacturaConfigured()) {
     const error = new Error("OpenFactura no esta configurado; no se emitira otro DTE demo");
     error.status = 503;
@@ -1858,14 +1858,76 @@ async function reissueOrderDte({ orderId, req = null, resendEmail = true, force 
     throw error;
   }
 
-  if (currentInvoice && !invoiceLooksDemo(currentInvoice) && !force) {
+  const recipientEmail = normalizeEmail(emailTo);
+  if (recipientEmail && !validEmail(recipientEmail)) {
+    const error = new Error("El correo tecnico para prueba no tiene un formato valido");
+    error.status = 400;
+    throw error;
+  }
+
+  const sendDteEmail = async ({ invoice: invoiceForEmail, tickets: ticketsForEmail, type }) => {
+    const emailState = await readState();
+    const template = findTemplate(emailState.emailTemplates, "payment");
+    try {
+      const emailResult = await sendTicketEmail({
+        user,
+        order,
+        event,
+        ticketType,
+        tickets: ticketsForEmail,
+        invoice: invoiceForEmail,
+        template,
+        baseUrl: configuredBaseUrl(req),
+        to: recipientEmail || undefined
+      });
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+        if (freshOrder && !recipientEmail) {
+          freshOrder.ticketEmailSentAt = new Date().toISOString();
+          freshOrder.updatedAt = freshOrder.ticketEmailSentAt;
+        }
+        logEmailResult(nextState, {
+          type,
+          templateId: template?.id || "payment",
+          to: recipientEmail || user.email,
+          originalTo: recipientEmail ? user.email : undefined,
+          userId: user.id,
+          orderId: order.id,
+          status: "sent",
+          mode: emailResult.mode,
+          subject: `Tus entradas para ${orderEventName(order, event)}`
+        });
+      });
+      return emailResult;
+    } catch (error) {
+      await updateState((nextState) => {
+        logEmailResult(nextState, {
+          type,
+          templateId: template?.id || "payment",
+          to: recipientEmail || user.email,
+          originalTo: recipientEmail ? user.email : undefined,
+          userId: user.id,
+          orderId: order.id,
+          status: "failed",
+          error: error.message
+        });
+      });
+      return { ok: false, message: error.message };
+    }
+  };
+
+  if (currentInvoice && !invoiceLooksDemo(currentInvoice)) {
+    const emailResult = resendEmail
+      ? await sendDteEmail({ invoice: currentInvoice, tickets, type: "dte_existing_resent" })
+      : null;
     return {
       skipped: true,
       reason: "already_real_invoice",
       order,
       user,
       tickets,
-      invoice: currentInvoice
+      invoice: currentInvoice,
+      email: emailResult
     };
   }
 
@@ -1921,49 +1983,7 @@ async function reissueOrderDte({ orderId, req = null, resendEmail = true, force 
   let emailResult = null;
 
   if (resendEmail) {
-    const template = findTemplate(state.emailTemplates, "payment");
-    try {
-      emailResult = await sendTicketEmail({
-        user,
-        order,
-        event,
-        ticketType,
-        tickets: savedTickets,
-        invoice: savedInvoice,
-        template,
-        baseUrl: configuredBaseUrl(req)
-      });
-      await updateState((nextState) => {
-        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
-        if (freshOrder) {
-          freshOrder.ticketEmailSentAt = new Date().toISOString();
-          freshOrder.updatedAt = freshOrder.ticketEmailSentAt;
-        }
-        logEmailResult(nextState, {
-          type: "dte_reissued",
-          templateId: template?.id || "payment",
-          to: user.email,
-          userId: user.id,
-          orderId: order.id,
-          status: "sent",
-          mode: emailResult.mode,
-          subject: `Tus entradas para ${orderEventName(order, event)}`
-        });
-      });
-    } catch (error) {
-      emailResult = { ok: false, message: error.message };
-      await updateState((nextState) => {
-        logEmailResult(nextState, {
-          type: "dte_reissued",
-          templateId: template?.id || "payment",
-          to: user.email,
-          userId: user.id,
-          orderId: order.id,
-          status: "failed",
-          error: error.message
-        });
-      });
-    }
+    emailResult = await sendDteEmail({ invoice: savedInvoice, tickets: savedTickets, type: "dte_reissued" });
   }
 
   return {
@@ -4126,7 +4146,8 @@ app.post("/api/backoffice/orders/reissue-demo-dtes", async (req, res, next) => {
           orderId: order.id,
           req,
           resendEmail: req.body.resendEmail !== false,
-          force: true
+          force: true,
+          emailTo: req.body.emailTo || ""
         });
         results.push({
           orderId: order.id,
@@ -4161,7 +4182,8 @@ app.post("/api/backoffice/orders/:orderId/reissue-dte", async (req, res, next) =
       orderId: req.params.orderId,
       req,
       resendEmail: req.body.resendEmail !== false,
-      force: Boolean(req.body.force)
+      force: Boolean(req.body.force),
+      emailTo: req.body.emailTo || ""
     });
     res.json({
       ok: true,
