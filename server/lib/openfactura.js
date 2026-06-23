@@ -76,7 +76,9 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
   const headers = {
     "Content-Type": "application/json",
     "Idempotency-Key": order.id,
-    "Ocp-Apim-Subscription-Key": subscriptionKey
+    "Ocp-Apim-Subscription-Key": subscriptionKey,
+    apikey: subscriptionKey,
+    "x-api-key": subscriptionKey
   };
   if (bearerToken) {
     headers.Authorization = `Bearer ${bearerToken}`;
