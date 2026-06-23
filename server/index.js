@@ -1817,7 +1817,14 @@ async function resendOrderEmail(orderId) {
   return { order, user, tickets, invoice };
 }
 
-async function reissueOrderDte({ orderId, req = null, resendEmail = true, force = false, emailTo = "" }) {
+async function reissueOrderDte({
+  orderId,
+  req = null,
+  resendEmail = true,
+  force = false,
+  emailTo = "",
+  issueMissingDte = false
+}) {
   if (!openFacturaConfigured()) {
     const error = new Error("OpenFactura no esta configurado; no se emitira otro DTE demo");
     error.status = 503;
@@ -1928,6 +1935,18 @@ async function reissueOrderDte({ orderId, req = null, resendEmail = true, force 
       tickets,
       invoice: currentInvoice,
       email: emailResult
+    };
+  }
+
+  if (!issueMissingDte) {
+    return {
+      skipped: true,
+      reason: currentInvoice ? "demo_invoice_requires_manual_confirmation" : "missing_invoice_requires_manual_confirmation",
+      order,
+      user,
+      tickets,
+      invoice: currentInvoice,
+      email: null
     };
   }
 
@@ -4147,7 +4166,8 @@ app.post("/api/backoffice/orders/reissue-demo-dtes", async (req, res, next) => {
           req,
           resendEmail: req.body.resendEmail !== false,
           force: true,
-          emailTo: req.body.emailTo || ""
+          emailTo: req.body.emailTo || "",
+          issueMissingDte: req.body.issueMissingDte === true
         });
         results.push({
           orderId: order.id,
@@ -4183,7 +4203,8 @@ app.post("/api/backoffice/orders/:orderId/reissue-dte", async (req, res, next) =
       req,
       resendEmail: req.body.resendEmail !== false,
       force: Boolean(req.body.force),
-      emailTo: req.body.emailTo || ""
+      emailTo: req.body.emailTo || "",
+      issueMissingDte: req.body.issueMissingDte === true
     });
     res.json({
       ok: true,
