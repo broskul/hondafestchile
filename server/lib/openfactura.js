@@ -9,6 +9,19 @@ function openFacturaConfigured() {
   );
 }
 
+function openFacturaRuntimeStatus() {
+  return {
+    configured: openFacturaConfigured(),
+    endpointConfigured: Boolean(cleanEnv("OPENFACTURA_ENDPOINT")),
+    apiKeyConfigured: Boolean(cleanEnv("OPENFACTURA_API_KEY") || cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY")),
+    companyRutConfigured: Boolean(cleanEnv("OPENFACTURA_COMPANY_RUT")),
+    companyNameConfigured: Boolean(cleanEnv("OPENFACTURA_COMPANY_NAME")),
+    companyGiroConfigured: Boolean(cleanEnv("OPENFACTURA_COMPANY_GIRO")),
+    companyAddressConfigured: Boolean(cleanEnv("OPENFACTURA_COMPANY_ADDRESS")),
+    companyEmailConfigured: Boolean(cleanEnv("OPENFACTURA_COMPANY_EMAIL"))
+  };
+}
+
 function responseErrorDetail(payload) {
   const candidates = [
     payload?.message,
@@ -207,5 +220,6 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
 module.exports = {
   buildOpenFacturaPayload,
   issueBoleta,
-  openFacturaConfigured
+  openFacturaConfigured,
+  openFacturaRuntimeStatus
 };

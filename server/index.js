@@ -26,7 +26,7 @@ const {
   parseWebhookNotification,
   verifyWebhookSignature
 } = require("./lib/mercadopago");
-const { issueBoleta, openFacturaConfigured } = require("./lib/openfactura");
+const { issueBoleta, openFacturaConfigured, openFacturaRuntimeStatus } = require("./lib/openfactura");
 const { cleanRut, formatRut, validateRut } = require("./lib/rut");
 const {
   checkoutStorageReady,
@@ -2298,7 +2298,8 @@ app.get("/api/health", async (req, res) => {
       email: mailProviderStatus(),
       mercadoPago: mercadoPagoConfigured(),
       mercadoPagoDetails: mercadoPagoRuntimeStatus(req),
-      openFactura: openFacturaConfigured()
+      openFactura: openFacturaConfigured(),
+      openFacturaDetails: openFacturaRuntimeStatus()
     }
   });
 });
