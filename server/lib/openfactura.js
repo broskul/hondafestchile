@@ -42,29 +42,69 @@ function buildOpenFacturaPayload({ order, user, event, ticketType, tickets, item
           total: order.total
         }
       ];
+  const tipoDte = Number(cleanEnv("OPENFACTURA_DTE_TYPE") || 39);
+  const fechaEmision = new Date().toISOString().slice(0, 10);
+  const rutEmisor = cleanEnv("OPENFACTURA_COMPANY_RUT");
+  const razonSocial = cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile";
+  const rutReceptor = user.rut || "66666666-6";
+  const razonSocialReceptor = user.name || "Consumidor final";
+  const detalle = detailItems.map((item, index) => ({
+    NroLinDet: index + 1,
+    NmbItem: `${item.ticketTypeName} - ${item.eventName}`,
+    DscItem: `Orden ${order.id}. Tickets: ${tickets
+      .filter((ticket) => !item.id || ticket.lineItemId === item.id)
+      .map((ticket) => ticket.code)
+      .join(", ")}`,
+    QtyItem: item.quantity,
+    PrcItem: item.unitPrice,
+    MontoItem: item.total,
+    nombre: `${item.ticketTypeName} - ${item.eventName}`,
+    descripcion: `Orden ${order.id}`,
+    cantidad: item.quantity,
+    precioUnitario: item.unitPrice,
+    montoItem: item.total
+  }));
 
   const dte = {
-    tipoDTE: Number(cleanEnv("OPENFACTURA_DTE_TYPE") || 39),
-    fechaEmision: new Date().toISOString().slice(0, 10),
+    TipoDTE: tipoDte,
+    FchEmis: fechaEmision,
+    RUTEmisor: rutEmisor,
+    RznSoc: razonSocial,
+    RUTRecep: rutReceptor,
+    RznSocRecep: razonSocialReceptor,
+    CorreoRecep: user.email,
+    MntTotal: order.total,
+    Encabezado: {
+      IdDoc: {
+        TipoDTE: tipoDte,
+        FchEmis: fechaEmision
+      },
+      Emisor: {
+        RUTEmisor: rutEmisor,
+        RznSoc: razonSocial
+      },
+      Receptor: {
+        RUTRecep: rutReceptor,
+        RznSocRecep: razonSocialReceptor,
+        CorreoRecep: user.email
+      },
+      Totales: {
+        MntTotal: order.total
+      }
+    },
+    Detalle: detalle,
+    tipoDTE: tipoDte,
+    fechaEmision,
     emisor: {
-      rut: cleanEnv("OPENFACTURA_COMPANY_RUT"),
-      razonSocial: cleanEnv("OPENFACTURA_COMPANY_NAME") || "Honda Fest Chile"
+      rut: rutEmisor,
+      razonSocial
     },
     receptor: {
-      rut: user.rut,
-      razonSocial: user.name,
+      rut: rutReceptor,
+      razonSocial: razonSocialReceptor,
       email: user.email
     },
-    detalle: detailItems.map((item) => ({
-      nombre: `${item.ticketTypeName} - ${item.eventName}`,
-      descripcion: `Orden ${order.id}. Tickets: ${tickets
-        .filter((ticket) => !item.id || ticket.lineItemId === item.id)
-        .map((ticket) => ticket.code)
-        .join(", ")}`,
-      cantidad: item.quantity,
-      precioUnitario: item.unitPrice,
-      montoItem: item.total
-    })),
+    detalle,
     totales: {
       montoTotal: order.total
     }
@@ -92,6 +132,10 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
       payload,
       createdAt: new Date().toISOString()
     };
+  }
+
+  if (!cleanEnv("OPENFACTURA_COMPANY_RUT")) {
+    throw new Error("OpenFactura: falta OPENFACTURA_COMPANY_RUT para informar RUTEmisor");
   }
 
   const subscriptionKey = cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY") || cleanEnv("OPENFACTURA_API_KEY");
