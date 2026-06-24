@@ -1,99 +1,171 @@
+const SUPPORT_WHATSAPP_URL = "https://wa.me/56972934950";
+
+function emailButton(href, label, variant = "primary") {
+  const background = variant === "dark" ? "#143b36" : "#d71920";
+  return [
+    `<a href="${href}" style="background:${background};border-radius:6px;color:#ffffff;display:inline-block;font-size:16px;font-weight:700;line-height:1.2;padding:14px 18px;text-decoration:none;">`,
+    label,
+    "</a>"
+  ].join("");
+}
+
+function emailShell({ preheader, eyebrow, title, intro, content, footerNote = "" }) {
+  return [
+    '<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
+    `<title>${title}</title></head>`,
+    '<body style="margin:0;padding:0;background:#f3f4f2;font-family:Arial,Helvetica,sans-serif;color:#17191f;">',
+    `<div style="display:none;font-size:1px;color:#f3f4f2;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}</div>`,
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f3f4f2;">',
+    '<tr><td align="center" style="padding:24px 12px;">',
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:640px;background:#ffffff;border:1px solid #e4e5df;">',
+    '<tr><td style="background:#111111;padding:22px 24px;">',
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;"><tr>',
+    '<td style="vertical-align:middle;"><span style="background:#ffffff;color:#111111;display:inline-block;font-size:18px;font-weight:800;letter-spacing:0;padding:11px 13px;">HFC</span></td>',
+    '<td align="right" style="color:#ffffff;font-size:14px;font-weight:700;vertical-align:middle;">Honda Fest Chile</td>',
+    "</tr></table>",
+    "</td></tr>",
+    '<tr><td style="padding:30px 28px 10px;">',
+    `<p style="color:#d71920;font-size:12px;font-weight:800;letter-spacing:.08em;margin:0 0 10px;text-transform:uppercase;">${eyebrow}</p>`,
+    `<h1 style="color:#17191f;font-size:28px;line-height:1.15;margin:0 0 14px;">${title}</h1>`,
+    `<p style="color:#4c5563;font-size:16px;line-height:1.55;margin:0;">${intro}</p>`,
+    "</td></tr>",
+    `<tr><td style="padding:18px 28px 30px;">${content}</td></tr>`,
+    '<tr><td style="background:#f7f7f4;border-top:1px solid #e4e5df;padding:18px 28px;">',
+    `<p style="color:#5f6673;font-size:13px;line-height:1.5;margin:0;">${footerNote || "Este correo es transaccional y fue enviado por una accion realizada en hondafestchile.cl."}</p>`,
+    '<p style="color:#8a9099;font-size:12px;line-height:1.5;margin:10px 0 0;">2026 PyR Eventos - contacto@hondafestchile.cl<br>Sistema desarrollado por Prof3sional.com - contacto@prof3sional.com</p>',
+    "</td></tr>",
+    "</table>",
+    "</td></tr>",
+    "</table>",
+    "</body></html>"
+  ].join("");
+}
+
+function orderSummaryBlock(extra = "") {
+  return [
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fafafa;border:1px solid #e4e5df;margin:0 0 18px;">',
+    '<tr><td style="padding:14px 16px;">',
+    '<p style="color:#6b7280;font-size:12px;font-weight:800;letter-spacing:.06em;margin:0 0 4px;text-transform:uppercase;">Orden</p>',
+    '<p style="color:#17191f;font-size:15px;font-weight:700;margin:0;">{{order_id}}</p>',
+    extra,
+    "</td></tr>",
+    "</table>"
+  ].join("");
+}
+
+function orderItemsTable() {
+  return [
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#ffffff;border:1px solid #e4e5df;margin:0 0 18px;">',
+    '<tr>',
+    '<th align="left" style="background:#17191f;color:#ffffff;font-size:13px;padding:12px;">Producto</th>',
+    '<th align="left" style="background:#17191f;color:#ffffff;font-size:13px;padding:12px;">Cant.</th>',
+    '<th align="left" style="background:#17191f;color:#ffffff;font-size:13px;padding:12px;">Precio</th>',
+    "</tr>",
+    "{{order_items_html}}",
+    "</table>"
+  ].join("");
+}
+
+function helpLine() {
+  return `<p style="color:#4c5563;font-size:14px;line-height:1.5;margin:18px 0 0;">Si necesitas ayuda, responde este correo o escribenos por WhatsApp: <a href="${SUPPORT_WHATSAPP_URL}" style="color:#143b36;font-weight:700;text-decoration:none;">+56 9 7293 4950</a>.</p>`;
+}
+
 const defaultEmailTemplates = [
   {
     id: "payment",
     type: "payment",
     name: "Pago confirmado",
-    subject: "Tus entradas para {{event_name}}",
+    subject: "Pago confirmado - {{event_name}}",
     text: [
       "Hola {{name}}.",
       "Tu pago fue confirmado para {{event_name}}.",
       "Orden: {{order_id}}",
       "Entradas:",
       "{{ticket_list_text}}",
-      "Boleta: {{invoice_label}}"
+      "Boleta: {{invoice_label_text}}",
+      `Ayuda: ${SUPPORT_WHATSAPP_URL}`
     ].join("\n"),
-    html: [
-      '<div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212">',
-      "<h1>Entradas confirmadas</h1>",
-      "<p>Hola {{name}}, tu pago fue confirmado para <strong>{{event_name}}</strong>.</p>",
-      "<p><strong>Orden:</strong> {{order_id}}</p>",
-      "<p><strong>Entradas:</strong></p>",
-      "{{ticket_list_html}}",
-      "<p><strong>Boleta:</strong> {{invoice_label}}</p>",
-      "</div>"
-    ].join("")
+    html: emailShell({
+      preheader: "Tu pago fue confirmado. Revisa el detalle de tu compra y la boleta.",
+      eyebrow: "Pago confirmado",
+      title: "Tu compra esta confirmada",
+      intro: "Hola {{name}}, recibimos correctamente tu pago para {{event_name}}. Conserva este correo como respaldo de tu compra.",
+      content: [
+        orderSummaryBlock('<p style="color:#4c5563;font-size:14px;margin:8px 0 0;"><strong>Evento:</strong> {{event_name}}</p>'),
+        '<h2 style="color:#17191f;font-size:18px;margin:0 0 10px;">Entradas</h2>',
+        "{{ticket_list_compact_html}}",
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f7faf8;border:1px solid #cfe5d5;margin:18px 0 0;"><tr><td style="padding:14px 16px;">',
+        '<p style="color:#2f6b3f;font-size:12px;font-weight:800;letter-spacing:.06em;margin:0 0 4px;text-transform:uppercase;">Boleta</p>',
+        '<p style="color:#17191f;font-size:15px;line-height:1.5;margin:0;">{{invoice_label_html}}</p>',
+        "</td></tr></table>",
+        helpLine()
+      ].join("")
+    })
   },
   {
     id: "enrollment_invitation",
     type: "enrollment_invitation",
     name: "Confirmacion de compra y enrolamiento",
-    subject: "Confirmacion de compra - {{event_name}}",
+    subject: "Completa tus datos - {{event_name}}",
     text: [
       "Hola {{name}}.",
-      "Gracias por tu compra en Honda Fest Chile. Tu pedido fue procesado exitosamente.",
+      "Gracias por tu compra en Honda Fest Chile.",
       "Orden: {{order_id}}",
       "Detalle:",
       "{{order_items_text}}",
-      "Si compraste entradas, enrolate con este link para obtener tu entrada personal:",
+      "Completa tus datos para obtener tu entrada personal:",
       "{{enroll_url}}",
       "QR: {{enroll_qr_url}}",
       "El dia del evento podras ingresar mostrando tu Cedula de Identidad o Pasaporte si no tienes RUT."
     ].join("\n"),
-    html: [
-      '<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>Confirmacion de Compra - Honda Fest Chile</title></head>',
-      '<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,sans-serif;">',
-      '<table style="width:100%;max-width:600px;margin:0 auto;border-spacing:0;background-color:#ffffff;">',
-      '<tr><td style="padding:20px;text-align:center;background-color:#000000;">',
-      '<img src="https://static.wixstatic.com/media/c04ebe_5948ba64ee9d42de93a3707c7e0ac029~mv2.png/v1/crop/x_571,y_541,w_2049,h_2078/fill/w_315,h_324,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/Group%20945.png" alt="Honda Fest Logo" style="width:100%;max-width:270px;height:auto;">',
-      "</td></tr>",
-      '<tr><td style="padding:20px;">',
-      '<h1 style="color:#333;margin-top:0;margin-bottom:20px;font-size:24px;">Gracias por tu compra</h1>',
-      '<p style="color:#666;font-size:16px;line-height:1.5;margin-top:0;margin-bottom:16px;">Hola <strong>{{name}}</strong>,</p>',
-      '<p style="color:#666;font-size:16px;line-height:1.5;margin-top:0;margin-bottom:16px;">Gracias por tu compra en el sitio Honda Fest Chile. Tu pedido ha sido procesado exitosamente. A continuacion encontraras los detalles de tu compra:</p>',
-      '<p style="color:#333;font-size:14px;line-height:1.5;margin-top:0;margin-bottom:12px;"><strong>Orden:</strong> {{order_id}}</p>',
-      '<table style="width:100%;border-collapse:collapse;background-color:#FAFAFA;border-radius:8px;overflow:hidden;font-size:16px;">',
-      '<tr><th style="background-color:#da2f47;color:#ffffff;padding:12px;text-align:left;">Producto</th><th style="background-color:#da2f47;color:#ffffff;padding:12px;text-align:left;">Cantidad</th><th style="background-color:#da2f47;color:#ffffff;padding:12px;text-align:left;">Precio</th></tr>',
-      "{{order_items_html}}",
-      "</table>",
-      '<p style="color:#666;font-size:16px;line-height:1.5;margin-top:20px;margin-bottom:16px;">Si compraste entradas, enrolate con el siguiente link para obtener tu entrada personal. El dia del evento podras ingresar solo mostrando tu Cedula de Identidad o Pasaporte si no tienes RUT.</p>',
-      '<p style="text-align:center;margin:22px 0 12px;"><a href="{{enroll_url}}" style="background-color:#da2f47;color:#fff;padding:15px 20px;text-align:center;display:inline-block;text-decoration:none;font-size:18px;border-radius:5px;">Ver mi pedido y enrolarme</a></p>',
-      '<p style="text-align:center;margin:8px 0 18px;"><img src="{{enroll_qr_url}}" alt="QR para enrolamiento" width="180" style="max-width:180px;height:auto;"></p>',
-      '<p style="color:#666;font-size:14px;line-height:1.5;margin-top:0;margin-bottom:16px;">Tambien puedes abrir este enlace: <a href="{{enroll_url}}" style="color:#da2f47;">{{enroll_url}}</a></p>',
-      '<p style="color:#666;font-size:16px;line-height:1.5;margin-top:0;margin-bottom:16px;">Si tienes alguna pregunta, no dudes en contactarnos.</p>',
-      '<p style="color:#333;font-weight:bold;font-size:16px;line-height:1.5;margin-top:20px;margin-bottom:0;">Que disfrutes tu compra.</p>',
-      "</td></tr>",
-      '<tr><td style="padding:5px;text-align:center;background-color:#f4f4f4;">',
-      '<p style="font-size:16px;color:#999999;margin:4px 0;">2026 PyR Eventos - contacto@hondafestchile.cl</p>',
-      '<p style="font-size:14px;color:#999999;margin:4px 0;">Sistema desarrollado por Prof3sional.com - contacto@prof3sional.com</p>',
-      "</td></tr>",
-      "</table>",
-      "</body></html>"
-    ].join("")
+    html: emailShell({
+      preheader: "Tu compra fue recibida. Completa tus datos para obtener tu entrada personal.",
+      eyebrow: "Compra recibida",
+      title: "Completa tu enrolamiento",
+      intro: "Hola {{name}}, tu pedido fue procesado. Para generar tu entrada personal necesitamos que completes tus datos desde este enlace seguro.",
+      content: [
+        orderSummaryBlock(),
+        orderItemsTable(),
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff5f6;border:1px solid #f3c4cc;margin:0 0 18px;"><tr><td style="padding:16px;">',
+        '<p style="color:#17191f;font-size:15px;line-height:1.55;margin:0;">El dia del evento podras ingresar mostrando tu Cedula de Identidad o Pasaporte si no tienes RUT.</p>',
+        "</td></tr></table>",
+        `<p style="margin:0 0 16px;text-align:center;">${emailButton("{{enroll_url}}", "Ver mi pedido y enrolarme")}</p>`,
+        '<p style="margin:0 0 14px;text-align:center;"><img src="{{enroll_qr_url}}" alt="QR para enrolamiento" width="170" style="height:auto;max-width:170px;"></p>',
+        '<p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;text-align:center;">Tambien puedes abrir este enlace:<br><a href="{{enroll_url}}" style="color:#d71920;word-break:break-all;">{{enroll_url}}</a></p>',
+        helpLine()
+      ].join("")
+    })
   },
   {
     id: "ticket_after_enrollment",
     type: "ticket_after_enrollment",
     name: "Entrada contra enrolamiento",
-    subject: "Tu entrada para {{event_name}}",
+    subject: "Tu entrada - {{event_name}}",
     text: [
       "Hola {{name}}.",
       "Esta es tu entrada para {{event_name}}.",
       "{{ticket_list_text}}",
       "Presenta el QR o codigo en puerta."
     ].join("\n"),
-    html: [
-      '<div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212">',
-      "<h1>Tu entrada</h1>",
-      "<p>Hola {{name}}, presenta este QR o codigo en puerta para ingresar a <strong>{{event_name}}</strong>.</p>",
-      "{{ticket_list_html}}",
-      "</div>"
-    ].join("")
+    html: emailShell({
+      preheader: "Tu entrada esta lista. Presenta el QR o codigo en puerta.",
+      eyebrow: "Entrada lista",
+      title: "Tu entrada esta lista",
+      intro: "Hola {{name}}, presenta el QR o codigo de este correo en puerta para ingresar a {{event_name}}.",
+      content: [
+        "{{ticket_list_html}}",
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f7faf8;border:1px solid #cfe5d5;margin:18px 0 0;"><tr><td style="padding:14px 16px;">',
+        '<p style="color:#17191f;font-size:14px;line-height:1.5;margin:0;">Recomendacion: lleva tu cedula de identidad o pasaporte. El codigo QR tambien puede validarse manualmente con el codigo impreso.</p>',
+        "</td></tr></table>",
+        helpLine()
+      ].join("")
+    })
   },
   {
     id: "payment_failed_retry",
     type: "payment_failed_retry",
     name: "Pago no finalizado",
-    subject: "No pudiste comprar tu entrada?",
+    subject: "Tu compra no se finalizo - {{event_name}}",
     text: [
       "Hola {{name}}.",
       "Vimos que tu compra para {{event_name}} no se finalizo.",
@@ -105,32 +177,18 @@ const defaultEmailTemplates = [
       "Si necesitas ayuda, escribenos por WhatsApp:",
       "{{whatsapp_url}}"
     ].join("\n"),
-    html: [
-      '<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>Compra no finalizada - Honda Fest Chile</title></head>',
-      '<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,sans-serif;">',
-      '<table style="width:100%;max-width:600px;margin:0 auto;border-spacing:0;background-color:#ffffff;">',
-      '<tr><td style="padding:20px;text-align:center;background-color:#000000;">',
-      '<img src="https://static.wixstatic.com/media/c04ebe_5948ba64ee9d42de93a3707c7e0ac029~mv2.png/v1/crop/x_571,y_541,w_2049,h_2078/fill/w_315,h_324,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/Group%20945.png" alt="Honda Fest Logo" style="width:100%;max-width:250px;height:auto;">',
-      "</td></tr>",
-      '<tr><td style="padding:24px;">',
-      '<h1 style="color:#333;margin-top:0;margin-bottom:16px;font-size:24px;">No pudiste comprar tu entrada?</h1>',
-      '<p style="color:#666;font-size:16px;line-height:1.5;margin-top:0;margin-bottom:16px;">Hola <strong>{{name}}</strong>, vimos que tu compra para <strong>{{event_name}}</strong> no se finalizo.</p>',
-      '<p style="color:#666;font-size:16px;line-height:1.5;margin-top:0;margin-bottom:16px;">Si fue un error, puedes intentarlo nuevamente desde el boton. Si tienes dudas, tambien puedes hablarnos directo por WhatsApp.</p>',
-      '<p style="color:#333;font-size:14px;line-height:1.5;margin-top:0;margin-bottom:12px;"><strong>Orden:</strong> {{order_id}}</p>',
-      '<table style="width:100%;border-collapse:collapse;background-color:#FAFAFA;border-radius:8px;overflow:hidden;font-size:16px;">',
-      '<tr><th style="background-color:#da2f47;color:#ffffff;padding:12px;text-align:left;">Producto</th><th style="background-color:#da2f47;color:#ffffff;padding:12px;text-align:left;">Cantidad</th><th style="background-color:#da2f47;color:#ffffff;padding:12px;text-align:left;">Precio</th></tr>',
-      "{{order_items_html}}",
-      "</table>",
-      '<p style="text-align:center;margin:24px 0 10px;"><a href="{{retry_url}}" style="background-color:#da2f47;color:#fff;padding:15px 20px;text-align:center;display:inline-block;text-decoration:none;font-size:18px;border-radius:5px;">Intentar nuevamente</a></p>',
-      '<p style="text-align:center;margin:10px 0 0;"><a href="{{whatsapp_url}}" style="color:#1b5e20;font-weight:bold;text-decoration:none;">Necesito ayuda por WhatsApp</a></p>',
-      "</td></tr>",
-      '<tr><td style="padding:5px;text-align:center;background-color:#f4f4f4;">',
-      '<p style="font-size:16px;color:#999999;margin:4px 0;">2026 PyR Eventos - contacto@hondafestchile.cl</p>',
-      '<p style="font-size:14px;color:#999999;margin:4px 0;">Sistema desarrollado por Prof3sional.com - contacto@prof3sional.com</p>',
-      "</td></tr>",
-      "</table>",
-      "</body></html>"
-    ].join("")
+    html: emailShell({
+      preheader: "Tu pago no se completo. Puedes intentarlo nuevamente o pedir ayuda por WhatsApp.",
+      eyebrow: "Pago no finalizado",
+      title: "Tu compra quedo pendiente",
+      intro: "Hola {{name}}, vimos que tu compra para {{event_name}} no se finalizo. Si fue un error, puedes retomarla desde el boton.",
+      content: [
+        orderSummaryBlock(),
+        orderItemsTable(),
+        `<p style="margin:0 0 12px;text-align:center;">${emailButton("{{retry_url}}", "Intentar nuevamente")}</p>`,
+        `<p style="margin:0;text-align:center;">${emailButton("{{whatsapp_url}}", "Necesito ayuda por WhatsApp", "dark")}</p>`
+      ].join("")
+    })
   },
   {
     id: "marketing",
@@ -138,14 +196,18 @@ const defaultEmailTemplates = [
     name: "Correo libre / campana",
     subject: "{{campaign_title}}",
     text: ["Hola {{name}}.", "{{campaign_body}}", "{{cta_url}}"].join("\n"),
-    html: [
-      '<div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212">',
-      "<h1>{{campaign_title}}</h1>",
-      "<p>Hola {{name}},</p>",
-      "<p>{{campaign_body}}</p>",
-      '<p><a href="{{cta_url}}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Ver mas</a></p>',
-      "</div>"
-    ].join("")
+    html: emailShell({
+      preheader: "{{campaign_title}}",
+      eyebrow: "Honda Fest Chile",
+      title: "{{campaign_title}}",
+      intro: "Hola {{name}},",
+      content: [
+        '<div style="color:#4c5563;font-size:16px;line-height:1.6;margin:0 0 22px;">{{campaign_body}}</div>',
+        `<p style="margin:0;">${emailButton("{{cta_url}}", "Ver mas")}</p>`,
+        helpLine()
+      ].join(""),
+      footerNote: "Recibes este correo porque te registraste o interactuaste con Honda Fest Chile."
+    })
   }
 ];
 
@@ -229,15 +291,24 @@ function ticketEmailVariables({ user, order, event, tickets = [], invoice, baseU
   const ticketListText = ticketRows
     .map((ticket) => `- ${ticket.code} / validar: ${ticket.verifyUrl}`)
     .join("\n");
-  const ticketListHtml = `<ul>${ticketRows
+  const ticketListCompactHtml = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#ffffff;border:1px solid #e4e5df;">${ticketRows
     .map(
       (ticket) =>
-        `<li><strong>${escapeHtml(ticket.code)}</strong><br /><a href="${escapeHtml(ticket.verifyUrl)}">${escapeHtml(ticket.verifyUrl)}</a><br /><img src="${escapeHtml(ticket.qrUrl)}" alt="QR ${escapeHtml(ticket.code)}" width="160" /></li>`
+        `<tr><td style="border-bottom:1px solid #eceee8;padding:13px 15px;"><p style="color:#17191f;font-size:15px;font-weight:700;margin:0 0 4px;">${escapeHtml(ticket.code)}</p><p style="color:#6b7280;font-size:13px;line-height:1.45;margin:0;">${escapeHtml(ticket.holderName || "Asistente")}</p></td></tr>`
     )
-    .join("")}</ul>`;
-  const invoiceLabel = invoice?.pdfBase64
+    .join("")}</table>`;
+  const ticketListHtml = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#ffffff;border:1px solid #e4e5df;">${ticketRows
+    .map(
+      (ticket) =>
+        `<tr><td style="border-bottom:1px solid #eceee8;padding:16px;"><p style="color:#17191f;font-size:16px;font-weight:800;margin:0 0 6px;">${escapeHtml(ticket.code)}</p><p style="color:#6b7280;font-size:13px;line-height:1.45;margin:0 0 12px;">${escapeHtml(ticket.holderName || "Asistente")}</p><p style="margin:0 0 12px;"><img src="${escapeHtml(ticket.qrUrl)}" alt="QR ${escapeHtml(ticket.code)}" width="150" style="height:auto;max-width:150px;"></p><p style="color:#6b7280;font-size:12px;line-height:1.45;margin:0;">Validar: <a href="${escapeHtml(ticket.verifyUrl)}" style="color:#143b36;word-break:break-all;">${escapeHtml(ticket.verifyUrl)}</a></p></td></tr>`
+    )
+    .join("")}</table>`;
+  const invoiceLabelText = invoice?.pdfBase64
     ? `PDF adjunto${invoice?.folio ? ` - folio ${invoice.folio}` : ""}`
     : invoice?.pdfUrl || invoice?.folio || invoice?.providerId || "en proceso";
+  const invoiceLabelHtml = invoice?.pdfUrl
+    ? `<a href="${escapeHtml(invoice.pdfUrl)}" style="color:#143b36;font-weight:700;word-break:break-all;">Ver boleta</a>`
+    : escapeHtml(invoiceLabelText);
 
   return {
     name: user?.name || "Honda Fest",
@@ -247,11 +318,15 @@ function ticketEmailVariables({ user, order, event, tickets = [], invoice, baseU
     ticket_codes: ticketRows.map((ticket) => ticket.code).join(", "),
     ticket_list_text: ticketListText,
     ticket_list_html: ticketListHtml,
-    invoice_label: invoiceLabel,
+    ticket_list_compact_html: ticketListCompactHtml,
+    invoice_label: invoiceLabelText,
+    invoice_label_text: invoiceLabelText,
+    invoice_label_html: invoiceLabelHtml,
     cta_url: baseUrl || "",
     enroll_url: baseUrl ? `${baseUrl}/enrolamiento` : "/enrolamiento",
     campaign_title: "Honda Fest Chile",
-    campaign_body: ""
+    campaign_body: "",
+    support_whatsapp_url: SUPPORT_WHATSAPP_URL
   };
 }
 

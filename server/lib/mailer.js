@@ -20,6 +20,10 @@ function senderAddress() {
   return match ? match[1].trim() : from;
 }
 
+function replyToAddress() {
+  return cleanEnv("MAIL_REPLY_TO") || cleanEnv("CONTACT_TO") || cleanEnv("OPENFACTURA_COMPANY_EMAIL") || "contacto@hondafestchile.cl";
+}
+
 function graphConfigured() {
   return Boolean(
     cleanEnv("MS_TENANT_ID") &&
@@ -142,6 +146,38 @@ async function sendWithGraph(mail) {
   const html = mail.html || "";
   const text = mail.text || "";
   const content = html || text;
+  const attachments = graphAttachments(mail.attachments);
+  const replyTo = recipientList(mail.replyTo);
+  const internetMessageHeaders = Object.entries(mail.headers || {}).map(([name, value]) => ({
+    name,
+    value: String(value)
+  }));
+  const message = {
+    subject: mail.subject,
+    body: {
+      contentType: html ? "HTML" : "Text",
+      content
+    },
+    toRecipients: recipientList(mail.to).map((address) => ({
+      emailAddress: { address }
+    })),
+    ccRecipients: recipientList(mail.cc).map((address) => ({
+      emailAddress: { address }
+    })),
+    bccRecipients: recipientList(mail.bcc).map((address) => ({
+      emailAddress: { address }
+    }))
+  };
+  if (replyTo.length) {
+    message.replyTo = replyTo.map((address) => ({ emailAddress: { address } }));
+  }
+  if (attachments.length) {
+    message.attachments = attachments;
+  }
+  if (internetMessageHeaders.length) {
+    message.internetMessageHeaders = internetMessageHeaders;
+  }
+
   const response = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
     method: "POST",
     headers: {
@@ -149,23 +185,7 @@ async function sendWithGraph(mail) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      message: {
-        subject: mail.subject,
-        body: {
-          contentType: html ? "HTML" : "Text",
-          content
-        },
-        toRecipients: recipientList(mail.to).map((address) => ({
-          emailAddress: { address }
-        })),
-        ccRecipients: recipientList(mail.cc).map((address) => ({
-          emailAddress: { address }
-        })),
-        bccRecipients: recipientList(mail.bcc).map((address) => ({
-          emailAddress: { address }
-        })),
-        attachments: graphAttachments(mail.attachments)
-      },
+      message,
       saveToSentItems: cleanEnv("MS_SAVE_TO_SENT_ITEMS") !== "false"
     })
   });
@@ -181,8 +201,14 @@ async function sendWithGraph(mail) {
 
 async function sendMail(message) {
   const mail = {
-    from: process.env.SMTP_FROM || "Honda Fest Chile <tickets@hondafestchile.cl>",
-    ...message
+    from: process.env.SMTP_FROM || "Honda Fest Chile <ticketera@hondafestchile.cl>",
+    replyTo: replyToAddress(),
+    ...message,
+    headers: {
+      "X-Auto-Response-Suppress": "OOF, AutoReply",
+      "X-Entity-Ref-ID": `hfc-${Date.now()}`,
+      ...(message.headers || {})
+    }
   };
 
   if (graphConfigured()) {
