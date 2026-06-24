@@ -1769,7 +1769,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
   };
 }
 
-async function resendOrderEmail(orderId) {
+async function resendOrderEmail(orderId, { emailTo = "" } = {}) {
   const state = await readState();
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (!order) {
@@ -1792,6 +1792,13 @@ async function resendOrderEmail(orderId) {
     throw error;
   }
 
+  const recipientEmail = normalizeEmail(emailTo);
+  if (recipientEmail && !validEmail(recipientEmail)) {
+    const error = new Error("El correo tecnico para prueba no tiene un formato valido");
+    error.status = 400;
+    throw error;
+  }
+
   await sendTicketEmail({
     user,
     order,
@@ -1800,7 +1807,8 @@ async function resendOrderEmail(orderId) {
     tickets,
     invoice,
     template: findTemplate(state.emailTemplates, "payment"),
-    baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : ""
+    baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : "",
+    to: recipientEmail || undefined
   });
 
   await updateState((nextState) => {
@@ -1809,7 +1817,8 @@ async function resendOrderEmail(orderId) {
       type: "resend_order",
       orderId: order.id,
       userId: user.id,
-      to: user.email,
+      to: recipientEmail || user.email,
+      originalTo: recipientEmail ? user.email : undefined,
       createdAt: new Date().toISOString()
     });
   });
@@ -4254,7 +4263,7 @@ app.put("/api/backoffice/email-templates/:templateId", async (req, res, next) =>
 app.post("/api/backoffice/orders/:orderId/resend", async (req, res, next) => {
   try {
     requireAdmin(req);
-    const result = await resendOrderEmail(req.params.orderId);
+    const result = await resendOrderEmail(req.params.orderId, { emailTo: req.body.emailTo || "" });
     res.json({
       ok: true,
       order: publicOrder(result.order),
