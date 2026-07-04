@@ -622,6 +622,7 @@ function renderOrders(data) {
     <section class="admin-table-section">
       <div class="admin-toolbar">
         <h2>Ventas</h2>
+        <button class="button ghost-light" type="button" data-expire-stale-orders>Expirar abandonadas</button>
         <button class="button secondary" type="button" data-reissue-demo-dtes>Reemitir DTE demo</button>
       </div>
       <div class="table-scroll">
@@ -642,7 +643,17 @@ function renderOrders(data) {
                     <td>${order.tickets.length}</td>
                     <td>${dteLabel(order)}</td>
                     <td>
-                      <button class="button secondary" type="button" data-resend="${escapeHtml(order.id)}">Reenviar</button>
+                      ${
+                        order.status === "paid" && order.profileRequired
+                          ? `<button class="button secondary" type="button" data-complete-profile="${escapeHtml(order.id)}">Finalizar perfil</button>
+                             <button class="button ghost-light" type="button" data-resend-enrollment="${escapeHtml(order.id)}">Reenviar enrolamiento</button>`
+                          : ""
+                      }
+                      ${
+                        order.tickets.length
+                          ? `<button class="button secondary" type="button" data-resend="${escapeHtml(order.id)}">Reenviar</button>`
+                          : ""
+                      }
                       ${
                         canReissueDte(order)
                           ? `<button class="button ghost-light" type="button" data-reissue-dte="${escapeHtml(order.id)}">Reemitir DTE</button>`
@@ -953,6 +964,59 @@ function attachBackofficeEvents() {
         button.disabled = false;
       }
     });
+  });
+
+  HFC.$$("[data-resend-enrollment]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await adminApi(`/api/backoffice/orders/${button.dataset.resendEnrollment}/resend-enrollment`, {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+        HFC.toast("Link de enrolamiento reenviado.");
+        await loadBackoffice();
+      } catch (error) {
+        HFC.toast(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+
+  HFC.$$("[data-complete-profile]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        const result = await adminApi(`/api/backoffice/orders/${button.dataset.completeProfile}/complete-profile`, {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+        HFC.toast(`Perfil cerrado. Tickets emitidos: ${result.tickets?.length || 0}.`);
+        await loadBackoffice();
+      } catch (error) {
+        HFC.toast(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+
+  HFC.$("[data-expire-stale-orders]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const result = await adminApi("/api/backoffice/orders/expire-stale", {
+        method: "POST",
+        body: JSON.stringify({})
+      });
+      HFC.toast(`Ordenes expiradas: ${result.expiredOrders || 0}.`);
+      await loadBackoffice();
+    } catch (error) {
+      HFC.toast(error.message);
+    } finally {
+      button.disabled = false;
+    }
   });
 
   HFC.$("[data-reissue-demo-dtes]")?.addEventListener("click", async (event) => {

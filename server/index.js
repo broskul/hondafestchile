@@ -427,11 +427,13 @@ function ticketAvailableForEvent(ticket, eventId) {
 }
 
 function orderCountsForPhase(state, eventId, ticketTypeId, phaseId, paidOnly = false) {
-  const statuses = paidOnly
-    ? new Set(["paid"])
-    : new Set(["created", "payment_pending", "payment_review", "paid"]);
+  const now = new Date();
   return (state.orders || []).reduce((sum, order) => {
-    if (!statuses.has(order.status)) return sum;
+    if (paidOnly) {
+      if (order.status !== "paid") return sum;
+    } else if (!orderReservesInventory(order, now)) {
+      return sum;
+    }
     return (
       sum +
       getOrderItems(order, state).reduce((itemSum, item) => {
@@ -441,6 +443,79 @@ function orderCountsForPhase(state, eventId, ticketTypeId, phaseId, paidOnly = f
       }, 0)
     );
   }, 0);
+}
+
+function envPositiveNumber(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function checkoutHoldMinutes() {
+  return envPositiveNumber("CHECKOUT_HOLD_MINUTES", 45);
+}
+
+function pendingPaymentHoldMinutes() {
+  return envPositiveNumber("PAYMENT_PENDING_HOLD_MINUTES", 24 * 60);
+}
+
+function orderReferenceDate(order, fields = ["updatedAt", "createdAt"]) {
+  for (const field of fields) {
+    const date = new Date(order?.[field] || "");
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return null;
+}
+
+function minutesSince(date, now = new Date()) {
+  if (!date) return Infinity;
+  return (now.getTime() - date.getTime()) / 60000;
+}
+
+function orderHoldExpired(order, now = new Date()) {
+  if (order?.status === "created") {
+    return minutesSince(orderReferenceDate(order, ["createdAt", "updatedAt"]), now) > checkoutHoldMinutes();
+  }
+  if (order?.status === "payment_pending" || order?.status === "payment_review") {
+    return minutesSince(orderReferenceDate(order), now) > pendingPaymentHoldMinutes();
+  }
+  return false;
+}
+
+function orderReservesInventory(order, now = new Date()) {
+  if (order?.status === "paid") return true;
+  if (!["created", "payment_pending", "payment_review"].includes(order?.status)) return false;
+  return !orderHoldExpired(order, now);
+}
+
+function expireStaleCheckoutOrdersInState(state, now = new Date()) {
+  let expired = 0;
+  if (!state.audit) state.audit = [];
+  for (const order of state.orders || []) {
+    if (!orderHoldExpired(order, now)) continue;
+    order.previousStatus = order.previousStatus || order.status;
+    order.status = "payment_expired";
+    order.paymentStatus = order.paymentStatus || "expired";
+    order.fulfillmentStatus = order.fulfillmentStatus || "not_started";
+    order.expiredAt = order.expiredAt || now.toISOString();
+    order.updatedAt = now.toISOString();
+    state.audit.push({
+      id: id("audit"),
+      type: "checkout_order_expired",
+      orderId: order.id,
+      previousStatus: order.previousStatus,
+      createdAt: order.expiredAt
+    });
+    expired += 1;
+  }
+  return expired;
+}
+
+async function readStateWithCheckoutMaintenance() {
+  const state = await readState();
+  const expiredOrders = expireStaleCheckoutOrdersInState(state);
+  if (!expiredOrders) return { state, expiredOrders };
+  await writeState(state);
+  return { state: await readState(), expiredOrders };
 }
 
 function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
@@ -760,7 +835,11 @@ function publicOrder(order) {
     fulfillmentStatus: order.fulfillmentStatus || null,
     profileRequired: Boolean(order.profileRequired),
     requiresPilotInfo: Boolean(order.requiresPilotInfo),
-    createdAt: order.createdAt
+    enrollmentEmailStatus: order.enrollmentEmailStatus || null,
+    enrollmentEmailSentAt: order.enrollmentEmailSentAt || null,
+    expiredAt: order.expiredAt || null,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt || null
   };
 }
 
@@ -1030,13 +1109,14 @@ function findUserByRut(state, rutInput) {
 }
 
 function userProfileComplete(user) {
-  if (user?.profileStatus === "pending" || user?.namePending) return false;
-  return Boolean(
+  const hasRequiredData = Boolean(
     user &&
       String(user.name || "").trim() &&
       validateRut(user.rut || "") &&
       String(user.phone || "").trim()
   );
+  if (!hasRequiredData) return false;
+  return !(user?.profileStatus === "pending" && user?.namePending);
 }
 
 function pilotProfileComplete(user) {
@@ -1826,6 +1906,82 @@ async function resendOrderEmail(orderId, { emailTo = "" } = {}) {
   return { order, user, tickets, invoice };
 }
 
+function existingProfileMissingFields(user, items = [], state = null) {
+  const missing = [];
+  if (!String(user?.name || "").trim()) missing.push("nombre");
+  if (!validateRut(user?.rut || "")) missing.push("RUT");
+  if (!String(user?.phone || "").trim()) missing.push("telefono");
+
+  if (orderItemsRequirePilotInfo(items, state)) {
+    if (!normalizeLicensePlate(user?.licensePlate || user?.patent || user?.plate).trim()) missing.push("patente");
+    if (!String(user?.vehicle || "").trim()) missing.push("auto");
+    if (!String(user?.club || "").trim()) missing.push("club");
+  }
+
+  return missing;
+}
+
+async function completeOrderProfileFromExistingData(orderId) {
+  let paymentForFulfillment = null;
+
+  await updateState((state) => {
+    const order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    if (order.status !== "paid" || !order.profileRequired) {
+      const error = new Error("La orden no esta pendiente de perfil");
+      error.status = 409;
+      throw error;
+    }
+
+    const user = state.users.find((candidate) => candidate.id === order.userId);
+    const items = getOrderItems(order, state);
+    const missing = existingProfileMissingFields(user, items, state);
+    if (!user || missing.length) {
+      const error = new Error(`Faltan datos para cerrar el perfil: ${missing.join(", ")}`);
+      error.status = 409;
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    user.namePending = false;
+    user.emailVerified = true;
+    user.profileStatus = "complete";
+    user.profileCompletedAt = user.profileCompletedAt || now;
+    user.updatedAt = now;
+    order.profileRequired = false;
+    order.requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
+    order.enrollmentCompletedAt = order.enrollmentCompletedAt || now;
+    order.enrollmentCompletedBy = "backoffice_existing_profile";
+    order.enrollmentTokenConsumedAt = now;
+    order.enrollmentTokenStatus = "consumed";
+    order.enrollmentToken = null;
+    order.updatedAt = now;
+    paymentForFulfillment = order.payment || {
+      provider: order.paymentMode || "mercadopago",
+      paymentId: order.paymentId || null,
+      status: "approved"
+    };
+    state.audit.push({
+      id: id("audit"),
+      type: "checkout_profile_completed_from_existing_data",
+      orderId: order.id,
+      userId: user.id,
+      createdAt: now
+    });
+  });
+
+  return completeOrderPayment(orderId, {
+    provider: paymentForFulfillment?.provider || "mercadopago",
+    paymentId: paymentForFulfillment?.paymentId || null,
+    status: "approved",
+    statusDetail: paymentForFulfillment?.statusDetail || "backoffice_existing_profile"
+  });
+}
+
 async function reissueOrderDte({
   orderId,
   req = null,
@@ -2212,6 +2368,40 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
   }
 }
 
+function profilePendingReminderHours() {
+  return envPositiveNumber("PROFILE_PENDING_REMINDER_HOURS", 24);
+}
+
+function profilePendingReminderDue(order, now = new Date()) {
+  if (order?.status !== "paid" || !order.profileRequired) return false;
+  const lastSent = orderReferenceDate(order, ["enrollmentEmailSentAt", "enrollmentReminderSentAt"]);
+  return !lastSent || minutesSince(lastSent, now) >= profilePendingReminderHours() * 60;
+}
+
+async function sendDueProfilePendingEnrollmentReminders({ req = null } = {}) {
+  const state = await readState();
+  const now = new Date();
+  const candidates = (state.orders || [])
+    .filter((order) => profilePendingReminderDue(order, now))
+    .slice(0, envPositiveNumber("PROFILE_PENDING_REMINDER_BATCH", 5));
+  const results = [];
+
+  for (const order of candidates) {
+    try {
+      const result = await sendEnrollmentInvitationEmail({ orderId: order.id, req, force: true });
+      results.push({ orderId: order.id, ok: result.ok, mode: result.mode || null, message: result.message || null });
+    } catch (error) {
+      results.push({ orderId: order.id, ok: false, message: error.message });
+    }
+  }
+
+  return {
+    sent: results.filter((result) => result.ok).length,
+    failed: results.filter((result) => !result.ok).length,
+    results
+  };
+}
+
 async function sendPaymentRetryEmail({ orderId, req = null, reason = "", force = false }) {
   let state = await readState();
   let order = state.orders.find((candidate) => candidate.id === orderId);
@@ -2353,7 +2543,7 @@ app.get("/api/health", async (req, res) => {
 
 app.get("/api/catalog", async (req, res, next) => {
   try {
-    const state = await readState();
+    const { state } = await readStateWithCheckoutMaintenance();
     const mercadoPagoDetails = mercadoPagoRuntimeStatus(req);
     const testMode = Boolean(mercadoPagoDetails.sandbox);
     res.json({
@@ -2720,7 +2910,7 @@ app.post("/api/orders", async (req, res, next) => {
 
     await requireCheckoutStorage();
 
-    const initialState = await readState();
+    const { state: initialState } = await readStateWithCheckoutMaintenance();
     const sessionUser = accountUserFromRequest(req, initialState);
     const identity = checkoutIdentityFromBody(req.body, sessionUser, {
       rutOptional: mercadoPagoInternalCheckoutEnabled()
@@ -2758,7 +2948,7 @@ app.post("/api/orders/from-cart", async (req, res, next) => {
   try {
     await requireCheckoutStorage();
 
-    const initialState = await readState();
+    const { state: initialState } = await readStateWithCheckoutMaintenance();
     const sessionUser = accountUserFromRequest(req, initialState);
     const identity = checkoutIdentityFromBody(req.body, sessionUser, {
       rutOptional: mercadoPagoInternalCheckoutEnabled()
@@ -3581,7 +3771,7 @@ app.post("/api/orders/:orderId/simulate-payment", async (req, res, next) => {
 function adminAuthorized(req) {
   const submitted = String(req.headers["x-admin-token"] || "");
   const configured = process.env.BACKOFFICE_PASSWORD || process.env.BACKOFFICE_TOKEN || "";
-  return submitted === "123hfc" || Boolean(configured && submitted === configured);
+  return Boolean(configured && submitted === configured);
 }
 
 function requireAdmin(req) {
@@ -3742,7 +3932,8 @@ async function sendCampaignBatch({ req, state, body }) {
 app.get("/api/backoffice/summary", async (req, res, next) => {
   try {
     requireAdmin(req);
-    const state = await readState();
+    const reminderSummary = await sendDueProfilePendingEnrollmentReminders({ req });
+    const { state, expiredOrders } = await readStateWithCheckoutMaintenance();
     const paidOrders = state.orders.filter((order) => order.status === "paid");
     const revenue = paidOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
 
@@ -3772,7 +3963,9 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         checkedInTickets: state.tickets.filter((ticket) => ticket.status === "checked_in").length,
         users: state.users.length,
         enrolados: state.users.filter((user) => user.emailVerified).length,
-        contacts: (state.contacts || []).length
+        contacts: (state.contacts || []).length,
+        expiredOrders,
+        enrollmentRemindersSent: reminderSummary.sent
       },
       bi: salesBi(state),
       ticketing: ticketingConfig(state),
@@ -4204,6 +4397,16 @@ app.post("/api/backoffice/orders/reissue-demo-dtes", async (req, res, next) => {
   }
 });
 
+app.post("/api/backoffice/orders/expire-stale", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const { expiredOrders } = await readStateWithCheckoutMaintenance();
+    res.json({ ok: true, expiredOrders });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/backoffice/orders/:orderId/reissue-dte", async (req, res, next) => {
   try {
     requireAdmin(req);
@@ -4224,6 +4427,40 @@ app.post("/api/backoffice/orders/:orderId/reissue-dte", async (req, res, next) =
       tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
       invoice: result.invoice,
       email: result.email
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/orders/:orderId/resend-enrollment", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const state = await readState();
+    const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!order || order.status !== "paid" || !order.profileRequired) {
+      const error = new Error("Orden pendiente de enrolamiento no encontrada");
+      error.status = 404;
+      throw error;
+    }
+
+    const result = await sendEnrollmentInvitationEmail({ orderId: order.id, req, force: true });
+    res.json({ ok: result.ok, message: result.message, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/orders/:orderId/complete-profile", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const result = await completeOrderProfileFromExistingData(req.params.orderId);
+    res.json({
+      ok: true,
+      order: publicOrder(result.order),
+      user: publicUser(result.user),
+      tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
+      invoice: result.invoice
     });
   } catch (error) {
     next(error);
