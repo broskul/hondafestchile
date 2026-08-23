@@ -21,10 +21,11 @@ La ruta no aparece en la navegacion publica principal. Entra con la contraseña 
 - Correccion de correos de enrolados/contactos y reenvio de verificacion.
 - Envio unitario o masivo usando plantillas para pago, invitacion a enrolarse, entrada contra enrolamiento y campanas libres.
 - Edicion de plantillas de correo desde backoffice.
-- Tabla de ventas con cliente, total, estado, tickets, DTE y accion de reenvio.
+- Tabla de ventas con cliente, total, estado, tickets, DTE y acciones de reenvio. En una orden pagada ya marcada como completa permite `Reabrir enrolamiento`, que genera un acceso nuevo sin duplicar entradas.
 - Tabla de entradas en detalle con codigo, evento, asistente, RUT y estado.
 - Tabla de usuarios enrolados.
 - `POST /api/backoffice/orders/:orderId/resend` reenvia correo de entradas/comprobante.
+- `POST /api/backoffice/orders/:orderId/resend-enrollment` reenvia el acceso pendiente y acepta `{ "reopen": true }` para recuperar un acceso consumido o cerrado por una incidencia.
 
 ## Archivos clave
 

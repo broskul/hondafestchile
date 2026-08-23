@@ -12,6 +12,7 @@ Gestionar acceso de compradores, enrolamiento post-pago con RUT y portal privado
 4. `/enrolamiento` tambien tiene portal privado con usuario/password para gestionar ordenes pagadas pendientes.
 5. Al completar nombre, RUT, telefono, vehiculo y club, la orden emite tickets y envia correo de confirmacion. El token se consume solo despues de completar esta entrega.
 6. `POST /api/auth/register` queda como ruta tecnica heredada, no visible en el flujo publico de compra.
+7. Si una orden pagada quedo marcada como perfil completo durante una incidencia, backoffice permite `Reabrir enrolamiento`: invalida el acceso anterior, crea un token nuevo y reenvia la invitacion sin duplicar entradas ni DTE.
 
 ## Archivos clave
 
@@ -28,3 +29,4 @@ Gestionar acceso de compradores, enrolamiento post-pago con RUT y portal privado
 - Falta recuperacion de password y expiracion formal de sesiones.
 - Para produccion se debe activar HTTPS, rate limiting y politicas de privacidad visibles.
 - Una falla de OpenFactura/Haulmer no invalida el enlace ni deja al comprador sin entradas: se guarda el error tributario para reintento y se mantiene la entrega de tickets.
+- La recuperacion administrativa de enrolamiento reinicia solamente el token, el estado de perfil y el correo final de la orden afectada; las entradas existentes se reutilizan de forma idempotente.

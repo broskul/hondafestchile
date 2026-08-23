@@ -647,7 +647,9 @@ function renderOrders(data) {
                         order.status === "paid" && order.profileRequired
                           ? `<button class="button secondary" type="button" data-complete-profile="${escapeHtml(order.id)}">Finalizar perfil</button>
                              <button class="button ghost-light" type="button" data-resend-enrollment="${escapeHtml(order.id)}">Reenviar enrolamiento</button>`
-                          : ""
+                          : order.status === "paid"
+                            ? `<button class="button ghost-light" type="button" data-reopen-enrollment="${escapeHtml(order.id)}">Reabrir enrolamiento</button>`
+                            : ""
                       }
                       ${
                         order.tickets.length
@@ -975,6 +977,24 @@ function attachBackofficeEvents() {
           body: JSON.stringify({})
         });
         HFC.toast("Link de enrolamiento reenviado.");
+        await loadBackoffice();
+      } catch (error) {
+        HFC.toast(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+
+  HFC.$$("[data-reopen-enrollment]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await adminApi(`/api/backoffice/orders/${button.dataset.reopenEnrollment}/resend-enrollment`, {
+          method: "POST",
+          body: JSON.stringify({ reopen: true })
+        });
+        HFC.toast("Nuevo enlace de enrolamiento enviado. Las entradas existentes se conservaran.");
         await loadBackoffice();
       } catch (error) {
         HFC.toast(error.message);

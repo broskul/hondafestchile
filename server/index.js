@@ -4505,12 +4505,44 @@ app.post("/api/backoffice/orders/:orderId/reissue-dte", async (req, res, next) =
 app.post("/api/backoffice/orders/:orderId/resend-enrollment", async (req, res, next) => {
   try {
     requireAdmin(req);
-    const state = await readState();
-    const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
-    if (!order || order.status !== "paid" || !order.profileRequired) {
+    const reopen = req.body?.reopen === true;
+    let state = await readState();
+    let order = state.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!order || order.status !== "paid" || (!order.profileRequired && !reopen)) {
       const error = new Error("Orden pendiente de enrolamiento no encontrada");
       error.status = 404;
       throw error;
+    }
+
+    if (reopen && !order.profileRequired) {
+      const now = new Date().toISOString();
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === req.params.orderId);
+        if (!freshOrder || freshOrder.status !== "paid" || freshOrder.profileRequired) return;
+
+        freshOrder.profileRequired = true;
+        freshOrder.fulfillmentStatus = "profile_pending";
+        freshOrder.enrollmentToken = null;
+        freshOrder.enrollmentTokenCreatedAt = null;
+        freshOrder.enrollmentTokenConsumedAt = null;
+        freshOrder.enrollmentTokenStatus = "reopened";
+        freshOrder.enrollmentEmailSentAt = null;
+        freshOrder.enrollmentEmailStatus = "pending";
+        freshOrder.enrollmentEmailError = null;
+        freshOrder.enrollmentReopenedAt = now;
+        freshOrder.enrollmentReopenReason = "backoffice_recovery";
+        freshOrder.ticketEmailSentAt = null;
+        freshOrder.updatedAt = now;
+        nextState.audit.push({
+          id: id("audit"),
+          type: "enrollment_reopened",
+          orderId: freshOrder.id,
+          reason: "backoffice_recovery",
+          createdAt: now
+        });
+      });
+      state = await readState();
+      order = state.orders.find((candidate) => candidate.id === req.params.orderId);
     }
 
     const result = await sendEnrollmentInvitationEmail({ orderId: order.id, req, force: true });
