@@ -26,7 +26,12 @@ const {
   parseWebhookNotification,
   verifyWebhookSignature
 } = require("./lib/mercadopago");
-const { issueBoleta, openFacturaConfigured, openFacturaRuntimeStatus } = require("./lib/openfactura");
+const {
+  issueBoleta,
+  openFacturaConfigured,
+  automaticInvoiceIssuanceEnabled,
+  openFacturaRuntimeStatus
+} = require("./lib/openfactura");
 const { cleanRut, formatRut, validateRut } = require("./lib/rut");
 const {
   checkoutStorageReady,
@@ -1798,7 +1803,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     await writeState(state);
   }
 
-  if (!invoice) {
+  if (!invoice && automaticInvoiceIssuanceEnabled()) {
     try {
       invoice = await issueBoleta({ order, user, event, ticketType, tickets, items });
       state = await readState();
@@ -1827,6 +1832,31 @@ async function completeOrderPayment(orderId, paymentData = {}) {
       });
       await writeState(state);
     }
+  } else if (!invoice) {
+    state = await readState();
+    const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
+    const queueReason = "Emision automatica de DTE desactivada";
+    const queuedAlready =
+      freshOrder?.invoiceStatus === "pending" &&
+      freshOrder?.invoicePendingReason === "automatic_issue_disabled";
+
+    if (freshOrder) {
+      freshOrder.invoiceStatus = "pending";
+      freshOrder.invoiceError = null;
+      freshOrder.invoicePendingReason = "automatic_issue_disabled";
+      freshOrder.updatedAt = new Date().toISOString();
+    }
+
+    if (!queuedAlready) {
+      state.audit.push({
+        id: id("audit"),
+        type: "invoice_queued",
+        orderId: order.id,
+        reason: queueReason,
+        createdAt: new Date().toISOString()
+      });
+    }
+    await writeState(state);
   }
 
   state = await readState();
@@ -2549,7 +2579,7 @@ app.get("/api/health", async (req, res) => {
       email: mailProviderStatus(),
       mercadoPago: mercadoPagoConfigured(),
       mercadoPagoDetails: mercadoPagoRuntimeStatus(req),
-      openFactura: openFacturaConfigured(),
+      openFactura: openFacturaConfigured() && automaticInvoiceIssuanceEnabled(),
       openFacturaDetails: openFacturaRuntimeStatus()
     }
   });
