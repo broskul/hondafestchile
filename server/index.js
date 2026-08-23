@@ -1729,6 +1729,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
 
   let tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
   let invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+  let invoiceError = null;
   const paymentRecord = upsertPaymentRecord(state, order, {
     ...paymentData,
     status: paymentData.status || "approved"
@@ -1809,15 +1810,22 @@ async function completeOrderPayment(orderId, paymentData = {}) {
       }
       await writeState(state);
     } catch (error) {
+      invoiceError = error.message;
       state = await readState();
       const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
       if (freshOrder) {
         freshOrder.invoiceStatus = "failed";
-        freshOrder.invoiceError = error.message;
+        freshOrder.invoiceError = invoiceError;
         freshOrder.updatedAt = new Date().toISOString();
       }
+      state.audit.push({
+        id: id("audit"),
+        type: "invoice_issue_failed",
+        orderId: order.id,
+        error: invoiceError,
+        createdAt: new Date().toISOString()
+      });
       await writeState(state);
-      throw error;
     }
   }
 
@@ -1845,7 +1853,8 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     event,
     ticketType,
     tickets,
-    invoice
+    invoice,
+    invoiceError
   };
 }
 
@@ -1892,6 +1901,11 @@ async function resendOrderEmail(orderId, { emailTo = "" } = {}) {
   });
 
   await updateState((nextState) => {
+    const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+    if (freshOrder && !recipientEmail) {
+      freshOrder.ticketEmailSentAt = new Date().toISOString();
+      freshOrder.updatedAt = freshOrder.ticketEmailSentAt;
+    }
     nextState.emailLogs.push({
       id: id("email"),
       type: "resend_order",
@@ -3281,6 +3295,7 @@ async function completeEnrollmentProfile(req, orderId) {
   }
 
   let paymentForFulfillment = null;
+  let enrollmentAccessType = null;
 
   await updateState((state) => {
     const order = state.orders.find((candidate) => candidate.id === orderId);
@@ -3297,6 +3312,7 @@ async function completeEnrollmentProfile(req, orderId) {
     }
 
     const access = authorizeEnrollmentAccess(req, state, order);
+    enrollmentAccessType = access.type;
     const user = state.users.find((candidate) => candidate.id === order.userId);
     if (!user || user.email !== email) {
       const error = new Error("El correo no coincide con la orden");
@@ -3351,13 +3367,11 @@ async function completeEnrollmentProfile(req, orderId) {
         ticket.updatedAt = now;
       });
 
-    order.profileRequired = false;
+    // Preserve the secure link until fulfillment has completed. A DTE provider
+    // outage must never strand a paid buyer after they submit their profile.
+    order.profileRequired = true;
     order.requiresPilotInfo = requiresPilotInfo;
-    order.enrollmentCompletedAt = order.enrollmentCompletedAt || now;
-    order.enrollmentCompletedBy = access.type;
-    order.enrollmentTokenConsumedAt = now;
-    order.enrollmentTokenStatus = "consumed";
-    order.enrollmentToken = null;
+    order.enrollmentProfileSubmittedAt = now;
     order.updatedAt = now;
     paymentForFulfillment = order.payment || {
       provider: order.paymentMode || "mercadopago",
@@ -3367,7 +3381,7 @@ async function completeEnrollmentProfile(req, orderId) {
 
     state.audit.push({
       id: id("audit"),
-      type: "checkout_profile_completed",
+      type: "checkout_profile_submitted",
       orderId: order.id,
       userId: user.id,
       source: access.type,
@@ -3386,6 +3400,31 @@ async function completeEnrollmentProfile(req, orderId) {
     paymentId: paymentForFulfillment?.paymentId || null,
     status: "approved",
     statusDetail: paymentForFulfillment?.statusDetail || null
+  });
+
+  await updateState((nextState) => {
+    const freshOrder = nextState.orders.find((candidate) => candidate.id === orderId);
+    if (!freshOrder || freshOrder.status !== "paid" || freshOrder.profileRequired) return;
+
+    const now = new Date().toISOString();
+    const completedNow = !freshOrder.enrollmentCompletedAt;
+    freshOrder.enrollmentCompletedAt = freshOrder.enrollmentCompletedAt || now;
+    freshOrder.enrollmentCompletedBy = freshOrder.enrollmentCompletedBy || enrollmentAccessType || "token";
+    freshOrder.enrollmentTokenConsumedAt = freshOrder.enrollmentTokenConsumedAt || now;
+    freshOrder.enrollmentTokenStatus = "consumed";
+    freshOrder.enrollmentToken = null;
+    freshOrder.updatedAt = now;
+
+    if (completedNow) {
+      nextState.audit.push({
+        id: id("audit"),
+        type: "checkout_profile_completed",
+        orderId: freshOrder.id,
+        userId: freshOrder.userId,
+        source: enrollmentAccessType || "token",
+        createdAt: now
+      });
+    }
   });
 
   return {

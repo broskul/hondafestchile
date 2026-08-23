@@ -11,6 +11,7 @@ Emitir boleta electronica automaticamente al confirmarse el pago de una orden.
 3. Si `OPENFACTURA_API_KEY` y `OPENFACTURA_ENDPOINT` estan configurados, se hace POST al proveedor.
 4. Si faltan credenciales, se crea una boleta demo asociada a la orden.
 5. El correo de tickets incluye folio, identificador o URL PDF cuando el proveedor la devuelva.
+6. Si el proveedor rechaza o no esta activo, las entradas y su correo igualmente se entregan; la orden queda con `invoiceStatus = failed`, el detalle del error y una auditoria `invoice_issue_failed` para reemitir el DTE desde backoffice cuando Haulmer este disponible.
 
 ## Archivos clave
 
