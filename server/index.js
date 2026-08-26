@@ -373,7 +373,7 @@ function ticketingConfig(state) {
 
   // Replace only the exact retired Honda Fest 2026 presale configuration.
   // Future backoffice saves bypass this compatibility migration naturally.
-  if (isLegacyHondaFest2026Preventa(source)) return defaultTicketingConfig();
+  if (isLegacyHondaFest2026Preventa(source)) return normalizeTicketingConfig(defaultTicketingConfig());
 
   return normalizeTicketingConfig(source);
 }
