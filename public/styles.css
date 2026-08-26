@@ -4728,7 +4728,7 @@ a:focus-visible {
 }
 
 .home-special-pass-promo > img {
-  object-position: 64% center;
+  object-position: center;
   filter: saturate(1.02) contrast(1.04);
 }
 
@@ -5004,7 +5004,7 @@ a:focus-visible {
 
   .home-special-pass-promo > img {
     height: 52%;
-    object-position: center 58%;
+    object-position: 72% center;
     opacity: 1;
   }
 

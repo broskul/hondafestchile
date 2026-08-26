@@ -27,6 +27,7 @@ El usuario aprobo expresamente el mockup generado el 26 de agosto de 2026, con l
 - Preservar legibilidad sobre la fotografia y evitar saturar la interfaz con datos decorativos.
 - Mantener visible el inicio del calendario de eventos en el primer viewport.
 - Aplicar la identidad visual tambien a ticketera, Mi Pit Lane y entradas, con menor densidad cinematografica.
+- No repetir la misma imagen, escena o sujeto protagonista en secciones consecutivas. El hero presenta la accion del evento y el siguiente bloque debe revelar producto, personas, detalle o una perspectiva distinta.
 
 ## Hero Racing
 
