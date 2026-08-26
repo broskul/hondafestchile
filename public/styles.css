@@ -1411,9 +1411,32 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+.ticket-display-price small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.parking-reference {
+  margin: -4px 0 0;
+  padding: 10px 12px;
+  color: #315b3b;
+  border-left: 3px solid var(--forest);
+  background: #f1f7f2;
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .participation-ticket-card {
   border-color: rgba(216, 38, 47, 0.26);
   background: #fffdf9;
+}
+
+.pistons-upgrade-card {
+  border-color: rgba(31, 143, 77, 0.3);
+  background: #f7fbf6;
 }
 
 .ticket-participation-eyebrow {
@@ -1471,6 +1494,10 @@ a:focus-visible {
 
 .cart-drawer.open {
   pointer-events: auto;
+}
+
+.cart-open .floating-actions {
+  display: none;
 }
 
 .cart-backdrop {
@@ -1573,6 +1600,41 @@ a:focus-visible {
   padding-top: 10px;
   border-top: 1px solid var(--line);
   font-size: 1.2rem;
+}
+
+.cart-pistons-upgrade {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.cart-pistons-upgrade p {
+  margin: 0 0 4px;
+  color: var(--red-dark);
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.cart-pistons-upgrade h3 {
+  margin: 0 0 6px;
+  font-size: 1.08rem;
+}
+
+.cart-pistons-upgrade span,
+.ticket-upgrade-note {
+  display: block;
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.cart-pistons-upgrade .button {
+  flex: 0 0 auto;
 }
 
 .checkout-box {
@@ -2250,6 +2312,15 @@ a:focus-visible {
 }
 
 @media (max-width: 860px) {
+  .cart-pistons-upgrade {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .cart-pistons-upgrade .button {
+    width: 100%;
+  }
+
   .site-header {
     grid-template-columns: 1fr auto;
   }
@@ -2323,9 +2394,15 @@ a:focus-visible {
 }
 
 @media (max-width: 620px) {
-  .brand small,
-  .nav-cta {
+  .brand small {
     display: none;
+  }
+
+  .nav-cta {
+    display: inline-flex;
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 0.82rem;
   }
 
   .floating-actions {

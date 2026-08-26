@@ -23,42 +23,33 @@ const events = [
     summary:
       "Una jornada para celebrar cultura japonesa, autos preparados, clubes, cosplay, musica, stands y gastronomia.",
     highlights: ["Cultura japonesa", "Exhibicion de clubes", "Stands y comunidad", "Show & shine"],
-    accent: "japon"
+    accent: "japon",
+    active: false
   }
 ];
 
 const ticketTypes = [
   {
-    id: "general",
-    name: "Entrada General",
-    description: "Acceso al recinto, paddock publico, exhibiciones, stands y food trucks.",
+    id: "hfc-2026-galeria",
+    name: "Entrada Galeria",
+    description: "Acceso a galeria de Honda Fest Chile. Estacionamiento en galeria incluido sin costo.",
     entryType: "attendee",
-    price: 8000,
-    maxQuantity: 6
+    netPrice: 5000,
+    price: 6664,
+    maxQuantity: 6,
+    eventIds: ["honda-fest-chile-2026"],
+    parkingNote: "Estacionamiento galeria: gratis."
   },
   {
-    id: "club",
-    name: "Entrada Club",
-    description: "Acceso general mas cupo para estacionamiento de exhibicion sujeto a validacion.",
+    id: "hfc-2026-parque-cerrado",
+    name: "Entrada Parque Cerrado",
+    description: "Acceso a parque cerrado de Honda Fest Chile.",
     entryType: "attendee",
-    price: 12000,
-    maxQuantity: 4
-  },
-  {
-    id: "piloto-track",
-    name: "Piloto Track Day",
-    description: "Inscripcion de piloto, briefing, numero de participante y acceso a manga asignada.",
-    entryType: "pilot",
-    price: 45000,
-    maxQuantity: 1
-  },
-  {
-    id: "stand",
-    name: "Stand Emprendedor",
-    description: "Reserva inicial de stand; produccion confirmara metraje y requerimientos.",
-    entryType: "attendee",
-    price: 60000,
-    maxQuantity: 2
+    netPrice: 10000,
+    price: 13328,
+    maxQuantity: 6,
+    eventIds: ["honda-fest-chile-2026"],
+    parkingNote: "Estacionamiento parque cerrado: $15.000, pago directo en el recinto."
   }
 ];
 

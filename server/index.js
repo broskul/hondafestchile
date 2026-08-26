@@ -259,6 +259,7 @@ function normalizeTicket(ticket = {}) {
     id: idValue || base.id || id("ticket-type"),
     name: String(ticket.name || base.name || "Entrada").trim(),
     description: String(ticket.description || base.description || "").trim(),
+    parkingNote: String(ticket.parkingNote ?? base.parkingNote ?? "").trim(),
     price: pricing.total,
     netPrice: pricing.netPrice,
     pricing,

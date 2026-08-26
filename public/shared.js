@@ -1,5 +1,8 @@
 (() => {
   const CART_KEY = "hfc_cart";
+  const PISTONS_WHATSAPP_URL = `https://wa.me/56972934950?text=${encodeURIComponent(
+    "Hola, quiero conocer los Pistones y las experiencias especiales de Honda Fest Chile 2026."
+  )}`;
   const BUYER_KEY = "hfc_buyer";
   const ACCOUNT_TOKEN_KEY = "hfc_account_token";
   const ACCOUNT_USER_KEY = "hfc_account_user";
@@ -476,6 +479,14 @@
           <strong>${formatCurrency(total)}</strong>
         </div>
       </div>
+      <section class="cart-pistons-upgrade" aria-label="Mejora tu experiencia">
+        <div>
+          <p>Eleva tu experiencia</p>
+          <h3>Suma Pistones a tu entrada.</h3>
+          <span>Consulta por credenciales y experiencias especiales para vivir Honda Fest Chile de otra manera.</span>
+        </div>
+        <a class="button secondary" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">Conocer Pistones</a>
+      </section>
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;
 
@@ -798,6 +809,7 @@
   function openCartDrawer() {
     const drawer = $("#cartDrawer");
     if (!drawer) return;
+    document.body.classList.add("cart-open");
     drawer.classList.add("open");
     drawer.setAttribute("aria-hidden", "false");
     renderAllCarts();
@@ -806,6 +818,7 @@
   function closeCartDrawer() {
     const drawer = $("#cartDrawer");
     if (!drawer) return;
+    document.body.classList.remove("cart-open");
     drawer.classList.remove("open");
     drawer.setAttribute("aria-hidden", "true");
   }
