@@ -104,14 +104,12 @@ Antes de publicar definitivamente el premio se mantienen pendientes, bajo respon
 
 ### Preview para revisión de Pablo
 
-- Deployment Vercel vigente: `dpl_6TGxuXywBvZoVHGs9XyUcvNekbvb`.
-- Estado comprobado: `READY`, target Preview; no se usó `--prod` ni se promovió un alias de producción.
-- URL técnica: `https://hondafestchile-kapvl6u26-prof3sionalcl-2961s-projects.vercel.app`.
-- Alias Preview estable: `https://hondafestchile-prof3sionalcl-2961-prof3sionalcl-2961s-projects.vercel.app`.
-- El proyecto mantiene Vercel Authentication. `Anyone with the link` está habilitado sobre el alias Preview y se regeneró un enlace compartible temporal por aproximadamente 23 horas. El parámetro de acceso no se guarda en ContextIA.
-- Verificación externa en navegador limpio: `/pases-especiales` cargó sin login mediante el enlace compartible, `GET /api/catalog` y `GET /api/special-passes/catalog` respondieron 200, y no hubo errores ni advertencias de consola.
-- La inspección visual remota confirmó el hero promocional del automóvil con luces encendidas a ancho completo en escritorio. La versión móvil se validó localmente a `390x844` con el faro principal visible y el aviso de entrada libre de superposición.
-- El escaneo de runtime del deployment no encontró eventos `error` ni `fatal` durante la ventana de verificación.
-- La preview no contiene variables Supabase ni Mercado Pago. Es apta para revisión visual y funcional básica, no para probar cobros, persistencia ni emisión real.
+- Preview automática vigente para la rama `codex/hfc-pistones-upgrade`; el deployment exacto se consulta en Vercel porque cambia con cada push documental.
+- Estado comprobado: `READY`, target Preview; no se usó producción ni se promovió el alias público.
+- Alias Preview: `https://hondafestchile-git-codex-hf-530217-prof3sionalcl-2961s-projects.vercel.app`.
+- El proyecto mantiene Vercel Authentication. Se regeneró un enlace compartible temporal por aproximadamente 23 horas; su parámetro de acceso no se guarda en ContextIA.
+- Verificación remota autenticada: `/pases-especiales` mostró los cinco niveles, refrigerios, netos y totales con IVA más cargo de 8%; los botones siguieron deshabilitados como `Próximamente` y no hubo errores ni advertencias de consola.
+- La inspección visual cubrió escritorio y móvil `390x844`, incluyendo la ticketera, la marca de Pistón al 10%, la escasez de Parque Cerrado y las tarjetas de upgrades.
+- La preview es apta para revisión visual y funcional básica, no para probar cobros o persistencia de Pases mientras no se aplique la migración y se vincule el upgrade con una entrada pagada.
 - `.vercelignore` excluye `ContextIA/`, `output/`, `.playwright-cli/`, `scripts/` y `supabase/` del paquete publicado, además de los secretos y logs ya excluidos.
 - Aprendizaje operativo: con Vercel CLI autenticado, `vercel deploy --yes` puede responder `Not authorized` si no se fija el equipo. El comando validado para este proyecto es `vercel deploy --yes --scope prof3sionalcl-2961s-projects`; sigue creando Preview mientras no se agregue `--prod`.
