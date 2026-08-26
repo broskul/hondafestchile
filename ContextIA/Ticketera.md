@@ -32,6 +32,7 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 - `Entrada Parque Cerrado`: $10.000 neto. Con IVA queda en $11.900 y el total online con cargo de servicio de 12% es $13.328.
 - Estacionamiento galeria: gratis. Estacionamiento parque cerrado: $15.000, se paga directamente en el recinto y nunca se agrega al carrito.
 - Inicio, ticketera y carrito invitan a consultar por Pistones como upgrade de experiencia. No se presenta como una entrada ni se cobra hasta que PyR habilite su producto y persistencia en produccion.
+- La configuracion heredada con una sola entrada `ticket-honda-fest-preventa-2026` se reemplaza en runtime por este catalogo 2026. Es un puente acotado: al guardar una configuracion desde backoffice deja de aplicar.
 
 ## Archivos clave
 

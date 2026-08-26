@@ -358,11 +358,24 @@ function normalizeTicketingConfig(config = {}) {
   };
 }
 
+function isLegacyHondaFest2026Preventa(config = {}) {
+  const ticketIds = Array.isArray(config.ticketTypes)
+    ? config.ticketTypes.map((ticket) => String(ticket?.id || "").trim()).filter(Boolean)
+    : [];
+  return ticketIds.length === 1 && ticketIds[0] === "ticket-honda-fest-preventa-2026";
+}
+
 function ticketingConfig(state) {
   const record = (state.settings || []).find(
     (candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing"
   );
-  return normalizeTicketingConfig(record?.payload || record || defaultTicketingConfig());
+  const source = record?.payload || record || defaultTicketingConfig();
+
+  // Replace only the exact retired Honda Fest 2026 presale configuration.
+  // Future backoffice saves bypass this compatibility migration naturally.
+  if (isLegacyHondaFest2026Preventa(source)) return defaultTicketingConfig();
+
+  return normalizeTicketingConfig(source);
 }
 
 function hasTicketingSetting(state) {
