@@ -88,7 +88,7 @@ function clone(value) {
 const TICKETING_SETTING_ID = "ticketing_config";
 const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
-const TICKET_SERVICE_CHARGE_RATE = 0.12;
+const TICKET_SERVICE_CHARGE_RATE = 0.08;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
 const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
 const TICKET_ENTRY_TYPE_LABELS = {
@@ -206,7 +206,10 @@ function defaultTicketingConfig() {
     ticketTypes: defaultTicketTypes.map((ticket) => ({
       ...clone(ticket),
       active: true,
-      phases: defaultTicketPhases(ticket)
+      phases:
+        Array.isArray(ticket.phases) && ticket.phases.length
+          ? clone(ticket.phases)
+          : defaultTicketPhases(ticket)
     }))
   };
 }

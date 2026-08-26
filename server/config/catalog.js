@@ -32,24 +32,100 @@ const ticketTypes = [
   {
     id: "hfc-2026-galeria",
     name: "Entrada Galeria",
-    description: "Acceso a galeria de Honda Fest Chile. Estacionamiento en galeria incluido sin costo.",
+    description: "Acceso al sector exterior del autodromo. Estacionamiento en galeria incluido sin costo.",
     entryType: "attendee",
-    netPrice: 5000,
-    price: 6664,
+    netPrice: 7000,
+    price: 8996,
     maxQuantity: 6,
     eventIds: ["honda-fest-chile-2026"],
-    parkingNote: "Estacionamiento galeria: gratis."
+    parkingNote: "Estacionamiento galeria: gratis.",
+    phases: [
+      {
+        id: "preventa",
+        name: "Preventa",
+        kind: "preventa",
+        netPrice: 7000,
+        quota: null,
+        startsAt: "",
+        endsAt: "",
+        perOrderLimit: 6,
+        enabled: true,
+        sortOrder: 10
+      },
+      {
+        id: "general",
+        name: "Venta general",
+        kind: "general",
+        netPrice: 7000,
+        quota: null,
+        startsAt: "",
+        endsAt: "",
+        perOrderLimit: 6,
+        enabled: false,
+        sortOrder: 20
+      },
+      {
+        id: "puerta",
+        name: "Puerta",
+        kind: "puerta",
+        netPrice: 10000,
+        quota: null,
+        startsAt: "",
+        endsAt: "",
+        perOrderLimit: 6,
+        enabled: true,
+        sortOrder: 30
+      }
+    ]
   },
   {
     id: "hfc-2026-parque-cerrado",
     name: "Entrada Parque Cerrado",
-    description: "Acceso a parque cerrado de Honda Fest Chile.",
+    description: "Acceso al sector de pilotos y a la experiencia principal de Honda Fest Chile.",
     entryType: "attendee",
     netPrice: 10000,
-    price: 13328,
+    price: 12852,
     maxQuantity: 6,
     eventIds: ["honda-fest-chile-2026"],
-    parkingNote: "Estacionamiento parque cerrado: $15.000, pago directo en el recinto."
+    parkingNote: "Estacionamiento parque cerrado: $15.000, pago directo en el recinto.",
+    phases: [
+      {
+        id: "preventa",
+        name: "Preventa",
+        kind: "preventa",
+        netPrice: 10000,
+        quota: 100,
+        startsAt: "",
+        endsAt: "",
+        perOrderLimit: 6,
+        enabled: true,
+        sortOrder: 10
+      },
+      {
+        id: "general",
+        name: "Venta general",
+        kind: "general",
+        netPrice: 10000,
+        quota: null,
+        startsAt: "",
+        endsAt: "",
+        perOrderLimit: 6,
+        enabled: false,
+        sortOrder: 20
+      },
+      {
+        id: "puerta",
+        name: "Puerta",
+        kind: "puerta",
+        netPrice: 10000,
+        quota: null,
+        startsAt: "",
+        endsAt: "",
+        perOrderLimit: 6,
+        enabled: false,
+        sortOrder: 30
+      }
+    ]
   }
 ];
 

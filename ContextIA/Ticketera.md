@@ -28,8 +28,9 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 ## Honda Fest Chile 2026
 
 - Evento: 28 y 29 de noviembre de 2026, Autodromo Huachalalume, La Serena.
-- `Entrada Galeria`: $5.000 neto. Con IVA queda en $5.950 y el total online con cargo de servicio de 12% es $6.664.
-- `Entrada Parque Cerrado`: $10.000 neto. Con IVA queda en $11.900 y el total online con cargo de servicio de 12% es $13.328.
+- `Entrada Galeria`: sector exterior del autodromo. Preventa a $7.000 neto, sin cupo total; con IVA y cargo de servicio de 8% el total online es $8.996. En puerta se vende a $10.000 neto y es la unica entrada disponible en esa etapa.
+- `Entrada Parque Cerrado`: sector de pilotos y experiencia principal. Preventa a $10.000 neto, limitada a 100 entradas; con IVA y cargo de servicio de 8% el total online es $12.852. No se vende en puerta.
+- El cargo de servicio vigente es 8% sobre el total afecto de entradas y futuros upgrades. El backend reconstruye IVA, cargo y total desde el valor neto.
 - Estacionamiento galeria: gratis. Estacionamiento parque cerrado: $15.000, se paga directamente en el recinto y nunca se agrega al carrito.
 - Inicio, ticketera y carrito invitan a consultar por Pistones como upgrade de experiencia. No se presenta como una entrada ni se cobra hasta que PyR habilite su producto y persistencia en produccion.
 - La configuracion heredada con una sola entrada `ticket-honda-fest-preventa-2026` se reemplaza en runtime por este catalogo 2026. Es un puente acotado: al guardar una configuracion desde backoffice deja de aplicar.

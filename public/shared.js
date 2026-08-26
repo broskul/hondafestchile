@@ -7,7 +7,7 @@
   const ACCOUNT_TOKEN_KEY = "hfc_account_token";
   const ACCOUNT_USER_KEY = "hfc_account_user";
   const TICKET_VAT_RATE = 0.19;
-  const TICKET_SERVICE_CHARGE_RATE = 0.12;
+  const TICKET_SERVICE_CHARGE_RATE = 0.08;
   const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -471,7 +471,7 @@
           <strong>${formatCurrency(subtotal)}</strong>
         </div>
         <div>
-          <span>Cargo (12%)</span>
+          <span>Cargo (8%)</span>
           <strong>${formatCurrency(serviceCharge)}</strong>
         </div>
         <div class="cart-total">
