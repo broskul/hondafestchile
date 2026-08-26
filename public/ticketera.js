@@ -4,6 +4,15 @@ const PARTICIPATION_WHATSAPP_URL =
     "Hola Pablo, quiero participar en Honda Fest Chile como piloto, foodtruck o stand."
   )}`;
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function isManagedParticipationTicket(ticket) {
   const label = `${ticket.id || ""} ${ticket.name || ""}`.toLowerCase();
   return (
@@ -27,9 +36,11 @@ function renderTicketCard(ticket, event) {
         <small>${availability.available ? availability.salePhaseName : "Venta no disponible"}</small>
       </div>
       <div class="ticket-display-price">
-        <span>Precio</span>
+        <span>Entrada con IVA</span>
         <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
+        <small>+ cargo de servicio al finalizar</small>
       </div>
+      ${ticket.parkingNote ? `<p class="parking-reference">${escapeHtml(ticket.parkingNote)}</p>` : ""}
       <label>
         Cantidad
         <input type="number" min="1" max="${availability.maxQuantity}" value="1" ${availability.available ? "" : "disabled"}

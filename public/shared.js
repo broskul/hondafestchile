@@ -476,6 +476,14 @@
           <strong>${formatCurrency(total)}</strong>
         </div>
       </div>
+      <section class="cart-pistons-upgrade" aria-label="Mejora tu experiencia">
+        <div>
+          <p>Eleva tu experiencia</p>
+          <h3>Suma Pistones a tu entrada.</h3>
+          <span>Lanyard, credencial y experiencias especiales. El Pase Especial no reemplaza tu entrada.</span>
+        </div>
+        <a class="button secondary" href="/pases-especiales">Elegir Pistones</a>
+      </section>
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;
 
@@ -684,29 +692,35 @@
     }
 
     if (order.status === "paid" && order.profileRequired) {
-      clearCart();
-      await renderAllCarts();
+      if (order.kind !== "special_pass") {
+        clearCart();
+        await renderAllCarts();
+      }
       const enrollmentAction = data.enrollmentUrl
         ? `<div class="status-actions"><a class="button primary" href="${escapeHtml(data.enrollmentUrl)}">Completar datos</a></div>`
         : "";
       setStatus(
         statusElement,
-        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el boton y QR para completar los datos de enrolamiento.
+        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el botón y QR para completar los datos de ${order.kind === "special_pass" ? "tu Pase Especial" : "enrolamiento"}.
         ${enrollmentAction}`
       );
       return;
     }
 
     if (order.status === "paid") {
-      clearCart();
-      await renderAllCarts();
+      if (order.kind !== "special_pass") {
+        clearCart();
+        await renderAllCarts();
+      }
       const tickets = data.tickets || [];
+      const specialPasses = data.specialPasses || [];
+      const issuedCodes = order.kind === "special_pass" ? specialPasses : tickets;
       setStatus(
         statusElement,
-        `<strong>Compra confirmada.</strong><br />${tickets
-          .map((ticket) => `<code>${ticket.code}</code>`)
+        `<strong>${order.kind === "special_pass" ? "Pase Especial confirmado" : "Compra confirmada"}.</strong><br />${issuedCodes
+          .map((item) => `<code>${item.code}</code>`)
           .join(" ")}
-        <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver mis entradas</a></div>`
+        <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver ${order.kind === "special_pass" ? "mi pase" : "mis entradas"}</a></div>`
       );
       return;
     }
@@ -897,6 +911,8 @@
     openCartDrawer,
     prefillBuyerForms,
     renderAllCarts,
+    renderInternalPayment,
+    renderOrderResult,
     saveAccountSession,
     setStatus,
     toast

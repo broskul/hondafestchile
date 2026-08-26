@@ -15,7 +15,7 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 ## Flujo funcional
 
 1. Desde `/ticketera` agrega entradas al carrito en `localStorage`; los valores vienen del backoffice si existe `ticketing_config`.
-2. En checkout solo ingresa correo y acepta terminos para no enfriar la compra.
+2. En checkout ingresa correo, RUT, teléfono y acepta términos de uso de datos personales; los datos específicos del asistente se completan después del pago cuando corresponda.
 3. El carrito lateral se abre como lightbox desde cualquier pagina con `shared.js`.
 4. `/carrito` permite revisar cantidades y finalizar compra con correo.
 5. `POST /api/orders/from-cart` crea orden multiproducto.
@@ -24,6 +24,14 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 8. Al completar datos desde token o portal privado, se emiten tickets con codigo y QR.
 9. `/mis-compras` recupera tickets y boleta por correo/RUT.
 10. `/validar` usa `BarcodeDetector` si el navegador lo soporta, o ingreso manual de codigo.
+
+## Honda Fest Chile 2026
+
+- Evento: 28 y 29 de noviembre de 2026, Autódromo Huachalalume, La Serena.
+- `Entrada Galería`: $5.000 neto. Con IVA queda en $5.950 y el total online con cargo de servicio de 12% es $6.664.
+- `Entrada Parque Cerrado`: $10.000 neto. Con IVA queda en $11.900 y el total online con cargo de servicio de 12% es $13.328.
+- Estacionamiento galería: gratis. Estacionamiento parque cerrado: $15.000, se paga directamente en el recinto y nunca se agrega al carrito.
+- La ticketera y el carrito invitan a sumar Pistones como Pase Especial, siempre con el aviso visible de que no reemplaza la entrada al evento.
 
 ## Archivos clave
 

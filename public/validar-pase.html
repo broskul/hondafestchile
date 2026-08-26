@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validar Pase Especial | Honda Fest Chile</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/test-mode.js"></script>
+    <script defer src="/shared.js"></script>
+    <script defer src="/validar-pase.js"></script>
+  </head>
+  <body class="special-pass-validation-page">
+    <header class="site-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Control de Pases</small></span></a>
+      <nav class="main-nav"><a href="/pases-especiales">Pases Especiales</a><a href="/validar">Validar entrada</a><a href="/backoffice-hfc">Backoffice</a></nav>
+      <a class="nav-cta" href="/pases-especiales">Ver pases</a>
+    </header>
+
+    <main>
+      <section class="page-hero compact-hero pass-validation-hero">
+        <div><p class="section-kicker">Retiro y acceso especial</p><h1>Valida una credencial impresa.</h1><p>Consulta el QR y registra por separado el retiro del lanyard y el acceso a experiencias especiales.</p></div>
+      </section>
+      <section class="section split-section pass-validation-layout">
+        <div class="ticket-panel page-panel">
+          <div class="scanner-box">
+            <video id="passQrVideo" playsinline muted></video>
+            <div class="scanner-actions"><button class="button secondary" type="button" id="startPassScanner">Usar cámara</button><button class="button ghost-light" type="button" id="stopPassScanner">Detener</button></div>
+          </div>
+          <form id="passValidateForm" class="form-grid stacked-form manual-code-form">
+            <label>Código del Pase Especial <input name="code" required placeholder="HFC-PASE-2026-XXXXXXXXXX" /></label>
+            <button class="button primary full" type="submit">Consultar pase</button>
+          </form>
+          <details class="operator-access">
+            <summary>Acceso del equipo HFC</summary>
+            <form id="passOperatorForm">
+              <input type="text" name="username" autocomplete="username" value="operador-hfc" hidden />
+              <label>Clave de operación <input id="passAdminToken" type="password" autocomplete="current-password" placeholder="Clave backoffice" /></label>
+              <p>La clave solo se usa para registrar retiro y acceso; una consulta pública no modifica el pase.</p>
+            </form>
+          </details>
+        </div>
+        <aside class="ticket-panel validation-result special-pass-result-panel">
+          <p class="section-kicker">Resultado</p>
+          <div id="passValidationResult" class="empty-state">Sin Pase Especial consultado.</div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>
