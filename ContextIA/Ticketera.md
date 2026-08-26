@@ -31,8 +31,9 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 - `Entrada Galeria`: sector exterior del autodromo. Preventa a $7.000 neto, sin cupo total; con IVA y cargo de servicio de 8% el total online es $8.996. En puerta se vende a $10.000 neto y es la unica entrada disponible en esa etapa.
 - `Entrada Parque Cerrado`: sector de pilotos y experiencia principal. Preventa a $10.000 neto, limitada a 100 entradas; con IVA y cargo de servicio de 8% el total online es $12.852. No se vende en puerta.
 - El cargo de servicio vigente es 8% sobre el total afecto de entradas y futuros upgrades. El backend reconstruye IVA, cargo y total desde el valor neto.
+- Las tarjetas de entradas muestran el valor neto como ancla principal, el IVA en menor jerarquia y el total con IVA como cierre. El carrito repite el desglose y agrega el cargo de servicio antes del total pagable.
 - Estacionamiento galeria: gratis. Estacionamiento parque cerrado: $15.000, se paga directamente en el recinto y nunca se agrega al carrito.
-- Inicio, ticketera y carrito invitan a consultar por Pistones como upgrade de experiencia. No se presenta como una entrada ni se cobra hasta que PyR habilite su producto y persistencia en produccion.
+- Inicio, ticketera y carrito presentan Pistones como un upgrade visible bajo el mensaje `Mejora tu experiencia` y `Suma Pistones. Gana premios.`. La promesa se acota a mas oportunidades y beneficios; no se presenta como garantia de premio, entrada independiente ni producto cobrable hasta que PyR habilite producto, bases y persistencia en produccion.
 - La configuracion heredada con una sola entrada `ticket-honda-fest-preventa-2026` se reemplaza en runtime por este catalogo 2026. Es un puente acotado: al guardar una configuracion desde backoffice deja de aplicar.
 
 ## Archivos clave

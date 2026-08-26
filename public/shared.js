@@ -370,6 +370,8 @@
       if (existing) {
         changed = true;
         existing.quantity = quantity;
+        existing.netSubtotal = pricing.netPrice * quantity;
+        existing.vatAmount = (pricing.netWithVat - pricing.netPrice) * quantity;
         existing.subtotal = unitPrice * quantity;
         existing.serviceCharge = pricing.serviceCharge * quantity;
         existing.total = paymentUnitPrice * quantity;
@@ -387,6 +389,8 @@
         unitPrice,
         paymentUnitPrice,
         pricing,
+        netSubtotal: pricing.netPrice * quantity,
+        vatAmount: (pricing.netWithVat - pricing.netPrice) * quantity,
         subtotal: unitPrice * quantity,
         serviceCharge: pricing.serviceCharge * quantity,
         total: paymentUnitPrice * quantity,
@@ -428,6 +432,8 @@
   async function renderCart(container, options = {}) {
     if (!container) return;
     const { details, removedCount } = await cleanCart();
+    const netSubtotal = details.reduce((sum, item) => sum + item.netSubtotal, 0);
+    const vatAmount = details.reduce((sum, item) => sum + item.vatAmount, 0);
     const subtotal = details.reduce((sum, item) => sum + item.subtotal, 0);
     const serviceCharge = details.reduce((sum, item) => sum + item.serviceCharge, 0);
     const total = details.reduce((sum, item) => sum + item.total, 0);
@@ -450,7 +456,7 @@
                 <div>
                   <strong>${item.ticketTypeName}</strong>
                   <span>${item.eventName}</span>
-                  <small>${formatCurrency(item.unitPrice)} c/u</small>
+                  <small>${formatCurrency(item.pricing.netPrice)} neto c/u · IVA ${formatCurrency(item.pricing.netWithVat - item.pricing.netPrice)}</small>
                 </div>
                 <label>
                   Cant.
@@ -467,7 +473,15 @@
       </div>
       <div class="cart-payment-summary">
         <div>
-          <span>Precio</span>
+          <span>Neto entradas</span>
+          <strong>${formatCurrency(netSubtotal)}</strong>
+        </div>
+        <div class="cart-tax-row">
+          <span>IVA (19%)</span>
+          <strong>${formatCurrency(vatAmount)}</strong>
+        </div>
+        <div>
+          <span>Subtotal con IVA</span>
           <strong>${formatCurrency(subtotal)}</strong>
         </div>
         <div>
@@ -481,11 +495,11 @@
       </div>
       <section class="cart-pistons-upgrade" aria-label="Mejora tu experiencia">
         <div>
-          <p>Eleva tu experiencia</p>
-          <h3>Suma Pistones a tu entrada.</h3>
-          <span>Consulta por credenciales y experiencias especiales para vivir Honda Fest Chile de otra manera.</span>
+          <p>Mejora tu experiencia</p>
+          <h3>Suma Pistones. Gana premios.</h3>
+          <span>Cada Pistón suma una oportunidad. Eleva tu entrada con refrigerios, experiencias y beneficios especiales.</span>
         </div>
-        <a class="button secondary" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">Conocer Pistones</a>
+        <a class="button upgrade-button" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">Mejorar mi experiencia</a>
       </section>
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;

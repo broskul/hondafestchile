@@ -29,6 +29,27 @@ function isManagedParticipationTicket(ticket) {
   );
 }
 
+function renderTicketPrice(pricing) {
+  const vatAmount = Math.max(0, Number(pricing.netWithVat || 0) - Number(pricing.netPrice || 0));
+  return `
+    <div class="ticket-display-price" aria-label="Desglose del precio de la entrada">
+      <div class="ticket-price-net">
+        <span>Precio neto</span>
+        <strong>${HFC.formatCurrency(pricing.netPrice)}</strong>
+      </div>
+      <div class="ticket-price-vat">
+        <span>IVA (19%)</span>
+        <strong>${HFC.formatCurrency(vatAmount)}</strong>
+      </div>
+      <div class="ticket-price-total">
+        <span>Total con IVA</span>
+        <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
+      </div>
+      <small>Cargo de servicio de 8% calculado en el carrito</small>
+    </div>
+  `;
+}
+
 function renderTicketCard(ticket, event) {
   const availability = HFC.ticketAvailability(ticket, event.id);
   const pricing = HFC.priceBreakdownFromAvailability(availability);
@@ -39,11 +60,7 @@ function renderTicketCard(ticket, event) {
         <p>${ticket.description}</p>
         <small>${availability.available ? availability.salePhaseName : "Venta no disponible"}</small>
       </div>
-      <div class="ticket-display-price">
-        <span>Entrada con IVA</span>
-        <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
-        <small>+ cargo de servicio al finalizar</small>
-      </div>
+      ${renderTicketPrice(pricing)}
       ${ticket.parkingNote ? `<p class="parking-reference">${escapeHtml(ticket.parkingNote)}</p>` : ""}
       <label>
         Cantidad
@@ -81,16 +98,16 @@ function renderPistonsUpgradeCard() {
   return `
     <article class="product-card pistons-upgrade-card">
       <div>
-        <small class="ticket-participation-eyebrow">Eleva tu experiencia</small>
-        <h4>Haz upgrade con Pistones</h4>
-        <p>Pregunta por las credenciales, experiencias especiales y beneficios que puedes sumar a tu entrada.</p>
+        <small class="ticket-participation-eyebrow">Mejora tu experiencia</small>
+        <h4>Suma Pistones. Gana premios.</h4>
+        <p>Cada Pistón suma una oportunidad. Mejora tu entrada con refrigerios, experiencias y beneficios especiales.</p>
       </div>
-      <div class="ticket-display-price ticket-display-price--contact">
-        <span>Experiencia</span>
-        <strong>Pistones</strong>
+      <div class="pistons-upgrade-benefit">
+        <span>Más Pistones</span>
+        <strong>Más oportunidades de ganar</strong>
       </div>
-      <a class="button secondary full" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">
-        Conocer los Pistones
+      <a class="button upgrade-button full" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">
+        Mejorar mi experiencia
       </a>
     </article>
   `;

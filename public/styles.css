@@ -1390,31 +1390,66 @@ a:focus-visible {
 
 .ticket-display-price {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: baseline;
-  padding: 12px;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8f9f6;
 }
 
-.ticket-display-price span {
-  color: var(--muted);
-  font-size: 0.95rem;
-  font-weight: 800;
-  line-height: 1.35;
+.ticket-display-price > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.ticket-display-price strong {
-  font-size: 1.28rem;
+.ticket-display-price span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.ticket-price-net {
+  padding-bottom: 6px;
+}
+
+.ticket-price-net strong {
+  font-size: 2rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.ticket-price-vat {
+  color: var(--muted);
+}
+
+.ticket-price-vat strong {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.ticket-price-total {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.ticket-price-total strong {
+  font-size: 1.42rem;
+  font-weight: 900;
   white-space: nowrap;
 }
 
 .ticket-display-price small {
   grid-column: 1 / -1;
+  padding-top: 8px;
   color: var(--muted);
-  font-size: 0.78rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
   font-weight: 750;
 }
 
@@ -1435,8 +1470,59 @@ a:focus-visible {
 }
 
 .pistons-upgrade-card {
-  border-color: rgba(31, 143, 77, 0.3);
-  background: #f7fbf6;
+  color: #ffffff;
+  border: 2px solid var(--gold);
+  background: var(--red-dark);
+  box-shadow: 0 18px 42px rgba(156, 16, 21, 0.24);
+}
+
+.pistons-upgrade-card h4 {
+  font-size: 1.42rem;
+}
+
+.product-card.pistons-upgrade-card p {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.pistons-upgrade-card .ticket-participation-eyebrow {
+  color: #2b210a;
+  border-color: var(--gold);
+  background: var(--gold);
+}
+
+.pistons-upgrade-benefit {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  color: #2b210a;
+  border-left: 4px solid var(--cyan);
+  background: #fff3c8;
+}
+
+.pistons-upgrade-benefit span {
+  color: var(--red-dark);
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.pistons-upgrade-benefit strong {
+  font-size: 1.05rem;
+}
+
+.button.upgrade-button {
+  color: #2b210a;
+  border: 2px solid var(--gold);
+  background: var(--gold);
+  box-shadow: 0 8px 0 #7d5200;
+}
+
+.button.upgrade-button:hover {
+  color: #ffffff;
+  border-color: var(--cyan);
+  background: var(--red);
+  box-shadow: 0 8px 0 var(--red-dark);
+  transform: translateY(-2px);
 }
 
 .ticket-participation-eyebrow {
@@ -1607,13 +1693,17 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 18px 0;
-  border-top: 1px solid var(--line);
+  padding: 18px;
+  color: #ffffff;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  background: var(--red-dark);
+  box-shadow: 0 14px 32px rgba(156, 16, 21, 0.2);
 }
 
 .cart-pistons-upgrade p {
   margin: 0 0 4px;
-  color: var(--red-dark);
+  color: var(--gold);
   font-size: 0.76rem;
   font-weight: 950;
   text-transform: uppercase;
@@ -1621,20 +1711,25 @@ a:focus-visible {
 
 .cart-pistons-upgrade h3 {
   margin: 0 0 6px;
-  font-size: 1.08rem;
+  color: #ffffff;
+  font-size: 1.22rem;
 }
 
 .cart-pistons-upgrade span,
 .ticket-upgrade-note {
   display: block;
   max-width: 520px;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.84);
   font-size: 0.84rem;
   line-height: 1.45;
 }
 
 .cart-pistons-upgrade .button {
   flex: 0 0 auto;
+}
+
+.ticket-upgrade-note {
+  color: var(--muted);
 }
 
 .checkout-box {
@@ -2396,6 +2491,17 @@ a:focus-visible {
 @media (max-width: 620px) {
   .brand small {
     display: none;
+  }
+
+  .event-products-heading {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    align-items: start;
+  }
+
+  .event-products-heading h3 {
+    font-size: 2rem;
   }
 
   .nav-cta {
