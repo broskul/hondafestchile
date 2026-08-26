@@ -32,7 +32,9 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 - `Entrada Parque Cerrado`: sector de pilotos y experiencia principal. Preventa a $10.000 neto, limitada a 100 entradas; con IVA y cargo de servicio de 8% el total online es $12.852. No se vende en puerta.
 - El cargo de servicio vigente es 8% sobre el total afecto de entradas y futuros upgrades. El backend reconstruye IVA, cargo y total desde el valor neto.
 - Estacionamiento galeria: gratis. Estacionamiento parque cerrado: $15.000, se paga directamente en el recinto y nunca se agrega al carrito.
-- Inicio, ticketera y carrito invitan a consultar por Pistones como upgrade de experiencia. No se presenta como una entrada ni se cobra hasta que PyR habilite su producto y persistencia en produccion.
+- Cada entrada incluye 1 Piston y genera un codigo individual para el padron del sorteo. Las tarjetas de producto y las entradas emitidas muestran un Piston de color solido con 10% de opacidad como fondo.
+- Inicio, ticketera y carrito presentan los Pases de 1, 3, 5, 7 y 9 Pistones como upgrades. Los valores de Pase son netos y usan el mismo IVA y cargo de 8% de las entradas.
+- La venta de Pases permanece cerrada por `SPECIAL_PASSES_ENABLED=false` hasta vincular el upgrade con una entrada, aplicar la migracion remota y completar las bases de PyR Eventos.
 - La configuracion heredada con una sola entrada `ticket-honda-fest-preventa-2026` se reemplaza en runtime por este catalogo 2026. Es un puente acotado: al guardar una configuracion desde backoffice deja de aplicar.
 
 ## Archivos clave

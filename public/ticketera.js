@@ -4,10 +4,6 @@ const PARTICIPATION_WHATSAPP_URL =
     "Hola Pablo, quiero participar en Honda Fest Chile como piloto, foodtruck o stand."
   )}`;
 
-const PISTONS_WHATSAPP_URL = `https://wa.me/56972934950?text=${encodeURIComponent(
-  "Hola, quiero conocer los Pistones y las experiencias especiales de Honda Fest Chile 2026."
-)}`;
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -33,12 +29,15 @@ function renderTicketCard(ticket, event) {
   const availability = HFC.ticketAvailability(ticket, event.id);
   const pricing = HFC.priceBreakdownFromAvailability(availability);
   return `
-    <article class="product-card">
+    <article class="product-card ticket-product-card">
+      <span class="ticket-piston-watermark" aria-hidden="true"></span>
       <div>
         <h4>${ticket.name}</h4>
         <p>${ticket.description}</p>
         <small>${availability.available ? availability.salePhaseName : "Venta no disponible"}</small>
+        ${availability.saleRemaining !== null && availability.saleRemaining !== undefined ? `<strong class="ticket-stock-note">Sólo ${availability.saleRemaining} disponibles</strong>` : ""}
       </div>
+      <div class="included-piston-badge"><span class="mini-piston" aria-hidden="true"></span><strong>Incluye 1 Pistón</strong><small>1 boleto para el sorteo del automóvil</small></div>
       <div class="ticket-display-price">
         <span>Entrada con IVA</span>
         <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
@@ -83,14 +82,14 @@ function renderPistonsUpgradeCard() {
       <div>
         <small class="ticket-participation-eyebrow">Eleva tu experiencia</small>
         <h4>Haz upgrade con Pistones</h4>
-        <p>Pregunta por las credenciales, experiencias especiales y beneficios que puedes sumar a tu entrada.</p>
+        <p>Suma 1, 3, 5, 7 o 9 Pistones, refrigerios y nuevas prestaciones a tu entrada.</p>
       </div>
       <div class="ticket-display-price ticket-display-price--contact">
         <span>Experiencia</span>
         <strong>Pistones</strong>
       </div>
-      <a class="button secondary full" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">
-        Conocer los Pistones
+      <a class="button secondary full" href="/pases-especiales">
+        Ver Pases de Pistones
       </a>
     </article>
   `;

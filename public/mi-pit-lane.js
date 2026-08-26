@@ -22,7 +22,7 @@
 
   function ordersForTab() {
     if (activeTab === "pending") return account.orders.filter((order) => order.profileRequired);
-    if (activeTab === "current") return account.orders.filter((order) => !order.profileRequired && (order.tickets || []).length);
+    if (activeTab === "current") return account.orders.filter((order) => !order.profileRequired && ((order.tickets || []).length || (order.specialPasses || []).length));
     return account.orders;
   }
 
@@ -44,6 +44,8 @@
       ? `<a class="button primary" href="${escapeHtml(order.enrollmentUrl)}">Enrolar pendiente</a>`
       : "";
     const tickets = order.tickets || [];
+    const specialPasses = order.specialPasses || [];
+    const issuedItems = order.kind === "special_pass" ? specialPasses : tickets;
     return `
       <article class="purchase-card">
         <header>
@@ -59,17 +61,17 @@
             .map((item) => `<li>${escapeHtml(item.quantity)} x ${escapeHtml(item.ticketTypeName)} · ${escapeHtml(item.eventName)}</li>`)
             .join("")}
         </ul>
-        ${tickets.length
+        ${issuedItems.length
           ? `<div class="ticket-grid">
-              ${tickets
+              ${issuedItems
                 .map(
-                  (ticket) => `
+                  (item) => `
                     <div class="ticket-pass">
-                      <img src="${escapeHtml(ticket.qrUrl)}" alt="QR ticket ${escapeHtml(ticket.code)}" />
-                      <strong>${escapeHtml(ticket.ticketTypeName || "Entrada")}</strong>
-                      <span>${escapeHtml(ticket.eventName || "")}</span>
-                      <code>${escapeHtml(ticket.code)}</code>
-                      <small>${escapeHtml(ticket.status || "")}</small>
+                      <img src="${escapeHtml(item.qrUrl)}" alt="QR ${escapeHtml(item.code)}" />
+                      <strong>${escapeHtml(item.levelName || item.ticketTypeName || "Entrada")}</strong>
+                      <span>${escapeHtml(item.eventName || "")}</span>
+                      <code>${escapeHtml(item.code)}</code>
+                      ${order.kind === "special_pass" ? `<b>${escapeHtml(item.pistonCount)} ${Number(item.pistonCount) === 1 ? "Pistón" : "Pistones"}</b><small>${(item.benefits || []).map(escapeHtml).join(" · ")}</small><small>Retiro: ${escapeHtml(item.pickupStatus)} · Acceso: ${escapeHtml(item.accessStatus)}</small><em>UPGRADE: REQUIERE UNA ENTRADA HFC 2026</em>` : `<b>${escapeHtml(item.pistonCount || 1)} Pistón incluido</b><small>1 Pistón = 1 boleto para el sorteo · ${escapeHtml(item.status || "")}</small>`}
                     </div>
                   `
                 )
@@ -79,7 +81,7 @@
         <div class="status-actions">
           ${pendingAction}
           ${order.invoice?.pdfUrl ? `<a class="button secondary" href="${escapeHtml(order.invoice.pdfUrl)}">Ver boleta</a>` : ""}
-          ${tickets[0]?.code ? `<a class="button secondary" href="/validar?code=${encodeURIComponent(tickets[0].code)}">Probar QR</a>` : ""}
+          ${issuedItems[0]?.code ? `<a class="button secondary" href="${order.kind === "special_pass" ? "/validar-pase" : "/validar"}?code=${encodeURIComponent(issuedItems[0].code)}">Probar QR</a>` : ""}
         </div>
       </article>
     `;

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pases de Pistones HFC 2026 | Honda Fest Chile</title>
+    <meta name="description" content="Upgrades de Pistones para las entradas Honda Fest Chile 2026, con refrigerios y prestaciones según el Pase elegido." />
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/test-mode.js"></script>
+    <script defer src="/shared.js"></script>
+    <script defer src="/pases-especiales.js"></script>
+  </head>
+  <body class="special-pass-page">
+    <header class="site-header special-pass-header">
+      <a class="brand" href="/"><span class="brand-mark">HFC</span><span><strong>Honda Fest Chile</strong><small>Pases de Pistones</small></span></a>
+      <nav class="main-nav" aria-label="Pases de Pistones">
+        <a href="#niveles">Niveles</a>
+        <a href="#beneficios">Beneficios</a>
+        <a href="#retiro">Retiro</a>
+        <a href="/mi-pit-lane">Mi Pit Lane</a>
+      </nav>
+      <a class="nav-cta" href="#comprar">Elegir pase</a>
+    </header>
+
+    <main>
+      <section class="special-pass-hero">
+        <img src="/assets/sorteo-auto/auto-hero-promocional-v2.webp" alt="Automóvil rojo con sus luces encendidas, incluido entre los premios especiales de Honda Fest Chile 2026" fetchpriority="high" />
+        <div class="special-pass-hero-shade"></div>
+        <div class="special-pass-hero-content">
+          <div class="special-pass-hero-copy">
+            <p class="special-pass-overline">Honda Fest Chile · 28 y 29 noviembre 2026</p>
+            <h1>Un automóvil.<span>Más Pistones, más oportunidades.</span></h1>
+            <p class="special-pass-lead">Cada entrada incluye 1 Pistón. Elige un Pase para sumar Pistones, refrigerios y nuevas prestaciones a tu experiencia HFC 2026.</p>
+            <div class="piston-lockup" aria-label="Niveles medidos en Pistones">
+              <span class="piston-icon" aria-hidden="true"></span>
+              <strong>1 Pistón = 1 boleto para el sorteo</strong>
+            </div>
+            <div class="special-pass-actions">
+              <a class="button primary" href="#niveles">Ver upgrades</a>
+              <a class="button secondary" href="#como-funciona">Cómo funciona</a>
+            </div>
+            <div class="not-entry-banner"><strong>TU ENTRADA YA INCLUYE 1 PISTÓN</strong><span>Los Pases agregan Pistones y prestaciones; no reemplazan el acceso al evento.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="special-pass-strip" aria-label="Formato y beneficios principales">
+        <div><span>01</span><strong>Toda entrada participa</strong><small>Incluye 1 Pistón</small></div>
+        <div><span>02</span><strong>1 a 9 Pistones extra</strong><small>Elige tu Pase</small></div>
+        <div><span>03</span><strong>Mejora tu experiencia</strong><small>Refrigerios y prestaciones</small></div>
+      </section>
+
+      <section class="section special-pass-levels" id="niveles">
+        <div class="section-heading special-pass-heading">
+          <p class="section-kicker">Elige tu nivel</p>
+          <h2>Más Pistones. Más experiencia.</h2>
+          <p>Los valores se muestran con IVA y cargo de servicio de 8%. Cada Pistón adicional suma un boleto al sorteo del automóvil.</p>
+        </div>
+        <div class="pass-level-grid" id="passLevelGrid" aria-live="polite">
+          <div class="empty-state">Cargando niveles...</div>
+        </div>
+      </section>
+
+      <section class="section special-pass-benefits" id="beneficios">
+        <div class="special-pass-benefit-copy">
+          <p class="section-kicker">Pase físico</p>
+          <h2>Una credencial impresa que activa experiencias.</h2>
+          <p>El mismo QR permite enrolar al titular, registrar el retiro del lanyard y validar el acceso especial. Los Pistones quedan registrados en el sistema para una participación auditable en los premios.</p>
+          <div id="commonBenefitList" class="benefit-check-list"></div>
+        </div>
+        <div class="special-pass-credential-card">
+          <img src="/assets/pases-especiales/pase-especial-hero.png" alt="Lanyard sencillo con credencial impresa dentro de un porta credencial transparente" loading="lazy" />
+          <div>
+            <p class="section-kicker">Lo que recibes</p>
+            <h3>Lanyard + credencial impresa.</h3>
+            <p>Un pase físico sencillo, individualizado con QR, para retirar y validar tus accesos especiales el día del evento.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section special-pass-steps" id="como-funciona">
+        <div class="section-heading special-pass-heading">
+          <p class="section-kicker">Simple y trazable</p>
+          <h2>Compra, enrola y retira.</h2>
+        </div>
+        <div class="steps-grid">
+          <article><span>1</span><h3>Compra tu entrada</h3><p>Galería y Parque Cerrado ya incluyen 1 Pistón por entrada.</p></article>
+          <article><span>2</span><h3>Completa el titular</h3><p>Después del pago recibirás un enlace seguro de enrolamiento.</p></article>
+          <article><span>3</span><h3>Presenta tu QR</h3><p>Úsalo para retirar el lanyard y la credencial impresa.</p></article>
+          <article><span>4</span><h3>Activa el acceso</h3><p>El equipo validará tu pase en las experiencias especiales.</p></article>
+        </div>
+      </section>
+
+      <section class="section pickup-section" id="retiro">
+        <div>
+          <p class="section-kicker">Retiro de credencial</p>
+          <h2>Tu pase te espera.</h2>
+        </div>
+        <div class="pickup-options">
+          <article><span class="pickup-dot confirmed"></span><div><strong>Día del evento</strong><p id="pickupEventDay">Retiro disponible presentando QR e identificación.</p></div></article>
+          <article><span class="pickup-dot pending"></span><div><strong>Antes del evento</strong><p id="pickupPreEvent">Punto de retiro por confirmar.</p></div></article>
+        </div>
+      </section>
+
+      <section class="section special-pass-checkout" id="comprar">
+        <div class="checkout-product-summary" id="selectedPassSummary">
+          <p class="section-kicker">Tu selección</p>
+          <h2>Elige un nivel arriba.</h2>
+          <p>Luego completa los datos del comprador para continuar al pago.</p>
+        </div>
+        <div class="ticket-panel checkout-page special-pass-checkout-panel">
+          <form class="form-grid stacked-form" id="specialPassCheckoutForm">
+            <input type="hidden" name="levelId" />
+            <label>Correo electrónico <input name="email" type="email" autocomplete="email" required placeholder="tu@correo.cl" /></label>
+            <label>Teléfono <input name="phone" type="tel" autocomplete="tel" required placeholder="+56 9 1234 5678" /></label>
+            <label class="terms-check"><input name="termsAccepted" type="checkbox" required /><span>Acepto el <a href="/terminos-datos-personales" target="_blank" rel="noreferrer">uso de mis datos personales</a>.</span></label>
+            <label class="terms-check not-entry-check"><input name="notEntryAccepted" type="checkbox" required /><span>Entiendo que este Pase es un <strong>UPGRADE DE PISTONES</strong> y requiere una entrada HFC 2026 válida.</span></label>
+            <button class="button primary full" type="submit" disabled id="specialPassPayButton">Selecciona un nivel</button>
+          </form>
+          <div class="status-box" id="checkoutStatus" hidden></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Honda Fest Chile · Pases de Pistones HFC 2026</p>
+      <div><a href="/ticketera">Comprar entrada</a><a href="/validar-pase">Validar pase</a></div>
+    </footer>
+  </body>
+</html>

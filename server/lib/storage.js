@@ -13,6 +13,7 @@ const initialState = {
   sessions: [],
   orders: [],
   tickets: [],
+  specialPasses: [],
   invoices: [],
   payments: [],
   settings: [],
@@ -27,6 +28,7 @@ const supabaseCollections = {
   sessions: "hfc_sessions",
   orders: "hfc_orders",
   tickets: "hfc_tickets",
+  specialPasses: "hfc_special_passes",
   invoices: "hfc_invoices",
   payments: "hfc_payments",
   settings: "hfc_settings",
@@ -38,6 +40,7 @@ const supabaseCollections = {
 
 let lastSupabaseWarning = null;
 let postgresPool = null;
+let specialPassStorageAvailable = null;
 
 function supabaseConfigured() {
   return postgresConfigured() || supabaseRestConfigured();
@@ -186,14 +189,27 @@ function canUseLocalWriteFallback(error) {
   return isMissingSchemaError(error) || isReachabilityError(error);
 }
 
+function specialPassStorageReady() {
+  return specialPassStorageAvailable !== false;
+}
+
 async function readPostgresState() {
   let entries;
 
   try {
     entries = await Promise.all(
       Object.entries(supabaseCollections).map(async ([collection, table]) => {
-        const result = await postgresQuery(`select payload from public.${table} order by created_at asc`);
-        return [collection, result.rows.map((row) => row.payload).filter(Boolean)];
+        try {
+          const result = await postgresQuery(`select payload from public.${table} order by created_at asc`);
+          if (collection === "specialPasses") specialPassStorageAvailable = true;
+          return [collection, result.rows.map((row) => row.payload).filter(Boolean)];
+        } catch (error) {
+          if (collection === "specialPasses" && isMissingSchemaError(error)) {
+            specialPassStorageAvailable = false;
+            return [collection, []];
+          }
+          throw error;
+        }
       })
     );
   } catch (error) {
@@ -219,13 +235,22 @@ async function readSupabaseState() {
   try {
     entries = await Promise.all(
       Object.entries(supabaseCollections).map(async ([collection, table]) => {
-        const rows = await supabaseRequest(table, {
-          query: {
-            select: "payload",
-            order: "created_at.asc"
+        try {
+          const rows = await supabaseRequest(table, {
+            query: {
+              select: "payload",
+              order: "created_at.asc"
+            }
+          });
+          if (collection === "specialPasses") specialPassStorageAvailable = true;
+          return [collection, rows.map((row) => row.payload).filter(Boolean)];
+        } catch (error) {
+          if (collection === "specialPasses" && isMissingSchemaError(error)) {
+            specialPassStorageAvailable = false;
+            return [collection, []];
           }
-        });
-        return [collection, rows.map((row) => row.payload).filter(Boolean)];
+          throw error;
+        }
       })
     );
   } catch (error) {
@@ -293,6 +318,17 @@ function supabaseRow(collection, item) {
     };
   }
 
+  if (collection === "specialPasses") {
+    return {
+      ...base,
+      order_id: item.orderId || null,
+      user_id: item.userId || null,
+      code: item.code || null,
+      status: item.status || null,
+      piston_count: Number(item.pistonCount || 0)
+    };
+  }
+
   if (collection === "invoices" || collection === "payments") {
     return { ...base, order_id: item.orderId || null };
   }
@@ -327,6 +363,7 @@ function supabaseRow(collection, item) {
 
 async function writeSupabaseState(state) {
   for (const [collection, table] of Object.entries(supabaseCollections)) {
+    if (collection === "specialPasses" && !specialPassStorageReady()) continue;
     const items = (state[collection] || []).map((item, index) => normalizeItem(collection, item, index));
     state[collection] = items;
 
@@ -357,6 +394,7 @@ async function writeSupabaseState(state) {
 
 async function writePostgresState(state) {
   for (const [collection, table] of Object.entries(supabaseCollections)) {
+    if (collection === "specialPasses" && !specialPassStorageReady()) continue;
     const items = (state[collection] || []).map((item, index) => normalizeItem(collection, item, index));
     state[collection] = items;
 
@@ -483,6 +521,7 @@ module.exports = {
   checkoutStorageReady,
   lastSupabaseWarning: storageWarning,
   readState,
+  specialPassStorageReady,
   storageMode,
   supabaseConfigured,
   updateState,

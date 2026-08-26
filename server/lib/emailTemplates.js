@@ -162,6 +162,75 @@ const defaultEmailTemplates = [
     })
   },
   {
+    id: "special_pass_enrollment",
+    type: "special_pass_enrollment",
+    name: "Pase de Pistones pendiente de enrolamiento",
+    subject: "Completa los datos de tu {{pass_name}} - Honda Fest Chile",
+    text: [
+      "Hola {{name}}.",
+      "Tu pago del {{pass_name}} fue confirmado.",
+      "Nivel: {{piston_count}} {{piston_label}}.",
+      "Este Pase es un upgrade y requiere una entrada HFC 2026 válida.",
+      "Completa los datos del titular para emitir la credencial impresa:",
+      "{{enroll_url}}",
+      "Retiro: {{pickup_event_day}}",
+      "{{pickup_pre_event}}"
+    ].join("\n"),
+    html: emailShell({
+      preheader: "Tu Pase de Pistones fue pagado. Completa el enrolamiento del titular.",
+      eyebrow: "Pase de Pistones HFC 2026",
+      title: "Completa el enrolamiento de tu pase",
+      intro: "Hola {{name}}, recibimos el pago de tu {{pass_name}} con {{piston_count}} {{piston_label}}. Completa los datos del titular para emitir la credencial impresa.",
+      content: [
+        orderSummaryBlock('<p style="color:#4c5563;font-size:14px;margin:8px 0 0;"><strong>Nivel:</strong> {{piston_count}} {{piston_label}}</p>'),
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#17191f;border-left:5px solid #d71920;margin:0 0 18px;"><tr><td style="padding:16px 18px;">',
+        '<p style="color:#ffffff;font-size:18px;font-weight:900;margin:0 0 6px;">UPGRADE PARA TU ENTRADA HFC 2026</p>',
+        '<p style="color:#d8dbe0;font-size:14px;line-height:1.5;margin:0;">Cada entrada ya incluye 1 Pistón. Este Pase agrega Pistones y prestaciones, pero requiere una entrada válida para ingresar.</p>',
+        "</td></tr></table>",
+        `<p style="margin:0 0 16px;text-align:center;">${emailButton("{{enroll_url}}", "Enrolar mi Pase de Pistones")}</p>`,
+        '<p style="margin:0 0 14px;text-align:center;"><img src="{{enroll_qr_url}}" alt="QR de enrolamiento" width="170" style="height:auto;max-width:170px;"></p>',
+        '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:16px 0 0;"><strong>Retiro:</strong> {{pickup_event_day}}<br>{{pickup_pre_event}}</p>',
+        helpLine()
+      ].join("")
+    })
+  },
+  {
+    id: "special_pass_issued",
+    type: "special_pass_issued",
+    name: "Pase de Pistones emitido",
+    subject: "Tu {{pass_name}} está listo - {{piston_count}} {{piston_label}}",
+    text: [
+      "Hola {{name}}.",
+      "Tu Pase de Pistones HFC 2026 está listo.",
+      "Código: {{pass_code}}",
+      "Nivel: {{piston_count}} {{piston_label}}.",
+      "UPGRADE: REQUIERE UNA ENTRADA HFC 2026 VÁLIDA.",
+      "Presenta este QR para retirar tu lanyard y credencial impresa.",
+      "{{pass_verify_url}}",
+      "Retiro: {{pickup_event_day}}",
+      "{{pickup_pre_event}}"
+    ].join("\n"),
+    html: emailShell({
+      preheader: "Tu Pase de Pistones está listo para ser retirado con su QR.",
+      eyebrow: "Credencial emitida",
+      title: "Tu Pase de Pistones está listo",
+      intro: "Hola {{name}}, emitimos tu {{pass_name}} con {{piston_count}} {{piston_label}}. Conserva este QR para retirar el lanyard y la credencial impresa.",
+      content: [
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#111111;border:1px solid #292929;margin:0 0 18px;"><tr><td align="center" style="padding:24px;">',
+        '<p style="color:#d71920;font-size:12px;font-weight:900;letter-spacing:.08em;margin:0 0 8px;text-transform:uppercase;">{{piston_count}} {{piston_label}}</p>',
+        '<p style="color:#ffffff;font-size:20px;font-weight:800;margin:0 0 14px;">{{pass_code}}</p>',
+        '<img src="{{pass_qr_url}}" alt="QR {{pass_code}}" width="190" style="background:#fff;height:auto;max-width:190px;padding:8px;">',
+        "</td></tr></table>",
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff2f3;border:1px solid #efb4bc;margin:0 0 18px;"><tr><td style="padding:16px;">',
+        '<p style="color:#a20f18;font-size:17px;font-weight:900;margin:0 0 6px;">UPGRADE PARA TU ENTRADA HFC 2026</p>',
+        '<p style="color:#4c3034;font-size:14px;line-height:1.5;margin:0;">Cada entrada incluye 1 Pistón. Este Pase agrega Pistones y prestaciones, pero no reemplaza la entrada al evento.</p>',
+        "</td></tr></table>",
+        '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:0;"><strong>Retiro:</strong> {{pickup_event_day}}<br>{{pickup_pre_event}}</p>',
+        helpLine()
+      ].join("")
+    })
+  },
+  {
     id: "payment_failed_retry",
     type: "payment_failed_retry",
     name: "Pago no finalizado",
@@ -284,23 +353,24 @@ function ticketEmailVariables({ user, order, event, tickets = [], invoice, baseU
     return {
       code: ticket.code,
       holderName: ticket.holderName || user?.name || "",
+      pistonCount: Math.max(1, Number(ticket.pistonCount || 1)),
       verifyUrl,
       qrUrl
     };
   });
   const ticketListText = ticketRows
-    .map((ticket) => `- ${ticket.code} / validar: ${ticket.verifyUrl}`)
+    .map((ticket) => `- ${ticket.code} / ${ticket.pistonCount} Pistón incluido / validar: ${ticket.verifyUrl}`)
     .join("\n");
   const ticketListCompactHtml = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#ffffff;border:1px solid #e4e5df;">${ticketRows
     .map(
       (ticket) =>
-        `<tr><td style="border-bottom:1px solid #eceee8;padding:13px 15px;"><p style="color:#17191f;font-size:15px;font-weight:700;margin:0 0 4px;">${escapeHtml(ticket.code)}</p><p style="color:#6b7280;font-size:13px;line-height:1.45;margin:0;">${escapeHtml(ticket.holderName || "Asistente")}</p></td></tr>`
+        `<tr><td style="border-bottom:1px solid #eceee8;padding:13px 15px;"><p style="color:#17191f;font-size:15px;font-weight:700;margin:0 0 4px;">${escapeHtml(ticket.code)}</p><p style="color:#a20f18;font-size:13px;font-weight:800;margin:0 0 4px;">${ticket.pistonCount} Pistón incluido</p><p style="color:#6b7280;font-size:13px;line-height:1.45;margin:0;">${escapeHtml(ticket.holderName || "Asistente")}</p></td></tr>`
     )
     .join("")}</table>`;
   const ticketListHtml = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#ffffff;border:1px solid #e4e5df;">${ticketRows
     .map(
       (ticket) =>
-        `<tr><td style="border-bottom:1px solid #eceee8;padding:16px;"><p style="color:#17191f;font-size:16px;font-weight:800;margin:0 0 6px;">${escapeHtml(ticket.code)}</p><p style="color:#6b7280;font-size:13px;line-height:1.45;margin:0 0 12px;">${escapeHtml(ticket.holderName || "Asistente")}</p><p style="margin:0 0 12px;"><img src="${escapeHtml(ticket.qrUrl)}" alt="QR ${escapeHtml(ticket.code)}" width="150" style="height:auto;max-width:150px;"></p><p style="color:#6b7280;font-size:12px;line-height:1.45;margin:0;">Validar: <a href="${escapeHtml(ticket.verifyUrl)}" style="color:#143b36;word-break:break-all;">${escapeHtml(ticket.verifyUrl)}</a></p></td></tr>`
+        `<tr><td style="border-bottom:1px solid #eceee8;padding:16px;background:#fffafa;"><p style="color:#17191f;font-size:16px;font-weight:800;margin:0 0 6px;">${escapeHtml(ticket.code)}</p><p style="color:#a20f18;font-size:13px;font-weight:800;margin:0 0 6px;">${ticket.pistonCount} Pistón incluido · 1 Pistón = 1 boleto</p><p style="color:#6b7280;font-size:13px;line-height:1.45;margin:0 0 12px;">${escapeHtml(ticket.holderName || "Asistente")}</p><p style="margin:0 0 12px;"><img src="${escapeHtml(ticket.qrUrl)}" alt="QR ${escapeHtml(ticket.code)}" width="150" style="height:auto;max-width:150px;"></p><p style="color:#6b7280;font-size:12px;line-height:1.45;margin:0;">Validar: <a href="${escapeHtml(ticket.verifyUrl)}" style="color:#143b36;word-break:break-all;">${escapeHtml(ticket.verifyUrl)}</a></p></td></tr>`
     )
     .join("")}</table>`;
   const invoiceLabelText = invoice?.pdfBase64

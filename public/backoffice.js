@@ -703,6 +703,48 @@ function renderTickets(data) {
   `;
 }
 
+function renderSpecialPasses(data) {
+  const config = data.specialPassConfig || { levels: [], pickup: {}, commonBenefits: [] };
+  const passes = data.specialPasses || [];
+  return `
+    <div class="kpi-grid">
+      <div class="kpi"><span>Pases emitidos</span><strong>${data.summary.specialPasses || 0}</strong></div>
+      <div class="kpi"><span>Pistones</span><strong>${data.summary.pistonsIssued || 0}</strong></div>
+      <div class="kpi"><span>Retirados</span><strong>${data.summary.pickedUpSpecialPasses || 0}</strong></div>
+      <div class="kpi"><span>Con acceso</span><strong>${data.summary.checkedInSpecialPasses || 0}</strong></div>
+    </div>
+    <form id="specialPassConfigForm" class="ticket-panel admin-form-panel">
+      <div class="admin-toolbar"><div><p class="section-kicker">Upgrade de entrada</p><h2>Pases de Pistones HFC 2026</h2></div><label>Catálogo activo <input name="active" type="checkbox" ${config.active ? "checked" : ""} /></label></div>
+      <div class="form-grid">
+        <label class="full">Aviso de compra <textarea name="purchaseNotice" rows="3">${escapeHtml(config.purchaseNotice || "")}</textarea></label>
+        <label>Retiro día del evento <textarea name="pickupEventDay" rows="3">${escapeHtml(config.pickup?.eventDay || "")}</textarea></label>
+        <label>Retiro previo <textarea name="pickupPreEvent" rows="3">${escapeHtml(config.pickup?.preEvent || "")}</textarea></label>
+        <label class="full">Beneficios, uno por línea <textarea name="commonBenefits" rows="5">${escapeHtml((config.commonBenefits || []).join("\n"))}</textarea></label>
+      </div>
+      <div class="admin-pass-levels">
+        ${(config.levels || []).map((level) => {
+          const pricing = HFC.priceBreakdownFromNet(level.netPrice || 0);
+          return `
+            <article data-admin-pass-level="${escapeHtml(level.id)}">
+              <strong>${escapeHtml(level.name)}</strong>
+              <label>Nombre <input data-pass-field="name" value="${escapeHtml(level.name)}" /></label>
+              <label>Pistones <input data-pass-field="pistons" type="number" min="1" value="${level.pistons}" /></label>
+              <label>Valor neto <input data-pass-field="netPrice" type="number" min="0" step="100" value="${pricing.netPrice}" /></label>
+              <small>Final con IVA + cargo 8%: ${HFC.formatCurrency(pricing.total)}</small>
+            </article>`;
+        }).join("")}
+      </div>
+      <div class="status-actions"><button class="button primary" type="submit">Guardar Pases de Pistones</button><button class="button secondary" type="button" data-export-special-passes>Descargar Pistones CSV</button><a class="button ghost-light" href="/validar-pase" target="_blank" rel="noreferrer">Abrir control de pases</a></div>
+      <div class="status-box" id="specialPassConfigStatus" hidden></div>
+    </form>
+    <section class="admin-table-section">
+      <h2>Pases emitidos</h2>
+      <div class="table-scroll"><table class="admin-table"><thead><tr><th>Código</th><th>Nivel</th><th>Titular</th><th>Retiro</th><th>Acceso</th><th>Operar</th></tr></thead><tbody>
+        ${passes.map((pass) => `<tr><td><code>${escapeHtml(pass.code)}</code></td><td><strong>${pass.pistonCount} ${pass.pistonCount === 1 ? "Pistón" : "Pistones"}</strong><br><small>${escapeHtml(pass.levelName || "")}</small></td><td>${escapeHtml(pass.holderName || "Pendiente")}<br><small>${escapeHtml(pass.holderRut || "")}</small></td><td>${escapeHtml(pass.pickupStatus || "pending")}</td><td>${escapeHtml(pass.accessStatus || "not_checked_in")}</td><td><a class="button secondary" href="/validar-pase?code=${encodeURIComponent(pass.code)}" target="_blank" rel="noreferrer">Validar</a></td></tr>`).join("") || '<tr><td colspan="6">Aún no hay Pases de Pistones emitidos.</td></tr>'}
+      </tbody></table></div>
+    </section>`;
+}
+
 function tabButton(id, label) {
   return `<button class="admin-tab${activeTab === id ? " active" : ""}" type="button" data-admin-tab="${id}">${label}</button>`;
 }
@@ -717,6 +759,7 @@ function renderBackoffice(data) {
     <div class="admin-tabs" role="tablist">
       ${tabButton("bi", "BI")}
       ${tabButton("ticketing", "Entradas")}
+      ${tabButton("passes", "Pases")}
       ${tabButton("guests", "Invitados")}
       ${tabButton("users", "Enrolados")}
       ${tabButton("contacts", "Contactos CSV")}
@@ -730,6 +773,7 @@ function renderBackoffice(data) {
         {
           bi: renderBi(data),
           ticketing: renderTicketing(data),
+          passes: renderSpecialPasses(data),
           guests: renderGuests(data),
           users: renderUsers(data),
           contacts: renderContacts(data),
@@ -813,6 +857,71 @@ function attachBackofficeEvents() {
       HFC.toast("Entradas guardadas.");
     } catch (error) {
       HFC.setStatus(status, error.message, true);
+    }
+  });
+
+  HFC.$("#specialPassConfigForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = HFC.$("#specialPassConfigStatus");
+    HFC.setStatus(status, "Guardando configuración de Pases de Pistones...");
+    const currentById = new Map((backofficeData.specialPassConfig?.levels || []).map((level) => [level.id, level]));
+    const levels = HFC.$$('[data-admin-pass-level]', form).map((card) => {
+      const current = currentById.get(card.dataset.adminPassLevel) || {};
+      return {
+        ...current,
+        id: card.dataset.adminPassLevel,
+        name: card.querySelector('[data-pass-field="name"]').value.trim(),
+        pistons: readNumber(card.querySelector('[data-pass-field="pistons"]').value, 1),
+        netPrice: readNumber(card.querySelector('[data-pass-field="netPrice"]').value, 0),
+        active: true
+      };
+    });
+    try {
+      await adminApi("/api/backoffice/special-passes/config", {
+        method: "PUT",
+        body: JSON.stringify({
+          specialPass: {
+            ...backofficeData.specialPassConfig,
+            active: form.active.checked,
+            purchaseNotice: form.purchaseNotice.value.trim(),
+            pickup: {
+              eventDay: form.pickupEventDay.value.trim(),
+              preEvent: form.pickupPreEvent.value.trim()
+            },
+            commonBenefits: form.commonBenefits.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean),
+            levels
+          }
+        })
+      });
+      await loadBackoffice();
+      HFC.toast("Configuración de Pases de Pistones guardada.");
+    } catch (error) {
+      HFC.setStatus(status, error.message, true);
+    }
+  });
+
+  HFC.$("[data-export-special-passes]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/backoffice/special-passes/export.csv", {
+        headers: { "x-admin-token": adminToken }
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.message || "No se pudo exportar el registro de Pistones");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "pases-especiales-pistones-hfc-2026.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      HFC.toast(error.message);
+    } finally {
+      button.disabled = false;
     }
   });
 

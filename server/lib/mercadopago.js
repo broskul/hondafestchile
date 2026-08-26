@@ -77,8 +77,8 @@ async function createPreference({ req, order, user, event, ticketType }) {
     cleanEnv("MERCADOPAGO_NOTIFICATION_URL") || `${baseUrl}/api/webhooks/mercadopago`;
   const items = order.items?.length
     ? order.items.map((item) => ({
-        id: item.ticketTypeId,
-        title: `${item.ticketTypeName} - ${item.eventName}`,
+        id: item.passLevelId || item.ticketTypeId || item.id,
+        title: `${item.productName || item.ticketTypeName} - ${item.eventName}`,
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
@@ -95,6 +95,7 @@ async function createPreference({ req, order, user, event, ticketType }) {
         }
       ];
 
+  const returnPath = String(order.returnPath || "/carrito").startsWith("/") ? order.returnPath : "/carrito";
   const body = {
     items,
     payer: {
@@ -103,15 +104,17 @@ async function createPreference({ req, order, user, event, ticketType }) {
     },
     external_reference: order.id,
     back_urls: {
-      success: `${baseUrl}/carrito?payment=success&order=${order.id}`,
-      failure: `${baseUrl}/carrito?payment=failure&order=${order.id}`,
-      pending: `${baseUrl}/carrito?payment=pending&order=${order.id}`
+      success: `${baseUrl}${returnPath}?payment=success&order=${order.id}`,
+      failure: `${baseUrl}${returnPath}?payment=failure&order=${order.id}`,
+      pending: `${baseUrl}${returnPath}?payment=pending&order=${order.id}`
     },
     notification_url: notificationUrl,
     auto_return: "approved",
     metadata: {
       event_id: event?.id || order.items?.[0]?.eventId,
       ticket_type_id: ticketType?.id || order.items?.[0]?.ticketTypeId,
+      product_kind: order.kind || "ticket",
+      pass_level_id: order.passLevelId || undefined,
       user_id: user.id
     }
   };
@@ -220,7 +223,7 @@ async function createCardPayment({ req, order, user, formData = {}, idempotencyK
     installments,
     payment_method_id: paymentMethodId,
     issuer_id: cleanValue(formData.issuer_id || formData.issuerId),
-    description: `Honda Fest Chile - orden ${order.id}`,
+    description: `${order.kind === "special_pass" ? "Pase de Pistones HFC 2026" : "Honda Fest Chile"} - orden ${order.id}`,
     external_reference: externalReference,
     notification_url: notificationUrl,
     binary_mode: cleanEnv("MERCADOPAGO_BINARY_MODE") ? envFlag("MERCADOPAGO_BINARY_MODE") : undefined,
@@ -239,8 +242,8 @@ async function createCardPayment({ req, order, user, formData = {}, idempotencyK
     },
     additional_info: {
       items: (order.items || []).map((item) => ({
-        id: item.ticketTypeId,
-        title: `${item.ticketTypeName} - ${item.eventName}`,
+        id: item.passLevelId || item.ticketTypeId || item.id,
+        title: `${item.productName || item.ticketTypeName} - ${item.eventName}`,
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice

@@ -44,6 +44,7 @@
   function profileForm(item, mode) {
     const order = item.order || {};
     const user = item.user || {};
+    const isSpecialPass = order.kind === "special_pass";
     const requiresPilotInfo = Boolean(
       item.requiresPilotInfo ||
         order.requiresPilotInfo ||
@@ -80,33 +81,38 @@
           <input name="phone" autocomplete="tel" required value="${escapeHtml(user.phone || "")}" placeholder="+56 9 1234 5678" />
         </label>
         ${pilotFields}
-        <button class="button primary full" type="submit">Emitir entradas</button>
+        ${isSpecialPass ? '<div class="not-entry-inline">UPGRADE: REQUIERE UNA ENTRADA HFC 2026</div>' : ""}
+        <button class="button primary full" type="submit">${isSpecialPass ? "Emitir Pase de Pistones" : "Emitir entradas"}</button>
       </form>
     `;
   }
 
   function renderCompleted(data) {
     const tickets = data.tickets || [];
+    const specialPasses = data.specialPasses || [];
+    const isSpecialPass = data.order?.kind === "special_pass" || specialPasses.length > 0;
+    const issuedItems = isSpecialPass ? specialPasses : tickets;
     content().innerHTML = `
       <p class="section-kicker">Listo</p>
-      <h2>Entradas emitidas</h2>
+      <h2>${isSpecialPass ? "Pase de Pistones emitido" : "Entradas emitidas"}</h2>
       <p class="form-note">Tambien enviamos la confirmacion al correo registrado.</p>
       <div class="ticket-grid">
-        ${tickets
+        ${issuedItems
           .map(
-            (ticket) => `
+            (item) => `
               <article class="ticket-pass">
-                <img src="${escapeHtml(ticket.qrUrl)}" alt="QR ${escapeHtml(ticket.code)}" />
-                <code>${escapeHtml(ticket.code)}</code>
-                <span>${escapeHtml(ticket.ticketTypeName || "")}</span>
+                <img src="${escapeHtml(item.qrUrl)}" alt="QR ${escapeHtml(item.code)}" />
+                <code>${escapeHtml(item.code)}</code>
+                <span>${escapeHtml(item.levelName || item.ticketTypeName || "")}</span>
+                ${isSpecialPass ? `<strong>${escapeHtml(item.pistonCount)} ${Number(item.pistonCount) === 1 ? "Pistón" : "Pistones"}</strong><small>UPGRADE: REQUIERE UNA ENTRADA HFC 2026</small>` : `<b>${escapeHtml(item.pistonCount || 1)} Pistón incluido</b><small>1 Pistón = 1 boleto para el sorteo</small>`}
               </article>
             `
           )
           .join("")}
       </div>
       <div class="status-actions">
-        <a class="button secondary" href="/mi-pit-lane">Ver mis entradas</a>
-        <a class="button ghost-light" href="/ticketera">Volver a ticketera</a>
+        <a class="button secondary" href="/mi-pit-lane">Ver ${isSpecialPass ? "mi pase" : "mis entradas"}</a>
+        <a class="button ghost-light" href="${isSpecialPass ? "/pases-especiales" : "/ticketera"}">Volver</a>
       </div>
     `;
     status().hidden = true;
@@ -119,7 +125,7 @@
       event.preventDefault();
       const submit = form.querySelector("button[type='submit']");
       submit.disabled = true;
-      HFC.setStatus(status(), "Guardando datos y emitiendo entradas...");
+      HFC.setStatus(status(), `Guardando datos y emitiendo ${item.order?.kind === "special_pass" ? "el Pase de Pistones" : "entradas"}...`);
 
       try {
         const payload = Object.fromEntries(new FormData(form).entries());
@@ -140,7 +146,7 @@
   }
 
   function renderEnrollment(item, mode) {
-    if (!item.order?.profileRequired && item.tickets?.length) {
+    if (!item.order?.profileRequired && (item.tickets?.length || item.specialPasses?.length)) {
       renderCompleted(item);
       return;
     }

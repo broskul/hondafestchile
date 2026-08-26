@@ -1,12 +1,17 @@
 _hfc_asset_review/
 .codex-logs/
+.playwright-cli/
 .codex-npm-cache-wrangler/
 .env
 .env.local
 *.local
+ContextIA/
 data/
 HFC Recursos 2026/
 HFC_R2_upload_ready/
 node_modules/
 Logo HFC.avif
 npm-debug.log*
+output/
+scripts/
+supabase/

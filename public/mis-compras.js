@@ -30,6 +30,8 @@ function renderPurchases(data) {
                     <strong>${ticket.ticketTypeName || "Entrada"}</strong>
                     <span>${ticket.eventName || ""}</span>
                     <code>${ticket.code}</code>
+                    <b>${ticket.pistonCount || 1} Pistón incluido</b>
+                    <small>1 Pistón = 1 boleto para el sorteo</small>
                     <small>${ticket.status}</small>
                   </div>
                 `
