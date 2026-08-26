@@ -4359,3 +4359,765 @@ a:focus-visible {
     flex-basis: 118px;
   }
 }
+
+/* Racing: Technical Motorsport Editorial */
+:root {
+  --racing-canvas: #080a0c;
+  --racing-canvas-soft: #111419;
+  --racing-surface: #f6f7f5;
+  --racing-ink: #0c0f12;
+  --racing-red: #e21c2a;
+  --racing-red-dark: #b50f19;
+  --racing-cyan: #37d5e7;
+  --racing-gold: #d4aa50;
+  --racing-line: rgba(255, 255, 255, 0.15);
+}
+
+.site-header {
+  color: #fff;
+  background: rgba(8, 10, 12, 0.96);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.site-header .main-nav,
+.site-header .brand small {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.site-header .main-nav a:hover,
+.site-header .main-nav a:focus-visible {
+  color: #fff;
+}
+
+.site-header .brand-mark {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.nav-cta,
+.button,
+.gallery-filter-button,
+.icon-button {
+  border-radius: 4px;
+}
+
+.nav-cta,
+.button.primary {
+  background: var(--racing-red);
+}
+
+.nav-cta:hover,
+.button.primary:hover {
+  background: var(--racing-red-dark);
+}
+
+.button.secondary {
+  background: #181c21;
+}
+
+.racing-site .section-kicker,
+.racing-site .eyebrow {
+  color: var(--racing-red);
+}
+
+.racing-hero .hero-stage {
+  height: calc(100svh - 118px);
+  min-height: 640px;
+  max-height: 860px;
+  background: var(--racing-canvas);
+  outline: 0;
+}
+
+.racing-hero .hero-poster,
+.racing-hero .hero-video {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+}
+
+.racing-hero .hero-poster {
+  display: block;
+  opacity: 1;
+  transition: opacity 520ms ease;
+}
+
+.racing-hero .hero-poster .hero-media,
+.racing-hero .hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 56%;
+}
+
+.racing-hero .hero-poster .hero-media {
+  filter: saturate(1.02) contrast(1.04) brightness(0.82);
+}
+
+.racing-hero .hero-video {
+  opacity: 0;
+  filter: saturate(1.06) contrast(1.04) brightness(0.82);
+  transition: opacity 520ms ease;
+}
+
+.racing-hero .hero-stage.is-video-active .hero-poster {
+  opacity: 0.18;
+}
+
+.racing-hero .hero-stage.is-video-active .hero-video {
+  opacity: 1;
+}
+
+.racing-hero .hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(5, 7, 9, 0.92) 0%, rgba(5, 7, 9, 0.64) 38%, rgba(5, 7, 9, 0.08) 70%),
+    linear-gradient(0deg, rgba(5, 7, 9, 0.82) 0%, rgba(5, 7, 9, 0.02) 58%),
+    linear-gradient(180deg, rgba(5, 7, 9, 0.42), transparent 24%);
+}
+
+.racing-hero .hero-overlay::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(90deg, #000, transparent 52%);
+  pointer-events: none;
+}
+
+.racing-hero .hero-content {
+  width: min(900px, 72vw);
+  padding: 0 clamp(20px, 6vw, 96px) clamp(62px, 9vh, 96px);
+}
+
+.racing-hero .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: #fff;
+  letter-spacing: 0;
+}
+
+.racing-hero .eyebrow span {
+  padding: 7px 9px;
+  color: #fff;
+  background: var(--racing-red);
+}
+
+.racing-hero h1 {
+  max-width: 880px;
+  font-size: clamp(4rem, 9.6vw, 8.8rem);
+  font-style: italic;
+  line-height: 0.78;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-shadow: 0 12px 42px rgba(0, 0, 0, 0.42);
+}
+
+.racing-hero h1 span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.82);
+}
+
+.racing-hero .hero-copy {
+  max-width: 680px;
+  margin-top: 24px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  line-height: 1.55;
+}
+
+.hero-race-data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  width: fit-content;
+  margin-top: 24px;
+  border-block: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.hero-race-data span {
+  display: grid;
+  gap: 4px;
+  min-width: 142px;
+  padding: 12px 18px 12px 0;
+}
+
+.hero-race-data span + span {
+  padding-left: 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.hero-race-data small {
+  color: var(--racing-cyan);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hero-race-data strong {
+  font-size: 0.83rem;
+  text-transform: uppercase;
+}
+
+.racing-hero .hero-quick-menu {
+  top: 28px;
+  right: clamp(18px, 4vw, 58px);
+  gap: 0;
+}
+
+.racing-hero .hero-quick-menu a {
+  min-height: 36px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: rgba(5, 7, 9, 0.56);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.racing-hero .hero-quick-menu a:hover,
+.racing-hero .hero-quick-menu a:focus-visible {
+  border-bottom-color: var(--racing-red);
+  background: rgba(5, 7, 9, 0.82);
+}
+
+.hero-motion-toggle {
+  position: absolute;
+  right: clamp(18px, 4vw, 58px);
+  bottom: 66px;
+  z-index: 8;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 50%;
+  background: rgba(5, 7, 9, 0.6);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.hero-motion-toggle:hover,
+.hero-motion-toggle:focus-visible {
+  border-color: var(--racing-red);
+  background: var(--racing-red);
+}
+
+.hero-motion-toggle span {
+  line-height: 1;
+  transform: translateX(1px);
+}
+
+.hero-motion-toggle[aria-pressed="true"] span {
+  transform: none;
+}
+
+.hero-motion-hint {
+  position: absolute;
+  right: clamp(76px, 8vw, 112px);
+  bottom: 76px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.67rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero-motion-hint span {
+  width: 28px;
+  height: 1px;
+  background: var(--racing-red);
+}
+
+.race-calendar-band {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 100px auto minmax(280px, 1fr) auto;
+  gap: clamp(20px, 4vw, 54px);
+  align-items: center;
+  width: min(1380px, calc(100% - 40px));
+  min-height: 154px;
+  margin: 0 auto;
+  padding: 24px clamp(22px, 4vw, 52px);
+  color: var(--racing-ink);
+  background: #fff;
+  border-bottom: 4px solid var(--racing-red);
+  box-shadow: 0 24px 70px rgba(12, 15, 18, 0.16);
+}
+
+.race-calendar-index {
+  display: grid;
+  border-right: 1px solid #d9dcda;
+}
+
+.race-calendar-index span {
+  color: var(--racing-red);
+  font-size: 2.7rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.race-calendar-index small {
+  margin-top: 6px;
+  color: #687079;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.race-calendar-date {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.race-calendar-date strong {
+  font-size: clamp(2.5rem, 5vw, 4.4rem);
+  line-height: 0.9;
+}
+
+.race-calendar-date span {
+  color: #5b6269;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.race-calendar-event h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.2vw, 2rem);
+  letter-spacing: 0;
+}
+
+.race-calendar-event .section-kicker {
+  margin-bottom: 5px;
+}
+
+.race-calendar-event p:last-child {
+  margin: 6px 0 0;
+  color: #626a72;
+}
+
+.home-special-pass-promo {
+  min-height: 680px;
+  margin-top: clamp(38px, 6vw, 86px);
+  background: var(--racing-canvas);
+}
+
+.home-special-pass-promo::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, rgba(7, 9, 11, 0.98) 0%, rgba(7, 9, 11, 0.82) 48%, rgba(7, 9, 11, 0.08) 76%);
+}
+
+.home-special-pass-promo > img {
+  object-position: 64% center;
+  filter: saturate(1.02) contrast(1.04);
+}
+
+.home-special-pass-copy {
+  z-index: 2;
+  width: min(820px, 61vw);
+  background: transparent;
+}
+
+.home-special-pass-copy h2 {
+  max-width: 760px;
+  font-size: clamp(2.6rem, 5.2vw, 5.8rem);
+  font-style: italic;
+  line-height: 0.92;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.home-pass-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  width: min(600px, 100%);
+  margin-top: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.home-pass-compare span {
+  display: grid;
+  gap: 4px;
+  padding: 15px 17px;
+}
+
+.home-pass-compare span + span {
+  border-left: 3px solid var(--racing-red);
+}
+
+.home-pass-compare small {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.home-pass-compare strong {
+  color: #fff;
+}
+
+.special-pass-page {
+  background: var(--racing-canvas);
+}
+
+.special-pass-page .special-pass-hero > picture,
+.special-pass-page .special-pass-hero > picture img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.special-pass-page .special-pass-hero > picture img {
+  object-fit: cover;
+  object-position: center 54%;
+  filter: saturate(1.03) contrast(1.04) brightness(0.78);
+}
+
+.special-pass-page .special-pass-hero-shade {
+  background:
+    linear-gradient(90deg, rgba(5, 7, 9, 0.94), rgba(5, 7, 9, 0.58) 48%, rgba(5, 7, 9, 0.08) 76%),
+    linear-gradient(0deg, rgba(5, 7, 9, 0.92), transparent 62%);
+}
+
+.special-pass-page .special-pass-hero h1 {
+  max-width: 1060px;
+  font-size: clamp(4rem, 8.5vw, 8.7rem);
+  font-style: italic;
+  line-height: 0.84;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.special-pass-page .special-pass-hero h1 span {
+  max-width: 780px;
+  font-size: 0.3em;
+  letter-spacing: 0;
+}
+
+.special-pass-page .special-pass-overline,
+.special-pass-page .special-pass-heading .section-kicker {
+  color: #ff4c57;
+  letter-spacing: 0;
+}
+
+.special-pass-page .special-pass-strip {
+  border-bottom: 3px solid var(--racing-red);
+}
+
+.pass-definition {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(520px, 1.2fr);
+  gap: clamp(42px, 7vw, 112px);
+  align-items: end;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding-block: clamp(78px, 9vw, 132px);
+}
+
+.pass-definition-copy h2 {
+  margin: 8px 0 0;
+  font-size: clamp(2.2rem, 4.7vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.pass-definition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.pass-definition-grid article {
+  display: grid;
+  align-content: start;
+  min-height: 290px;
+  padding: clamp(24px, 3vw, 38px);
+  background: #14171b;
+}
+
+.pass-definition-grid article + article {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.pass-definition-grid .pass-definition-upgrade {
+  background: #231013;
+  box-shadow: inset 0 4px 0 var(--racing-red);
+}
+
+.pass-definition-grid article > span {
+  color: var(--racing-cyan);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.pass-definition-grid .pass-definition-upgrade > span {
+  color: #ff6a72;
+}
+
+.pass-definition-grid h3 {
+  margin: 46px 0 10px;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+}
+
+.pass-definition-grid p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.55;
+}
+
+.pass-definition-grid a {
+  align-self: end;
+  width: fit-content;
+  margin-top: 24px;
+  color: #fff;
+  font-weight: 900;
+  text-decoration-color: var(--racing-red);
+  text-underline-offset: 5px;
+}
+
+.special-pass-page .special-pass-heading h2,
+.special-pass-page .special-pass-benefit-copy h2,
+.special-pass-page .pickup-section h2,
+.special-pass-page .checkout-product-summary h2 {
+  letter-spacing: 0;
+}
+
+.special-pass-page .pass-level-card {
+  min-height: 500px;
+  border-top-width: 3px;
+  border-radius: 0;
+  background: #14171b;
+}
+
+.special-pass-page .pass-level-card:hover,
+.special-pass-page .pass-level-card.selected {
+  transform: translateY(-7px);
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.32);
+}
+
+.special-pass-page .pass-level-card.featured {
+  background: #241114;
+}
+
+.special-pass-page .pass-level-number strong,
+.special-pass-page .selected-pass-lockup > span {
+  letter-spacing: 0;
+}
+
+.special-pass-page .pass-level-card h3 {
+  font-size: 1.08rem;
+}
+
+.special-pass-page .pass-level-card > small {
+  color: #ff777e;
+  letter-spacing: 0;
+}
+
+@media (max-width: 1040px) {
+  .race-calendar-band {
+    grid-template-columns: 72px auto 1fr;
+  }
+
+  .race-calendar-band > .button {
+    grid-column: 2 / -1;
+    width: fit-content;
+  }
+
+  .pass-definition {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .racing-hero .hero-stage {
+    height: 78svh;
+    min-height: 660px;
+    max-height: 760px;
+  }
+
+  .racing-hero .hero-content {
+    width: 100%;
+    padding: 0 22px 76px;
+  }
+
+  .racing-hero .hero-quick-menu {
+    top: 18px;
+    right: 16px;
+    left: 16px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .racing-hero .hero-motion-hint {
+    display: none;
+  }
+
+  .racing-hero .hero-motion-toggle {
+    right: 18px;
+    bottom: 24px;
+  }
+
+  .race-calendar-band {
+    width: calc(100% - 24px);
+    grid-template-columns: 64px 1fr;
+    gap: 20px;
+    margin-top: 0;
+    padding: 22px;
+  }
+
+  .race-calendar-event,
+  .race-calendar-band > .button {
+    grid-column: 1 / -1;
+  }
+
+  .home-special-pass-promo {
+    min-height: 760px;
+  }
+
+  .home-special-pass-promo::after {
+    background: linear-gradient(180deg, rgba(7, 9, 11, 0.12) 0%, rgba(7, 9, 11, 0.92) 50%, #07090b 100%);
+  }
+
+  .home-special-pass-promo > img {
+    height: 52%;
+    object-position: center 58%;
+    opacity: 1;
+  }
+
+  .home-special-pass-copy {
+    justify-content: flex-end;
+    width: 100%;
+    padding: 300px 22px 56px;
+  }
+
+  .special-pass-page .special-pass-hero > picture img {
+    object-position: center;
+  }
+}
+
+@media (max-width: 620px) {
+  .racing-hero .hero-stage {
+    height: 79svh;
+    min-height: 650px;
+  }
+
+  .racing-hero .hero-poster .hero-media,
+  .racing-hero .hero-video {
+    object-position: center 52%;
+  }
+
+  .racing-hero .hero-video {
+    display: none;
+  }
+
+  .racing-hero h1 {
+    font-size: clamp(3.25rem, 17vw, 5.2rem);
+  }
+
+  .racing-hero .hero-copy {
+    max-width: 92%;
+    margin-top: 18px;
+    font-size: 0.95rem;
+  }
+
+  .hero-race-data {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  .hero-race-data span {
+    min-width: 0;
+    flex: 1;
+    padding: 10px 8px 10px 0;
+  }
+
+  .hero-race-data span + span {
+    padding-left: 8px;
+  }
+
+  .hero-race-data strong {
+    font-size: 0.66rem;
+  }
+
+  .racing-hero .hero-actions {
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .racing-hero .hero-actions .button {
+    min-height: 42px;
+    padding-inline: 13px;
+    font-size: 0.78rem;
+  }
+
+  .racing-hero .hero-motion-toggle {
+    display: none;
+  }
+
+  .race-calendar-index small {
+    font-size: 0.6rem;
+  }
+
+  .race-calendar-date strong {
+    font-size: 2.65rem;
+  }
+
+  .home-special-pass-copy h2 {
+    font-size: clamp(2.35rem, 12vw, 3.8rem);
+  }
+
+  .home-pass-compare,
+  .pass-definition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-pass-compare span + span,
+  .pass-definition-grid article + article {
+    border-left: 0;
+    border-top: 3px solid var(--racing-red);
+  }
+
+  .special-pass-page .special-pass-hero h1 {
+    font-size: clamp(3.4rem, 17vw, 5.6rem);
+  }
+
+  .pass-definition-grid article {
+    min-height: 250px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .racing-hero .hero-poster,
+  .racing-hero .hero-video,
+  .special-pass-page .pass-level-card {
+    transition: none;
+  }
+
+  .racing-hero .hero-motion-hint {
+    display: none;
+  }
+}

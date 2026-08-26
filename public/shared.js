@@ -480,7 +480,7 @@
         <div>
           <p>Eleva tu experiencia</p>
           <h3>Suma Pistones a tu entrada.</h3>
-          <span>Lanyard, credencial y experiencias especiales. El Pase Especial no reemplaza tu entrada.</span>
+          <span>Lanyard, credencial y experiencias especiales. El Pase de Jornada no reemplaza tu entrada.</span>
         </div>
         <a class="button secondary" href="/pases-especiales">Elegir Pistones</a>
       </section>
@@ -701,7 +701,7 @@
         : "";
       setStatus(
         statusElement,
-        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el botón y QR para completar los datos de ${order.kind === "special_pass" ? "tu Pase Especial" : "enrolamiento"}.
+        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el botón y QR para completar los datos de ${order.kind === "special_pass" ? "tu Pase de Jornada" : "enrolamiento"}.
         ${enrollmentAction}`
       );
       return;
@@ -717,7 +717,7 @@
       const issuedCodes = order.kind === "special_pass" ? specialPasses : tickets;
       setStatus(
         statusElement,
-        `<strong>${order.kind === "special_pass" ? "Pase Especial confirmado" : "Compra confirmada"}.</strong><br />${issuedCodes
+        `<strong>${order.kind === "special_pass" ? "Pase de Jornada confirmado" : "Compra confirmada"}.</strong><br />${issuedCodes
           .map((item) => `<code>${item.code}</code>`)
           .join(" ")}
         <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver ${order.kind === "special_pass" ? "mi pase" : "mis entradas"}</a></div>`

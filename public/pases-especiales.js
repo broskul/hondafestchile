@@ -28,10 +28,10 @@
             <div class="pass-level-number"><strong>${level.pistons}</strong><span>${pistonLabel(level.pistons)}</span></div>
             ${pistonIconRow(level.pistons)}
             <h3>${escapeHtml(level.name)}</h3>
-            <p>${escapeHtml(catalog.physicalFormat)} · Acceso y premios especiales.</p>
+            <p>Pase de Jornada con ${escapeHtml(catalog.physicalFormat.toLowerCase())}, experiencias y participación en premios especiales.</p>
             <strong class="pass-level-price">${HFC.formatCurrency(level.price)}</strong>
-            <button class="button ${level.featured ? "primary" : "secondary"} full" type="button" data-select-level="${escapeHtml(level.id)}" ${purchaseAvailable ? "" : "disabled"}>${purchaseAvailable ? "Elegir nivel" : "Próximamente"}</button>
-            <small>${escapeHtml(catalog.notEntryLabel)}</small>
+            <button class="button ${level.featured ? "primary" : "secondary"} full" type="button" data-select-level="${escapeHtml(level.id)}" ${purchaseAvailable ? "" : "disabled"}>${purchaseAvailable ? `Elegir ${level.pistons} ${pistonLabel(level.pistons)}` : "Próximamente"}</button>
+            <small>REQUIERE ENTRADA HFC</small>
           </article>`
       )
       .join("");
@@ -63,7 +63,7 @@
       <p class="section-kicker">Tu selección</p>
       <div class="selected-pass-lockup"><span>${selectedLevel.pistons}</span><div><small>${pistonLabel(selectedLevel.pistons)}</small><h2>${escapeHtml(selectedLevel.name)}</h2></div></div>
       <strong>${HFC.formatCurrency(selectedLevel.price)}</strong>
-      <p>${escapeHtml(catalog.physicalFormat)}. Participación en premios y acceso a experiencias especiales.</p>
+      <p>Pase de Jornada con ${escapeHtml(catalog.physicalFormat.toLowerCase())}, experiencias y participación en premios especiales.</p>
       <div class="not-entry-inline">${escapeHtml(catalog.notEntryLabel)}</div>`;
     HFC.$("#comprar").scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -110,7 +110,7 @@
     }
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!selectedLevel) return HFC.setStatus(status, "Selecciona un nivel de Pase Especial.", true);
+      if (!selectedLevel) return HFC.setStatus(status, "Selecciona un nivel de Pase de Jornada.", true);
       const payload = Object.fromEntries(new FormData(form).entries());
       payload.termsAccepted = form.termsAccepted.checked;
       payload.notEntryAccepted = form.notEntryAccepted.checked;
@@ -119,7 +119,7 @@
       if (!payload.termsAccepted || !payload.notEntryAccepted) return HFC.setStatus(status, "Debes aceptar ambas confirmaciones para continuar.", true);
       const submit = form.querySelector('button[type="submit"]');
       submit.disabled = true;
-      HFC.setStatus(status, "Creando tu Pase Especial...");
+      HFC.setStatus(status, "Creando tu Pase de Jornada...");
       try {
         const data = await HFC.api("/api/special-passes/orders", { method: "POST", body: JSON.stringify(payload) });
         await handleCreatedOrder(data, status);

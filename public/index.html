@@ -17,14 +17,15 @@
     />
     <meta
       property="og:image"
-      content="https://www.hondafestchile.cl/media/honda-fest-2025/image/pista-autos-en-pista/053-img-1830.jpg"
+      content="https://www.hondafestchile.cl/assets/racing/hfc-hero-desktop.png"
     />
-    <link rel="preload" href="/media/honda-fest-2025/image/pista-autos-en-pista/053-img-1830.jpg" as="image" />
+    <link rel="preload" href="/assets/racing/hfc-hero-desktop.png" as="image" media="(min-width: 701px)" />
+    <link rel="preload" href="/assets/racing/hfc-hero-mobile.png" as="image" media="(max-width: 700px)" />
     <link rel="stylesheet" href="/styles.css" />
     <script defer src="/test-mode.js"></script>
     <script defer src="/app.js"></script>
   </head>
-  <body>
+  <body class="racing-site">
     <header class="site-header" id="top">
       <a class="brand" href="#top" aria-label="Honda Fest Chile">
         <span class="brand-mark" aria-hidden="true">
@@ -40,7 +41,7 @@
         <a href="#experiencia">Experiencia</a>
         <a href="#galerias">Galerias</a>
         <a href="/ticketera">Ticketera</a>
-        <a href="/pases-especiales">Pases Especiales</a>
+        <a href="/pases-especiales">Pistones</a>
         <a href="/mi-pit-lane">Mi Pit Lane</a>
         <a href="#comunidad">Comunidad</a>
       </nav>
@@ -48,62 +49,98 @@
     </header>
 
     <main>
-      <section class="hero hero-drive" aria-labelledby="hero-title">
-        <div class="hero-stage">
-          <img
-            class="hero-media"
-            src="/media/honda-fest-2025/image/pista-autos-en-pista/053-img-1830.jpg"
-            alt="Grilla de autos Honda reunidos en pista durante Honda Fest Chile"
-            title="Honda Fest Chile: grilla de autos en pista"
-            width="2048"
-            height="1365"
-            fetchpriority="high"
-          />
+      <section class="hero hero-drive racing-hero" aria-labelledby="hero-title">
+        <div class="hero-stage" data-hero-stage tabindex="0">
+          <picture class="hero-poster">
+            <source media="(max-width: 700px)" srcset="/assets/racing/hfc-hero-mobile.png" />
+            <img
+              class="hero-media"
+              src="/assets/racing/hfc-hero-desktop.png"
+              alt="Honda preparado recorriendo un circuito frente a las tribunas al atardecer"
+              title="Honda Fest Chile 2026"
+              width="1536"
+              height="1024"
+              fetchpriority="high"
+            />
+          </picture>
+          <video
+            class="hero-video"
+            data-hero-video
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            poster="/assets/racing/hfc-hero-desktop.png"
+            aria-hidden="true"
+          >
+            <source src="/assets/racing/hfc-hero-motion.mp4" type="video/mp4" />
+          </video>
           <div class="hero-overlay"></div>
+
+          <button
+            class="hero-motion-toggle"
+            type="button"
+            data-hero-motion-toggle
+            aria-label="Reproducir fondo en movimiento"
+            aria-pressed="false"
+            title="Reproducir fondo en movimiento"
+          ><span aria-hidden="true">&#9654;</span></button>
 
           <nav class="hero-quick-menu" aria-label="Accesos destacados">
             <a href="/ticketera">Tickets</a>
-            <a href="/pases-especiales">Pases</a>
+            <a href="/pases-especiales">Pistones</a>
             <a href="#galerias">Galerias</a>
             <a href="#comunidad">Comunidad</a>
           </nav>
 
           <div class="hero-content">
-            <p class="eyebrow">Proximo evento · 28 y 29 de noviembre de 2026</p>
-            <h1 id="hero-title">Honda Fest Chile</h1>
+            <p class="eyebrow"><span>Proxima largada</span> 28 y 29 de noviembre de 2026</p>
+            <h1 id="hero-title">Honda Fest <span>Chile</span></h1>
             <p class="hero-copy">
-              Pista, exhibicion, comunidad Honda y experiencia familiar en el Autodromo Huachalalume, La Serena.
+              La cultura Honda vuelve a pista. Dos jornadas de velocidad, exhibicion, clubes y comunidad en el
+              Autodromo Huachalalume.
             </p>
-            <p class="hero-meta">Agenda: Honda Fest Chile · 28 y 29 de noviembre de 2026 · Autodromo Huachalalume, La Serena.</p>
+            <div class="hero-race-data" aria-label="Datos del evento">
+              <span><small>Fecha</small><strong>28–29 NOV</strong></span>
+              <span><small>Circuito</small><strong>Huachalalume</strong></span>
+              <span><small>Ciudad</small><strong>La Serena</strong></span>
+            </div>
             <div class="hero-actions">
-              <a class="button primary" href="/ticketera">Reservar entrada</a>
-              <a class="button ghost" href="#galerias">Ver galerias</a>
+              <a class="button primary" href="/ticketera">Comprar entradas</a>
+              <a class="button ghost" href="/pases-especiales">Subir de nivel</a>
             </div>
           </div>
+
+          <div class="hero-motion-hint" aria-hidden="true"><span></span> Pasa sobre la pista para activar movimiento</div>
         </div>
       </section>
 
-      <section class="section intro-band" aria-label="Resumen">
-        <div class="intro-grid">
-          <div>
-            <p class="section-kicker">Proxima fecha confirmada</p>
-            <h2>Honda Fest Chile: 28 y 29 de noviembre de 2026.</h2>
-          </div>
-          <p>
-            El proximo encuentro se realiza en el Autodromo Huachalalume, La Serena, con entradas digitales,
-            pago rapido por correo y datos del asistente despues de pagar para emitir entradas y boleta.
-          </p>
+      <section class="race-calendar-band" aria-label="Proxima fecha confirmada">
+        <div class="race-calendar-index"><span>01</span><small>Fecha oficial</small></div>
+        <div class="race-calendar-date"><strong>28–29</strong><span>Noviembre<br />2026</span></div>
+        <div class="race-calendar-event">
+          <p class="section-kicker">Honda Fest Chile</p>
+          <h2>Autodromo Huachalalume</h2>
+          <p>La Serena · Entradas digitales · Dos jornadas de motorsport y cultura Honda.</p>
         </div>
+        <a class="button primary" href="/ticketera">Asegurar entrada</a>
       </section>
 
       <section class="home-special-pass-promo" aria-labelledby="home-pass-title">
-        <img src="/assets/pases-especiales/pase-especial-hero.png" alt="Lanyard con credencial impresa del Pase Especial HFC 2026" loading="lazy" />
+        <img src="/assets/racing/hfc-hero-solo.png" alt="Honda preparado recorriendo un circuito al atardecer" loading="lazy" />
         <div class="home-special-pass-copy">
-          <p class="section-kicker">Nueva experiencia HFC 2026</p>
-          <h2 id="home-pass-title">Pases Especiales medidos en Pistones.</h2>
-          <p>Lanyard con credencial impresa, accesos y premios especiales durante el evento, incluido un automóvil.</p>
-          <div class="not-entry-banner"><strong>NO ES VÁLIDO COMO ENTRADA</strong><span>Debes contar además con una entrada válida para ingresar.</span></div>
-          <a class="button primary" href="/pases-especiales">Conocer niveles</a>
+          <p class="section-kicker">Upgrade de jornada · HFC 2026</p>
+          <h2 id="home-pass-title">Tu entrada te lleva al evento. Los Pistones elevan la jornada.</h2>
+          <p>
+            Elige un Pase de Jornada de 1, 3, 5, 7 o 9 Pistones. Recibes credencial física, acceso a experiencias
+            especiales y participación en los premios anunciados para el evento.
+          </p>
+          <div class="home-pass-compare" aria-label="Diferencia entre entrada y Pase de Jornada">
+            <span><small>Para ingresar</small><strong>Entrada HFC</strong></span>
+            <span><small>Para subir de nivel</small><strong>Pase + Pistones</strong></span>
+          </div>
+          <div class="not-entry-banner"><strong>EL PASE NO REEMPLAZA TU ENTRADA</strong><span>Necesitas una entrada válida para ingresar al recinto.</span></div>
+          <a class="button primary" href="/pases-especiales">Elegir mis Pistones</a>
         </div>
       </section>
 

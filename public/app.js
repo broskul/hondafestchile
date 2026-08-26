@@ -128,6 +128,75 @@ function toast(message) {
   }, 5200);
 }
 
+function initRacingHero() {
+  const stage = $("[data-hero-stage]");
+  const video = $("[data-hero-video]");
+  const toggle = $("[data-hero-motion-toggle]");
+  if (!stage || !video) return;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+  let pinned = false;
+  let activationVersion = 0;
+
+  function setToggleState(active) {
+    if (!toggle) return;
+    toggle.setAttribute("aria-pressed", String(active));
+    toggle.setAttribute("aria-label", active ? "Detener fondo en movimiento" : "Reproducir fondo en movimiento");
+    toggle.setAttribute("title", active ? "Detener fondo en movimiento" : "Reproducir fondo en movimiento");
+    toggle.querySelector("span").innerHTML = active ? "&#9632;" : "&#9654;";
+  }
+
+  async function activate({ persist = false } = {}) {
+    if (window.getComputedStyle(video).display === "none") return;
+    const version = ++activationVersion;
+    if (persist) pinned = true;
+    try {
+      await video.play();
+      if (version !== activationVersion) {
+        video.pause();
+        return;
+      }
+      stage.classList.add("is-video-active");
+      setToggleState(true);
+    } catch {
+      stage.classList.remove("is-video-active");
+      setToggleState(false);
+    }
+  }
+
+  function deactivate({ force = false } = {}) {
+    if (pinned && !force) return;
+    activationVersion += 1;
+    pinned = false;
+    stage.classList.remove("is-video-active");
+    video.pause();
+    setToggleState(false);
+  }
+
+  stage.addEventListener("pointerenter", () => {
+    if (canHover.matches && !reduceMotion.matches) activate();
+  });
+  stage.addEventListener("pointerleave", () => deactivate());
+  stage.addEventListener("focusin", (event) => {
+    if (event.target === stage && canHover.matches && !reduceMotion.matches) activate();
+  });
+  stage.addEventListener("focusout", (event) => {
+    if (!stage.contains(event.relatedTarget)) deactivate();
+  });
+  toggle?.addEventListener("click", () => {
+    if (stage.classList.contains("is-video-active")) deactivate({ force: true });
+    else activate({ persist: true });
+  });
+  video.addEventListener("error", () => {
+    deactivate({ force: true });
+    if (toggle) toggle.hidden = true;
+  });
+  reduceMotion.addEventListener?.("change", (event) => {
+    if (event.matches) deactivate({ force: true });
+  });
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, {
     headers: {
@@ -1134,6 +1203,7 @@ function initGalleryLightbox() {
 }
 
 async function init() {
+  initRacingHero();
   await initGalleryLogoAssets();
   applyGalleryLogoSources();
   initGalleryTransitions();
