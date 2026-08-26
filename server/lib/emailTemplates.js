@@ -164,12 +164,13 @@ const defaultEmailTemplates = [
   {
     id: "special_pass_enrollment",
     type: "special_pass_enrollment",
-    name: "Pase Especial pendiente de enrolamiento",
+    name: "Pase pendiente de enrolamiento",
     subject: "Completa los datos de tu {{pass_name}} - Honda Fest Chile",
     text: [
       "Hola {{name}}.",
       "Tu pago del {{pass_name}} fue confirmado.",
       "Nivel: {{piston_count}} {{piston_label}}.",
+      "Tu Upgrade incluye un refresco extra y tus Pistones registrados para el sorteo, sujeto a bases.",
       "IMPORTANTE: NO ES VÁLIDO COMO ENTRADA.",
       "Para ingresar al evento debes contar además con una entrada válida.",
       "Completa los datos del titular para emitir la credencial impresa:",
@@ -178,8 +179,8 @@ const defaultEmailTemplates = [
       "{{pickup_pre_event}}"
     ].join("\n"),
     html: emailShell({
-      preheader: "Tu Pase Especial fue pagado. Completa el enrolamiento del titular.",
-      eyebrow: "Pase Especial HFC 2026",
+      preheader: "Tu Pase fue pagado. Completa el enrolamiento del titular.",
+      eyebrow: "Pase HFC 2026",
       title: "Completa el enrolamiento de tu pase",
       intro: "Hola {{name}}, recibimos el pago de tu {{pass_name}} con {{piston_count}} {{piston_label}}. Completa los datos del titular para emitir la credencial impresa.",
       content: [
@@ -188,7 +189,8 @@ const defaultEmailTemplates = [
         '<p style="color:#ffffff;font-size:18px;font-weight:900;letter-spacing:.04em;margin:0 0 6px;">NO ES VÁLIDO COMO ENTRADA</p>',
         '<p style="color:#d8dbe0;font-size:14px;line-height:1.5;margin:0;">Para ingresar debes contar además con una entrada válida para Honda Fest Chile. La compra del pase no verifica ni reemplaza esa entrada.</p>',
         "</td></tr></table>",
-        `<p style="margin:0 0 16px;text-align:center;">${emailButton("{{enroll_url}}", "Enrolar mi Pase Especial")}</p>`,
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff7f0;border:1px solid #f1c99e;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#7a3e00;font-size:15px;font-weight:900;margin:0 0 5px;">UPGRADE DE EXPERIENCIA</p><p style="color:#5b4633;font-size:14px;line-height:1.5;margin:0;">Tu Pase incluye un refresco extra. Mientras más Pistones elegiste, más posibilidades registradas tienes en el sorteo, sujeto a bases.</p></td></tr></table>',
+        `<p style="margin:0 0 16px;text-align:center;">${emailButton("{{enroll_url}}", "Enrolar mi Pase")}</p>`,
         '<p style="margin:0 0 14px;text-align:center;"><img src="{{enroll_qr_url}}" alt="QR de enrolamiento" width="170" style="height:auto;max-width:170px;"></p>',
         '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:16px 0 0;"><strong>Retiro:</strong> {{pickup_event_day}}<br>{{pickup_pre_event}}</p>',
         helpLine()
@@ -198,13 +200,14 @@ const defaultEmailTemplates = [
   {
     id: "special_pass_issued",
     type: "special_pass_issued",
-    name: "Pase Especial emitido",
+    name: "Pase emitido",
     subject: "Tu {{pass_name}} está listo - {{piston_count}} {{piston_label}}",
     text: [
       "Hola {{name}}.",
-      "Tu Pase Especial HFC 2026 está listo.",
+      "Tu Pase HFC 2026 está listo.",
       "Código: {{pass_code}}",
       "Nivel: {{piston_count}} {{piston_label}}.",
+      "Tu Upgrade incluye un refresco extra y tus Pistones registrados para el sorteo, sujeto a bases.",
       "IMPORTANTE: NO ES VÁLIDO COMO ENTRADA.",
       "Presenta este QR para retirar tu lanyard y credencial impresa.",
       "{{pass_verify_url}}",
@@ -212,9 +215,9 @@ const defaultEmailTemplates = [
       "{{pickup_pre_event}}"
     ].join("\n"),
     html: emailShell({
-      preheader: "Tu Pase Especial está listo para ser retirado con su QR.",
+      preheader: "Tu Pase está listo para ser retirado con su QR.",
       eyebrow: "Credencial emitida",
-      title: "Tu Pase Especial está listo",
+      title: "Tu Pase está listo",
       intro: "Hola {{name}}, emitimos tu {{pass_name}} con {{piston_count}} {{piston_label}}. Conserva este QR para retirar el lanyard y la credencial impresa.",
       content: [
         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#111111;border:1px solid #292929;margin:0 0 18px;"><tr><td align="center" style="padding:24px;">',
@@ -224,8 +227,9 @@ const defaultEmailTemplates = [
         "</td></tr></table>",
         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff2f3;border:1px solid #efb4bc;margin:0 0 18px;"><tr><td style="padding:16px;">',
         '<p style="color:#a20f18;font-size:17px;font-weight:900;margin:0 0 6px;">NO ES VÁLIDO COMO ENTRADA</p>',
-        '<p style="color:#4c3034;font-size:14px;line-height:1.5;margin:0;">El Pase Especial no reemplaza la entrada a Honda Fest Chile. El comprador debe contar con una entrada válida para ingresar.</p>',
+        '<p style="color:#4c3034;font-size:14px;line-height:1.5;margin:0;">El Pase no reemplaza la entrada a Honda Fest Chile. El comprador debe contar con una entrada válida para ingresar.</p>',
         "</td></tr></table>",
+        '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:0 0 14px;"><strong>Tu Upgrade:</strong> incluye un refresco extra y {{piston_count}} {{piston_label}} registrados para el sorteo, sujeto a bases.</p>',
         '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:0;"><strong>Retiro:</strong> {{pickup_event_day}}<br>{{pickup_pre_event}}</p>',
         helpLine()
       ].join("")

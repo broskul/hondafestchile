@@ -38,11 +38,23 @@ El usuario aprobo expresamente el mockup generado el 26 de agosto de 2026, con l
 - En escritorio, hover o foco activa el video; salir devuelve el poster. El boton reproducir/detener permite fijar la decision.
 - En movil se prioriza el crop vertical y la imagen estatica. `prefers-reduced-motion` impide la activacion automatica.
 
-## Editorial Pistones
+## Editorial Upgrade de experiencia
 
-- Nombre publico de categoria: `Pases de Jornada`.
-- Unidad de nivel: `Pistones`, disponibles en 1, 3, 5, 7 y 9.
-- Relacion de producto: la entrada habilita el ingreso; el Pase de Jornada agrega credencial, experiencias especiales y participacion en premios anunciados.
-- Limite obligatorio: el Pase de Jornada no reemplaza la entrada. Conservar `NO ES VALIDO COMO ENTRADA` en compra, enrolamiento, entrada digital y validacion.
-- No inventar beneficios por nivel. Los beneficios adicionales se publican solo cuando esten confirmados.
+- Concepto comercial general: `Upgrade de experiencia`.
+- Producto: `Pase`. No usar `Pase de Jornada`, `Pase Especial` ni `Pase + Pistones` en la comunicacion publica.
+- Variantes: `Pase de 1 Piston`, `Pase de 3 Pistones`, `Pase de 5 Pistones`, `Pase de 7 Pistones` y `Pase de 9 Pistones`.
+- Unidad de nivel: `Pistones`. Cada Piston representa una posibilidad registrada en el sorteo, sujeta a las bases oficiales.
+- Mensaje comercial principal: `¡Ganate este Honda con tu Upgrade de experiencia! Mientras mas Pistones, mas posibilidades tienes de ganar.`
+- Beneficio comun confirmado: cada Pase incluye un refresco extra durante la jornada.
+- Relacion de producto: la entrada habilita el ingreso; el Pase agrega credencial, experiencias, refresco y Pistones registrados.
+- Limite obligatorio: el Pase no reemplaza la entrada. Conservar `NO ES VALIDO COMO ENTRADA` en compra, enrolamiento, correo, Mi Pit Lane y validacion.
 - La reformulacion editorial no cambia la naturaleza pagada del producto, la logica de cobro, la elegibilidad ni los controles legales existentes.
+
+## Segunda pasada Racing
+
+- El hero general conserva el Honda blanco en pista y su video al hover.
+- El calendario recupera un motor tecnico a la izquierda mediante `public/assets/racing/hfc-calendar-engine-v2.webp`.
+- La campaña de Upgrade usa `public/assets/racing/hfc-upgrade-car-cinematic-v4.webp`: recreacion promocional del Honda real, con humo lateral, reflectores fuera de cuadro y tratamiento nocturno racing.
+- La imagen del premio es protagonista en portada y en `/pases-especiales`; la credencial aparece despues en `Lo que recibes` y no compite con el automovil.
+- Dentro de una pagina no se repite una imagen en secciones consecutivas. Evento, calendario, premio y credencial deben usar escenas o sujetos distintos.
+- La recreacion del Honda no acredita su estado documental. Las fotografias originales permanecen como referencia y la pagina de bases informa que la ficha del vehiculo sigue pendiente de publicacion por PyR Eventos.

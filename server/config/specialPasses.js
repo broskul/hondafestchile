@@ -5,8 +5,8 @@ const DEFAULT_SPECIAL_PASS_CONFIG = {
   active: true,
   campaignId: "hfc-2026-special-pass",
   eventId: "honda-fest-chile-2026",
-  name: "Pase de Jornada HFC 2026",
-  shortName: "Pase de Jornada",
+  name: "Pase HFC 2026",
+  shortName: "Pase",
   eventName: "Honda Fest Chile 2026",
   eventDate: "2026-11-29",
   eventDateLabel: "29 de noviembre de 2026",
@@ -19,10 +19,11 @@ const DEFAULT_SPECIAL_PASS_CONFIG = {
     preEvent: "Punto de retiro previo al evento: por confirmar."
   },
   commonBenefits: [
-    "Lanyard y credencial impresa de Pase de Jornada",
+    "Lanyard y credencial impresa de Pase",
     "Acceso a experiencias especiales el día del evento",
-    "Participación en premios especiales, incluido un automóvil",
-    "Nuevos beneficios serán publicados próximamente"
+    "Un refresco extra durante la jornada",
+    "Pistones registrados para el sorteo del Honda y otros premios, sujeto a bases",
+    "Mientras más Pistones, más posibilidades tienes de ganar"
   ],
   levels: [
     { id: "piston-1", pistons: 1, name: "Pase de 1 Pistón", price: 5000, accent: "steel" },

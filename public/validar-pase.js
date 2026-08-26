@@ -53,7 +53,7 @@
     if (!currentCode) return;
     const node = HFC.$("#passValidationResult");
     node.className = "empty-state";
-    node.textContent = "Consultando Pase Especial...";
+    node.textContent = "Consultando Pase...";
     try {
       const data = await HFC.api("/api/special-passes/validate", {
         method: "POST",
@@ -76,7 +76,7 @@
         body: JSON.stringify({ code: currentCode, action })
       });
       render(data);
-      HFC.toast(data.changed ? "Estado del Pase Especial actualizado." : "El estado ya estaba registrado.");
+      HFC.toast(data.changed ? "Estado del Pase actualizado." : "El estado ya estaba registrado.");
     } catch (error) {
       node.insertAdjacentHTML("beforeend", `<div class="status-box error">${escapeHtml(error.message)}</div>`);
     }

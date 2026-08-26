@@ -1,8 +1,8 @@
-# Pases Especiales HFC 2026 y premios
+# Pases HFC 2026 y sorteo
 
 ## Estrategia vigente
 
-La estrategia anterior de venta de boletos, números o packs con unidades de regalo queda reemplazada por un producto físico y operativo: **Pase Especial HFC 2026**.
+La estrategia anterior de venta de boletos, números o packs con unidades de regalo queda reemplazada por un producto físico y operativo: **Pase HFC 2026**. El concepto comercial que lo presenta es **Upgrade de experiencia**.
 
 Cada compra corresponde a un nivel cerrado medido en **Pistones**:
 
@@ -18,7 +18,16 @@ No se presenta como “compra X y lleva Y”, no existen Pistones de regalo y no
 
 ## Producto físico y comunicación
 
-El Pase Especial se materializa como un **lanyard con credencial impresa**, entregado en un porta credencial. Da acceso a experiencias especiales el día del evento y participa en premios especiales, entre ellos un automóvil. PyR Eventos publicará progresivamente nuevos beneficios por nivel.
+El Pase se materializa como un **lanyard con credencial impresa**, entregado en un porta credencial. Da acceso a experiencias especiales el día del evento, incluye un refresco extra y participa en el sorteo mediante los Pistones asociados. El automóvil es el atractivo comercial principal de la campaña.
+
+La taxonomía pública vigente es estricta:
+
+- concepto: `Upgrade de experiencia`;
+- producto: `Pase`;
+- variantes: `Pase de 1 Pistón`, `Pase de 3 Pistones`, `Pase de 5 Pistones`, `Pase de 7 Pistones` y `Pase de 9 Pistones`;
+- regla editorial: `Mientras más Pistones, más posibilidades tienes de ganar`.
+
+No usar públicamente `Pase de Jornada`, `Pase Especial` ni `Pase + Pistones`.
 
 La condición **“NO ES VÁLIDO COMO ENTRADA”** debe mostrarse de forma destacada en la portada, niveles, selección, aceptación previa al pago, enrolamiento, correo, Mi Pit Lane y consulta del QR.
 
@@ -42,7 +51,7 @@ La exportación administrativa genera una fila por Pistón con código de pase, 
 
 ## Flujo implementado
 
-1. La página `/pases-especiales` obtiene niveles y textos desde configuración persistente.
+1. La página `/pases-especiales` obtiene niveles y textos desde configuración persistente y presenta el automóvil como protagonista del Upgrade.
 2. El comprador elige un nivel, informa correo y teléfono y acepta privacidad y el aviso de no entrada.
 3. El backend reconstruye nombre, Pistones y precio desde el `levelId`; nunca confía en el precio del navegador.
 4. La orden queda con `kind: special_pass`, una unidad física y ruta de retorno propia.
@@ -85,11 +94,13 @@ Antes de publicar definitivamente el premio se mantienen pendientes, bajo respon
 ## Recursos visuales
 
 - Cinco fotografías originales del automóvil se mantienen sin retoque en `public/assets/sorteo-auto/`.
-- El automóvil es el atractivo principal de la landing: `public/assets/sorteo-auto/auto-hero-promocional-v2.webp` ocupa el hero a ancho completo, con el mensaje `Un automóvil. Entre los premios especiales.`
-- El hero es una recreación promocional digital basada en la fotografía real del vehículo: conserva el coupé rojo, llantas grafito y postura baja, reemplaza el taller por un pabellón nocturno limpio, usa piso reflectante y muestra faros halógenos y neblineros encendidos. Se optimizó a WebP de aproximadamente 192 KB.
+- El automóvil es el atractivo principal de la campaña: `public/assets/racing/hfc-upgrade-car-cinematic-v4.webp` ocupa el hero del Upgrade con el mensaje `¡Gánate este Honda con tu Upgrade de experiencia!`.
+- El hero es una recreación promocional digital basada en la fotografía real del vehículo: conserva el hatchback rojo de tres puertas, llantas grafito, molduras, postura, faros y neblineros. La direccion fotografica agrega pista nocturna mojada, humo lateral, luz roja y reflectores cercanos fuera de cuadro para una lectura racing.
+- `public/assets/racing/hfc-calendar-engine-v2.webp` es un recorte IA de motor tecnico usado a la izquierda de la fecha oficial; no representa necesariamente el motor del premio.
 - Las fotografías originales siguen siendo la referencia documental. La recreación debe tratarse como pieza publicitaria y PyR Eventos debe confirmar que no atribuya al premio características o estado distintos del automóvil real antes de una publicación definitiva.
-- La credencial dejó de competir visualmente con el premio y se presenta más abajo, dentro de `Lo que recibes`, usando `public/assets/pases-especiales/pase-especial-hero.png`.
+- La credencial no compite visualmente con el premio y se presenta más abajo, dentro de `Lo que recibes`, usando `public/assets/pases-especiales/pase-especial-hero.png`.
 - La pieza de la credencial es una representación conceptual sencilla; el diseño final de impresión debe reemplazarla cuando PyR entregue el arte definitivo.
+- `/bases-sorteo` publica sólo un estado informativo: mecánica conocida, precios, organizador, limite de no entrada y pendientes del vehículo. No se presenta como bases oficiales mientras PyR Eventos no complete y revise el documento definitivo.
 
 ## Estado técnico verificado al 10 de agosto de 2026
 

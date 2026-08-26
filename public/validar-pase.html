@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Validar Pase Especial | Honda Fest Chile</title>
+    <title>Validar Pase | Honda Fest Chile</title>
     <link rel="stylesheet" href="/styles.css" />
     <script defer src="/test-mode.js"></script>
     <script defer src="/shared.js"></script>
@@ -12,7 +12,7 @@
   <body class="special-pass-validation-page">
     <header class="site-header">
       <a class="brand" href="/"><span class="brand-mark"><img src="/logo-hfc.avif" alt="" width="72" height="48" /></span><span><strong>Honda Fest Chile</strong><small>Control de Pases</small></span></a>
-      <nav class="main-nav"><a href="/pases-especiales">Pases de Jornada</a><a href="/validar">Validar entrada</a><a href="/backoffice-hfc">Backoffice</a></nav>
+      <nav class="main-nav"><a href="/pases-especiales">Pases</a><a href="/validar">Validar entrada</a><a href="/backoffice-hfc">Backoffice</a></nav>
       <a class="nav-cta" href="/pases-especiales">Ver pases</a>
     </header>
 
@@ -27,7 +27,7 @@
             <div class="scanner-actions"><button class="button secondary" type="button" id="startPassScanner">Usar cámara</button><button class="button ghost-light" type="button" id="stopPassScanner">Detener</button></div>
           </div>
           <form id="passValidateForm" class="form-grid stacked-form manual-code-form">
-            <label>Código del Pase Especial <input name="code" required placeholder="HFC-PASE-2026-XXXXXXXXXX" /></label>
+            <label>Código del Pase <input name="code" required placeholder="HFC-PASE-2026-XXXXXXXXXX" /></label>
             <button class="button primary full" type="submit">Consultar pase</button>
           </form>
           <details class="operator-access">
@@ -41,7 +41,7 @@
         </div>
         <aside class="ticket-panel validation-result special-pass-result-panel">
           <p class="section-kicker">Resultado</p>
-          <div id="passValidationResult" class="empty-state">Sin Pase Especial consultado.</div>
+          <div id="passValidationResult" class="empty-state">Sin Pase consultado.</div>
         </aside>
       </section>
     </main>

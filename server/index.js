@@ -2590,7 +2590,7 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
 
 async function sendSpecialPassIssuedEmail({ user, order, pass, invoice, config, req = null, to = "" }) {
   if (!user || !order || !pass) {
-    const error = new Error("El Pase Especial aun no está listo para enviar");
+    const error = new Error("El Pase aun no está listo para enviar");
     error.status = 409;
     throw error;
   }
@@ -2843,7 +2843,7 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
         active: purchasable,
         unavailableMessage: purchasable
           ? ""
-          : "Los Pases Especiales estarán disponibles próximamente. Por ahora puedes conocer sus niveles y beneficios."
+          : "Los Pases estarán disponibles próximamente. Por ahora puedes conocer sus niveles y beneficios."
       },
       integrations: {
         paymentMode: paymentModeForClient(),
@@ -2851,7 +2851,7 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
         checkoutStorageReady: checkoutStorageReady(),
         testMode: Boolean(mercadoPagoDetails.sandbox),
         testModeMessage: mercadoPagoDetails.sandbox
-          ? "Sitio en modo prueba: el Pase Especial y el pago son de demostración."
+          ? "Sitio en modo prueba: el Pase y el pago son de demostración."
           : ""
       }
     });
@@ -2864,7 +2864,7 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
   try {
     await requireCheckoutStorage();
     if (!req.body.notEntryAccepted) {
-      const error = new Error("Debes confirmar que el Pase Especial no es válido como entrada");
+      const error = new Error("Debes confirmar que el Pase no es válido como entrada");
       error.status = 400;
       throw error;
     }
@@ -2872,18 +2872,18 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
     const { state: initialState } = await readStateWithCheckoutMaintenance();
     const config = specialPassConfigFromState(initialState);
     if (!specialPassStorageReady()) {
-      const error = new Error("Los Pases Especiales estarán disponibles próximamente");
+      const error = new Error("Los Pases estarán disponibles próximamente");
       error.status = 503;
       throw error;
     }
     if (!config.active) {
-      const error = new Error("La venta de Pases Especiales no está disponible");
+      const error = new Error("La venta de Pases no está disponible");
       error.status = 409;
       throw error;
     }
     const level = findSpecialPassLevel(config, requireString(req.body, "levelId", "Nivel del pase"));
     if (!level) {
-      const error = new Error("El nivel de Pase Especial no está disponible");
+      const error = new Error("El Pase seleccionado no está disponible");
       error.status = 400;
       throw error;
     }
@@ -4196,7 +4196,7 @@ app.get("/api/special-passes/:code/qr.svg", async (req, res, next) => {
     const state = await readState();
     const pass = (state.specialPasses || []).find((candidate) => candidate.code === req.params.code);
     if (!pass) {
-      res.status(404).type("text/plain").send("Pase Especial no encontrado");
+      res.status(404).type("text/plain").send("Pase no encontrado");
       return;
     }
     const svg = await QRCode.toString(`${baseUrl(req)}/validar-pase?code=${encodeURIComponent(pass.code)}`, {
@@ -4216,7 +4216,7 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
     const code = String(req.body.code || req.query.code || "").trim().toUpperCase();
     const action = String(req.body.action || "lookup").trim().toLowerCase();
     if (!code) {
-      const error = new Error("Código de Pase Especial requerido");
+      const error = new Error("Código de Pase requerido");
       error.status = 400;
       throw error;
     }
@@ -4230,7 +4230,7 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
       const state = await readState();
       const pass = (state.specialPasses || []).find((candidate) => String(candidate.code).toUpperCase() === code);
       if (!pass) {
-        const error = new Error("Pase Especial no encontrado");
+        const error = new Error("Pase no encontrado");
         error.status = 404;
         throw error;
       }
@@ -4249,12 +4249,12 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
     await updateState((state) => {
       const pass = (state.specialPasses || []).find((candidate) => String(candidate.code).toUpperCase() === code);
       if (!pass) {
-        const error = new Error("Pase Especial no encontrado");
+        const error = new Error("Pase no encontrado");
         error.status = 404;
         throw error;
       }
       if (pass.status !== "valid") {
-        const error = new Error("El Pase Especial no está vigente");
+        const error = new Error("El Pase no está vigente");
         error.status = 409;
         throw error;
       }
@@ -4267,7 +4267,7 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
         changes.push("special_pass_picked_up");
       }
       if (action === "checkin" && pass.pickupStatus !== "picked_up") {
-        const error = new Error("El Pase Especial debe retirarse antes de registrar el acceso");
+        const error = new Error("El Pase debe retirarse antes de registrar el acceso");
         error.status = 409;
         throw error;
       }
@@ -5196,6 +5196,7 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
 const pageRoutes = {
   "/ticketera": "ticketera.html",
   "/pases-especiales": "pases-especiales.html",
+  "/bases-sorteo": "bases-sorteo.html",
   "/carrito": "carrito.html",
   "/mi-pit-lane": "mi-pit-lane.html",
   "/mis-compras": "mis-compras.html",

@@ -712,7 +712,7 @@ function renderSpecialPasses(data) {
       <div class="kpi"><span>Con acceso</span><strong>${data.summary.checkedInSpecialPasses || 0}</strong></div>
     </div>
     <form id="specialPassConfigForm" class="ticket-panel admin-form-panel">
-      <div class="admin-toolbar"><div><p class="section-kicker">Producto físico</p><h2>Pase Especial HFC 2026</h2></div><label>Venta activa <input name="active" type="checkbox" ${config.active ? "checked" : ""} /></label></div>
+      <div class="admin-toolbar"><div><p class="section-kicker">Upgrade de experiencia</p><h2>Pases HFC 2026</h2></div><label>Venta activa <input name="active" type="checkbox" ${config.active ? "checked" : ""} /></label></div>
       <div class="form-grid">
         <label class="full">Aviso de compra <textarea name="purchaseNotice" rows="3">${escapeHtml(config.purchaseNotice || "")}</textarea></label>
         <label>Retiro día del evento <textarea name="pickupEventDay" rows="3">${escapeHtml(config.pickup?.eventDay || "")}</textarea></label>
@@ -728,13 +728,13 @@ function renderSpecialPasses(data) {
             <label>Precio final <input data-pass-field="price" type="number" min="0" step="1" value="${level.price}" /></label>
           </article>`).join("")}
       </div>
-      <div class="status-actions"><button class="button primary" type="submit">Guardar Pases Especiales</button><button class="button secondary" type="button" data-export-special-passes>Descargar Pistones CSV</button><a class="button ghost-light" href="/validar-pase" target="_blank" rel="noreferrer">Abrir control de pases</a></div>
+      <div class="status-actions"><button class="button primary" type="submit">Guardar Pases</button><button class="button secondary" type="button" data-export-special-passes>Descargar Pistones CSV</button><a class="button ghost-light" href="/validar-pase" target="_blank" rel="noreferrer">Abrir control de pases</a></div>
       <div class="status-box" id="specialPassConfigStatus" hidden></div>
     </form>
     <section class="admin-table-section">
       <h2>Pases emitidos</h2>
       <div class="table-scroll"><table class="admin-table"><thead><tr><th>Código</th><th>Nivel</th><th>Titular</th><th>Retiro</th><th>Acceso</th><th>Operar</th></tr></thead><tbody>
-        ${passes.map((pass) => `<tr><td><code>${escapeHtml(pass.code)}</code></td><td><strong>${pass.pistonCount} ${pass.pistonCount === 1 ? "Pistón" : "Pistones"}</strong><br><small>${escapeHtml(pass.levelName || "")}</small></td><td>${escapeHtml(pass.holderName || "Pendiente")}<br><small>${escapeHtml(pass.holderRut || "")}</small></td><td>${escapeHtml(pass.pickupStatus || "pending")}</td><td>${escapeHtml(pass.accessStatus || "not_checked_in")}</td><td><a class="button secondary" href="/validar-pase?code=${encodeURIComponent(pass.code)}" target="_blank" rel="noreferrer">Validar</a></td></tr>`).join("") || '<tr><td colspan="6">Aún no hay Pases Especiales emitidos.</td></tr>'}
+        ${passes.map((pass) => `<tr><td><code>${escapeHtml(pass.code)}</code></td><td><strong>${pass.pistonCount} ${pass.pistonCount === 1 ? "Pistón" : "Pistones"}</strong><br><small>${escapeHtml(pass.levelName || "")}</small></td><td>${escapeHtml(pass.holderName || "Pendiente")}<br><small>${escapeHtml(pass.holderRut || "")}</small></td><td>${escapeHtml(pass.pickupStatus || "pending")}</td><td>${escapeHtml(pass.accessStatus || "not_checked_in")}</td><td><a class="button secondary" href="/validar-pase?code=${encodeURIComponent(pass.code)}" target="_blank" rel="noreferrer">Validar</a></td></tr>`).join("") || '<tr><td colspan="6">Aún no hay Pases emitidos.</td></tr>'}
       </tbody></table></div>
     </section>`;
 }
@@ -858,7 +858,7 @@ function attachBackofficeEvents() {
     event.preventDefault();
     const form = event.currentTarget;
     const status = HFC.$("#specialPassConfigStatus");
-    HFC.setStatus(status, "Guardando configuración de Pases Especiales...");
+    HFC.setStatus(status, "Guardando configuración de Pases...");
     const currentById = new Map((backofficeData.specialPassConfig?.levels || []).map((level) => [level.id, level]));
     const levels = HFC.$$('[data-admin-pass-level]', form).map((card) => {
       const current = currentById.get(card.dataset.adminPassLevel) || {};
@@ -889,7 +889,7 @@ function attachBackofficeEvents() {
         })
       });
       await loadBackoffice();
-      HFC.toast("Configuración de Pases Especiales guardada.");
+      HFC.toast("Configuración de Pases guardada.");
     } catch (error) {
       HFC.setStatus(status, error.message, true);
     }

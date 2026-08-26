@@ -223,7 +223,7 @@ async function createCardPayment({ req, order, user, formData = {}, idempotencyK
     installments,
     payment_method_id: paymentMethodId,
     issuer_id: cleanValue(formData.issuer_id || formData.issuerId),
-    description: `${order.kind === "special_pass" ? "Pase Especial HFC 2026" : "Honda Fest Chile"} - orden ${order.id}`,
+    description: `${order.kind === "special_pass" ? "Pase HFC 2026" : "Honda Fest Chile"} - orden ${order.id}`,
     external_reference: externalReference,
     notification_url: notificationUrl,
     binary_mode: cleanEnv("MERCADOPAGO_BINARY_MODE") ? envFlag("MERCADOPAGO_BINARY_MODE") : undefined,

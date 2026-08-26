@@ -82,7 +82,7 @@
         </label>
         ${pilotFields}
         ${isSpecialPass ? '<div class="not-entry-inline">NO ES VÁLIDO COMO ENTRADA</div>' : ""}
-        <button class="button primary full" type="submit">${isSpecialPass ? "Emitir Pase de Jornada" : "Emitir entradas"}</button>
+        <button class="button primary full" type="submit">${isSpecialPass ? "Emitir Pase" : "Emitir entradas"}</button>
       </form>
     `;
   }
@@ -94,7 +94,7 @@
     const issuedItems = isSpecialPass ? specialPasses : tickets;
     content().innerHTML = `
       <p class="section-kicker">Listo</p>
-      <h2>${isSpecialPass ? "Pase de Jornada emitido" : "Entradas emitidas"}</h2>
+      <h2>${isSpecialPass ? "Pase emitido" : "Entradas emitidas"}</h2>
       <p class="form-note">Tambien enviamos la confirmacion al correo registrado.</p>
       <div class="ticket-grid">
         ${issuedItems
@@ -125,7 +125,7 @@
       event.preventDefault();
       const submit = form.querySelector("button[type='submit']");
       submit.disabled = true;
-      HFC.setStatus(status(), `Guardando datos y emitiendo ${item.order?.kind === "special_pass" ? "el Pase de Jornada" : "entradas"}...`);
+      HFC.setStatus(status(), `Guardando datos y emitiendo ${item.order?.kind === "special_pass" ? "el Pase" : "entradas"}...`);
 
       try {
         const payload = Object.fromEntries(new FormData(form).entries());

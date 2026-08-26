@@ -478,11 +478,11 @@
       </div>
       <section class="cart-pistons-upgrade" aria-label="Mejora tu experiencia">
         <div>
-          <p>Eleva tu experiencia</p>
-          <h3>Suma Pistones a tu entrada.</h3>
-          <span>Lanyard, credencial y experiencias especiales. El Pase de Jornada no reemplaza tu entrada.</span>
+          <p>Upgrade de experiencia</p>
+          <h3>Elige tu Pase.</h3>
+          <span>Más Pistones, más posibilidades de ganar el Honda. Incluye un refresco extra. El Pase no reemplaza tu entrada.</span>
         </div>
-        <a class="button secondary" href="/pases-especiales">Elegir Pistones</a>
+        <a class="button secondary" href="/pases-especiales">Elegir mi Pase</a>
       </section>
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;
@@ -701,7 +701,7 @@
         : "";
       setStatus(
         statusElement,
-        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el botón y QR para completar los datos de ${order.kind === "special_pass" ? "tu Pase de Jornada" : "enrolamiento"}.
+        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el botón y QR para completar los datos de ${order.kind === "special_pass" ? "tu Pase" : "enrolamiento"}.
         ${enrollmentAction}`
       );
       return;
@@ -717,7 +717,7 @@
       const issuedCodes = order.kind === "special_pass" ? specialPasses : tickets;
       setStatus(
         statusElement,
-        `<strong>${order.kind === "special_pass" ? "Pase de Jornada confirmado" : "Compra confirmada"}.</strong><br />${issuedCodes
+        `<strong>${order.kind === "special_pass" ? "Pase confirmado" : "Compra confirmada"}.</strong><br />${issuedCodes
           .map((item) => `<code>${item.code}</code>`)
           .join(" ")}
         <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver ${order.kind === "special_pass" ? "mi pase" : "mis entradas"}</a></div>`
