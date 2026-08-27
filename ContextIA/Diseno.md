@@ -31,12 +31,13 @@ El usuario aprobo expresamente el mockup generado el 26 de agosto de 2026, con l
 
 ## Hero Racing
 
-- Poster desktop: `public/assets/racing/hfc-hero-desktop.png`.
-- Poster movil: `public/assets/racing/hfc-hero-mobile.png`.
-- Imagen editorial secundaria: `public/assets/racing/hfc-hero-solo.png`.
-- Capa de movimiento local: `public/assets/racing/hfc-hero-motion.mp4`, preparada desde el banner aprobado para una transicion inmediata y reemplazable por metraje oficial cuando se incorpore al repositorio.
-- En escritorio, hover o foco activa el video; salir devuelve el poster. El boton reproducir/detener permite fijar la decision.
-- En movil se prioriza el crop vertical y la imagen estatica. `prefers-reduced-motion` impide la activacion automatica.
+- Poster local prioritario: `public/assets/racing/hfc-hero-poster-2560.avif`, con fallback WebP 1920 para que la primera pintura no dependa de red externa.
+- Movimiento: secuencia unica de 28 frames a 12 fps sobre `canvas`, con interpolacion visual entre frames y ultimo frame sostenido.
+- En escritorio, hover o foco reproduce la secuencia desde el inicio; salir devuelve el poster. El control permite detenerla o fijar una repeticion completa.
+- En movil, la secuencia se activa una vez al entrar al viewport y usa la variante AVIF 1280 con crop `cover` centrado horizontalmente. El auto debe permanecer grande y protagonista.
+- La reproduccion solo comienza cuando la variante completa fue descargada y decodificada. La resolucion desktop se selecciona por ancho renderizado para limitar memoria y evitar tirones.
+- `prefers-reduced-motion` conserva solo el poster, oculta los controles y no descarga ningun frame. `Save-Data` evita el autoplay movil y espera una accion explicita.
+- El manifiesto web es `public/hero-animation-manifest.json`; los frames versionados se publican en Cloudflare R2 conforme a `ContextIA/R2.md`.
 
 ## Editorial Upgrade de experiencia
 
@@ -52,7 +53,7 @@ El usuario aprobo expresamente el mockup generado el 26 de agosto de 2026, con l
 
 ## Segunda pasada Racing
 
-- El hero general conserva el Honda blanco en pista y su video al hover.
+- El hero general conserva el Honda blanco en pista y su secuencia de frames al hover.
 - El calendario recupera un motor tecnico a la izquierda mediante `public/assets/racing/hfc-calendar-engine-v2.webp`.
 - La campaña de Upgrade usa `public/assets/racing/hfc-upgrade-car-cinematic-v4.webp`: recreacion promocional del Honda real, con humo lateral, reflectores fuera de cuadro y tratamiento nocturno racing.
 - La imagen del premio es protagonista en portada y en `/pases-especiales`; la credencial aparece despues en `Lo que recibes` y no compite con el automovil.

@@ -130,71 +130,287 @@ function toast(message) {
 
 function initRacingHero() {
   const stage = $("[data-hero-stage]");
-  const video = $("[data-hero-video]");
+  const canvas = $("[data-hero-frame-canvas]");
   const toggle = $("[data-hero-motion-toggle]");
-  if (!stage || !video) return;
+  if (!stage || !canvas) return;
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const narrowViewport = window.matchMedia("(max-width: 700px)");
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const context = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  let manifest = null;
+  let frames = [];
+  let loadingPromise = null;
+  let animationFrame = 0;
+  let animationStartedAt = 0;
+  let lastPosition = 0;
+  let sequenceReady = false;
+  let sequencePlaying = false;
+  let pendingActivation = false;
+  let mobileVisible = false;
+  let mobileAutoPlayed = false;
   let pinned = false;
-  let activationVersion = 0;
 
-  function setToggleState(active) {
+  if (!context) {
+    if (toggle) toggle.hidden = true;
+    return;
+  }
+
+  function setToggleState(active, label = "Reproducir secuencia del hero") {
     if (!toggle) return;
     toggle.setAttribute("aria-pressed", String(active));
-    toggle.setAttribute("aria-label", active ? "Detener fondo en movimiento" : "Reproducir fondo en movimiento");
-    toggle.setAttribute("title", active ? "Detener fondo en movimiento" : "Reproducir fondo en movimiento");
+    toggle.setAttribute("aria-label", active ? "Detener secuencia del hero" : label);
+    toggle.setAttribute("title", active ? "Detener secuencia del hero" : label);
     toggle.querySelector("span").innerHTML = active ? "&#9632;" : "&#9654;";
   }
 
-  async function activate({ persist = false } = {}) {
-    if (window.getComputedStyle(video).display === "none") return;
-    const version = ++activationVersion;
-    if (persist) pinned = true;
-    try {
-      await video.play();
-      if (version !== activationVersion) {
-        video.pause();
-        return;
+  function frameUrl(variant, index) {
+    const frame = String(index + 1).padStart(2, "0");
+    const key = `${variant.filePrefix}${frame}.${variant.extension}`;
+    return `${manifest.cdnBaseUrl.replace(/\/$/, "")}/${key}`;
+  }
+
+  function loadImage(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = async () => {
+        try {
+          await image.decode?.();
+        } catch {
+          // The load event already confirms a drawable image in browsers without reliable decode().
+        }
+        resolve(image);
+      };
+      image.onerror = () => reject(new Error(`No se pudo decodificar ${url}`));
+      image.src = url;
+    });
+  }
+
+  async function decodeVariant(variant) {
+    const decoded = new Array(manifest.frameCount);
+    let cursor = 0;
+
+    async function worker() {
+      while (cursor < decoded.length) {
+        const index = cursor++;
+        decoded[index] = await loadImage(frameUrl(variant, index));
       }
-      stage.classList.add("is-video-active");
-      setToggleState(true);
-    } catch {
-      stage.classList.remove("is-video-active");
-      setToggleState(false);
+    }
+
+    await Promise.all(Array.from({ length: 4 }, worker));
+    return decoded;
+  }
+
+  function resizeCanvas() {
+    const bounds = stage.getBoundingClientRect();
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, narrowViewport.matches ? 1.25 : 1.5);
+    const width = Math.max(1, Math.round(bounds.width * pixelRatio));
+    const height = Math.max(1, Math.round(bounds.height * pixelRatio));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+      if (sequenceReady) renderPosition(lastPosition);
     }
   }
 
-  function deactivate({ force = false } = {}) {
+  function drawCover(image, alpha = 1) {
+    const scale = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    const x = (canvas.width - width) / 2;
+    const y = (canvas.height - height) / 2;
+    context.globalAlpha = alpha;
+    context.drawImage(image, x, y, width, height);
+  }
+
+  function renderPosition(position) {
+    if (!frames.length) return;
+    lastPosition = Math.max(0, Math.min(frames.length - 1, position));
+    const currentIndex = Math.floor(lastPosition);
+    const nextIndex = Math.min(frames.length - 1, currentIndex + 1);
+    const progress = lastPosition - currentIndex;
+    const easedProgress = progress * progress * (3 - 2 * progress);
+
+    context.globalAlpha = 1;
+    context.fillStyle = "#100d0b";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    drawCover(frames[currentIndex]);
+    if (nextIndex !== currentIndex && easedProgress > 0) drawCover(frames[nextIndex], easedProgress);
+    context.globalAlpha = 1;
+    stage.dataset.heroFrame = String(currentIndex + 1);
+  }
+
+  function finishSequence() {
+    sequencePlaying = false;
+    animationFrame = 0;
+    stage.classList.remove("is-sequence-playing");
+    stage.classList.add("is-sequence-complete");
+    setToggleState(false, "Repetir secuencia del hero");
+  }
+
+  function animationTick(now) {
+    if (!sequencePlaying) return;
+    const frameDuration = 1000 / manifest.fps;
+    const position = Math.min(frames.length - 1, (now - animationStartedAt) / frameDuration);
+    renderPosition(position);
+    if (position >= frames.length - 1) {
+      finishSequence();
+      return;
+    }
+    animationFrame = requestAnimationFrame(animationTick);
+  }
+
+  function playSequence({ persist = false } = {}) {
+    if (reduceMotion.matches) return;
+    if (!sequenceReady) {
+      pendingActivation = true;
+      if (persist) pinned = true;
+      beginLoading();
+      return;
+    }
+
+    cancelAnimationFrame(animationFrame);
+    if (persist) pinned = true;
+    pendingActivation = false;
+    sequencePlaying = true;
+    animationStartedAt = performance.now();
+    lastPosition = 0;
+    renderPosition(0);
+    stage.classList.add("is-sequence-active", "is-sequence-playing");
+    stage.classList.remove("is-sequence-complete");
+    setToggleState(true);
+    animationFrame = requestAnimationFrame(animationTick);
+  }
+
+  function resetSequence({ force = false } = {}) {
     if (pinned && !force) return;
-    activationVersion += 1;
     pinned = false;
-    stage.classList.remove("is-video-active");
-    video.pause();
+    pendingActivation = false;
+    sequencePlaying = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    lastPosition = 0;
+    stage.classList.remove("is-sequence-active", "is-sequence-playing", "is-sequence-complete");
     setToggleState(false);
   }
 
+  function maybeAutoPlayMobile() {
+    if (
+      narrowViewport.matches &&
+      mobileVisible &&
+      sequenceReady &&
+      !mobileAutoPlayed &&
+      !connection?.saveData &&
+      !reduceMotion.matches
+    ) {
+      mobileAutoPlayed = true;
+      playSequence();
+    }
+  }
+
+  async function beginLoading() {
+    if (loadingPromise || sequenceReady || reduceMotion.matches) return loadingPromise;
+    stage.dataset.heroState = "loading";
+    if (toggle) toggle.disabled = true;
+
+    loadingPromise = (async () => {
+      manifest = await fetch(canvas.dataset.heroManifest, { cache: "force-cache" }).then((response) => {
+        if (!response.ok) throw new Error("No se pudo leer el manifiesto del hero");
+        return response.json();
+      });
+
+      const renderedWidth = stage.getBoundingClientRect().width * Math.min(window.devicePixelRatio || 1, 1.5);
+      const primary = narrowViewport.matches
+        ? manifest.variants.mobile
+        : renderedWidth > manifest.variants.desktopFallback.width
+          ? manifest.variants.desktop
+          : manifest.variants.desktopFallback;
+      try {
+        frames = await decodeVariant(primary);
+      } catch (error) {
+        if (primary === manifest.variants.desktopFallback) throw error;
+        frames = await decodeVariant(manifest.variants.desktopFallback);
+      }
+
+      sequenceReady = true;
+      resizeCanvas();
+      renderPosition(0);
+      stage.dataset.heroState = "ready";
+      stage.classList.add("is-sequence-ready");
+      if (toggle) toggle.disabled = false;
+      if (pendingActivation) playSequence({ persist: pinned });
+      maybeAutoPlayMobile();
+    })().catch(() => {
+      stage.dataset.heroState = "error";
+      stage.classList.remove("is-sequence-ready");
+      if (toggle) toggle.hidden = true;
+    });
+
+    return loadingPromise;
+  }
+
   stage.addEventListener("pointerenter", () => {
-    if (canHover.matches && !reduceMotion.matches) activate();
+    if (canHover.matches && !reduceMotion.matches) playSequence();
   });
-  stage.addEventListener("pointerleave", () => deactivate());
+  stage.addEventListener("pointerleave", () => resetSequence());
   stage.addEventListener("focusin", (event) => {
-    if (event.target === stage && canHover.matches && !reduceMotion.matches) activate();
+    if (event.target === stage && canHover.matches && !reduceMotion.matches) playSequence();
   });
   stage.addEventListener("focusout", (event) => {
-    if (!stage.contains(event.relatedTarget)) deactivate();
+    if (!stage.contains(event.relatedTarget)) resetSequence();
   });
   toggle?.addEventListener("click", () => {
-    if (stage.classList.contains("is-video-active")) deactivate({ force: true });
-    else activate({ persist: true });
-  });
-  video.addEventListener("error", () => {
-    deactivate({ force: true });
-    if (toggle) toggle.hidden = true;
+    if (sequencePlaying) resetSequence({ force: true });
+    else playSequence({ persist: true });
   });
   reduceMotion.addEventListener?.("change", (event) => {
-    if (event.matches) deactivate({ force: true });
+    if (event.matches) {
+      resetSequence({ force: true });
+      if (toggle) toggle.hidden = true;
+    } else if (toggle) {
+      toggle.hidden = false;
+      beginLoading();
+    }
   });
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        mobileVisible = entry.isIntersecting;
+        maybeAutoPlayMobile();
+      },
+      { threshold: 0.35 }
+    );
+    observer.observe(stage);
+  } else {
+    mobileVisible = true;
+  }
+
+  const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(resizeCanvas) : null;
+  resizeObserver?.observe(stage);
+  window.addEventListener("resize", resizeCanvas, { passive: true });
+  resizeCanvas();
+
+  if (reduceMotion.matches) {
+    if (toggle) toggle.hidden = true;
+    stage.dataset.heroState = "reduced-motion";
+    return;
+  }
+
+  const scheduleLoading = () => {
+    if (connection?.saveData && !canHover.matches) {
+      stage.dataset.heroState = "waiting";
+      if (toggle) toggle.disabled = false;
+      return;
+    }
+    if ("requestIdleCallback" in window) requestIdleCallback(beginLoading, { timeout: 800 });
+    else setTimeout(beginLoading, 120);
+  };
+
+  if (document.readyState === "complete") scheduleLoading();
+  else window.addEventListener("load", scheduleLoading, { once: true });
 }
 
 async function api(path, options = {}) {

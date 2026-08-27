@@ -17,10 +17,9 @@
     />
     <meta
       property="og:image"
-      content="https://www.hondafestchile.cl/assets/racing/hfc-hero-desktop.png"
+      content="https://www.hondafestchile.cl/assets/racing/hfc-hero-poster-1920.webp"
     />
-    <link rel="preload" href="/assets/racing/hfc-hero-desktop.png" as="image" media="(min-width: 701px)" />
-    <link rel="preload" href="/assets/racing/hfc-hero-mobile.png" as="image" media="(max-width: 700px)" />
+    <link rel="preload" href="/assets/racing/hfc-hero-poster-2560.avif" as="image" type="image/avif" />
     <link rel="stylesheet" href="/styles.css" />
     <script defer src="/test-mode.js"></script>
     <script defer src="/app.js"></script>
@@ -52,38 +51,36 @@
       <section class="hero hero-drive racing-hero" aria-labelledby="hero-title">
         <div class="hero-stage" data-hero-stage tabindex="0">
           <picture class="hero-poster">
-            <source media="(max-width: 700px)" srcset="/assets/racing/hfc-hero-mobile.png" />
+            <source srcset="/assets/racing/hfc-hero-poster-2560.avif" type="image/avif" />
             <img
               class="hero-media"
-              src="/assets/racing/hfc-hero-desktop.png"
-              alt="Honda preparado recorriendo un circuito frente a las tribunas al atardecer"
+              src="/assets/racing/hfc-hero-poster-1920.webp"
+              alt="Honda preparado frente a la grilla de largada al atardecer"
               title="Honda Fest Chile 2026"
-              width="1536"
-              height="1024"
+              width="1920"
+              height="1080"
               fetchpriority="high"
+              decoding="async"
             />
           </picture>
-          <video
-            class="hero-video"
-            data-hero-video
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            poster="/assets/racing/hfc-hero-desktop.png"
+          <canvas
+            class="hero-frame-canvas"
+            data-hero-frame-canvas
+            data-hero-manifest="/hero-animation-manifest.json"
+            width="1920"
+            height="1080"
             aria-hidden="true"
-          >
-            <source src="/assets/racing/hfc-hero-motion.mp4" type="video/mp4" />
-          </video>
+          ></canvas>
           <div class="hero-overlay"></div>
 
           <button
             class="hero-motion-toggle"
             type="button"
             data-hero-motion-toggle
-            aria-label="Reproducir fondo en movimiento"
+            aria-label="Reproducir secuencia del hero"
             aria-pressed="false"
-            title="Reproducir fondo en movimiento"
+            title="Reproducir secuencia del hero"
+            disabled
           ><span aria-hidden="true">&#9654;</span></button>
 
           <nav class="hero-quick-menu" aria-label="Accesos destacados">

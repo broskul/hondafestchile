@@ -4431,7 +4431,7 @@ a:focus-visible {
 }
 
 .racing-hero .hero-poster,
-.racing-hero .hero-video {
+.racing-hero .hero-frame-canvas {
   position: absolute;
   inset: 0;
   z-index: -3;
@@ -4446,28 +4446,31 @@ a:focus-visible {
 }
 
 .racing-hero .hero-poster .hero-media,
-.racing-hero .hero-video {
+.racing-hero .hero-frame-canvas {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 56%;
 }
 
 .racing-hero .hero-poster .hero-media {
+  object-fit: cover;
+  object-position: center;
   filter: saturate(1.02) contrast(1.04) brightness(0.82);
 }
 
-.racing-hero .hero-video {
+.racing-hero .hero-frame-canvas {
+  display: block;
   opacity: 0;
   filter: saturate(1.06) contrast(1.04) brightness(0.82);
-  transition: opacity 520ms ease;
+  image-rendering: auto;
+  transition: opacity 140ms linear;
+  will-change: opacity;
 }
 
-.racing-hero .hero-stage.is-video-active .hero-poster {
-  opacity: 0.18;
+.racing-hero .hero-stage.is-sequence-active .hero-poster {
+  opacity: 0;
 }
 
-.racing-hero .hero-stage.is-video-active .hero-video {
+.racing-hero .hero-stage.is-sequence-active .hero-frame-canvas {
   opacity: 1;
 }
 
@@ -4613,6 +4616,11 @@ a:focus-visible {
 .hero-motion-toggle:focus-visible {
   border-color: var(--racing-red);
   background: var(--racing-red);
+}
+
+.hero-motion-toggle:disabled {
+  opacity: 0.46;
+  cursor: wait;
 }
 
 .hero-motion-toggle span {
@@ -5025,13 +5033,8 @@ a:focus-visible {
     min-height: 650px;
   }
 
-  .racing-hero .hero-poster .hero-media,
-  .racing-hero .hero-video {
-    object-position: center 52%;
-  }
-
-  .racing-hero .hero-video {
-    display: none;
+  .racing-hero .hero-poster .hero-media {
+    object-position: center;
   }
 
   .racing-hero h1 {
@@ -5075,7 +5078,8 @@ a:focus-visible {
   }
 
   .racing-hero .hero-motion-toggle {
-    display: none;
+    right: 16px;
+    bottom: 20px;
   }
 
   .race-calendar-index small {
@@ -5112,9 +5116,14 @@ a:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .racing-hero .hero-poster,
-  .racing-hero .hero-video,
+  .racing-hero .hero-frame-canvas,
   .special-pass-page .pass-level-card {
     transition: none;
+  }
+
+  .racing-hero .hero-frame-canvas,
+  .racing-hero .hero-motion-toggle {
+    display: none;
   }
 
   .racing-hero .hero-motion-hint {
