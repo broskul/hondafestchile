@@ -1361,9 +1361,96 @@ a:focus-visible {
   font-size: clamp(1.8rem, 4vw, 3rem);
 }
 
-.event-products-heading span {
+.event-purchase-meaning {
+  max-width: 620px;
+  margin: 8px 0 0;
   color: var(--muted);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.event-purchase-date {
+  display: grid;
+  gap: 4px;
+  min-width: min(100%, 258px);
+  padding: 12px 14px;
+  color: #fff;
+  background: var(--forest);
+  border-left: 4px solid var(--red);
+}
+
+.event-purchase-date strong {
+  font-size: 1.08rem;
+}
+
+.event-purchase-date span {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.event-single-day-notice {
+  margin: -4px 0 0;
+  padding: 12px 14px;
+  color: #93141a;
+  border: 1px solid rgba(216, 38, 47, 0.3);
+  border-left: 4px solid var(--red);
+  background: #fff4f4;
   font-weight: 850;
+  line-height: 1.45;
+}
+
+.day-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 26px;
+}
+
+.day-choice-card {
+  min-height: 220px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--red);
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(18, 20, 24, 0.07);
+}
+
+.day-choice-card--track {
+  border-top-color: var(--forest);
+}
+
+.day-choice-card h3 {
+  margin: 5px 0 10px;
+  font-size: 1.45rem;
+}
+
+.day-choice-card p:not(.day-choice-date) {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 650;
+  line-height: 1.48;
+}
+
+.day-choice-card strong {
+  display: block;
+  margin-top: 18px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.day-choice-date {
+  margin: 0;
+  color: var(--red);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.day-choice-card--track .day-choice-date {
+  color: var(--forest);
 }
 
 .ticket-product-grid {
@@ -2317,8 +2404,18 @@ a:focus-visible {
   .ticket-section,
   .community,
   .split-section,
+  .day-choice-grid,
   .ticket-product-grid {
     grid-template-columns: 1fr;
+  }
+
+  .event-products-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .event-purchase-date {
+    min-width: 0;
   }
 
   .kpi-grid {

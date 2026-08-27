@@ -4,7 +4,7 @@
   const ACCOUNT_TOKEN_KEY = "hfc_account_token";
   const ACCOUNT_USER_KEY = "hfc_account_user";
   const TICKET_VAT_RATE = 0.19;
-  const TICKET_SERVICE_CHARGE_RATE = 0.12;
+  const TICKET_SERVICE_CHARGE_RATE = 0.08;
   const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -428,6 +428,17 @@
     const subtotal = details.reduce((sum, item) => sum + item.subtotal, 0);
     const serviceCharge = details.reduce((sum, item) => sum + item.serviceCharge, 0);
     const total = details.reduce((sum, item) => sum + item.total, 0);
+    const serviceChargeRates = Array.from(
+      new Set(
+        details
+          .map((item) => Number(item.pricing?.serviceChargeRate))
+          .filter((rate) => Number.isFinite(rate) && rate >= 0)
+      )
+    );
+    const serviceChargeLabel =
+      serviceChargeRates.length === 1
+        ? `Cargo (${Math.round(serviceChargeRates[0] * 100)}%)`
+        : "Cargo de servicio";
     const cleanupNotice = removedCount
       ? `<div class="status-box">Actualizamos tu carrito porque una entrada ya no esta disponible.</div>`
       : "";
@@ -468,7 +479,7 @@
           <strong>${formatCurrency(subtotal)}</strong>
         </div>
         <div>
-          <span>Cargo (12%)</span>
+          <span>${serviceChargeLabel}</span>
           <strong>${formatCurrency(serviceCharge)}</strong>
         </div>
         <div class="cart-total">

@@ -36,8 +36,9 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 
 - La configuracion heredada de produccion mantiene una preventa unica para `28 y 29 de noviembre`: `ticket-honda-fest-preventa-2026`, $8.600 neto, IVA 19%, cargo 12%, cupo 200 y maximo 5 por compra. Se conserva oculta despues de migrar para que sus compras, QR y montos historicos sigan resolviendo correctamente.
 - Al 2026-08-26 el catalogo publico reporta 192 cupos disponibles de esos 200. Esa cifra incluye ordenes pagadas y reservas aun vigentes; no se debe usar como total tributario ni como confirmacion exclusiva de pagos.
-- Las nuevas ventas se separan por jornada: Sabado 21 de noviembre, `Drag Day`, y Domingo 22 de noviembre, `Track Day`. Cada entrada indica que solo es valida para el dia seleccionado y el landing muestra la fecha doble `21-22 de noviembre de 2026`.
+- Las nuevas ventas se separan por jornada: Sabado 21 de noviembre, `Drag Day` (aceleracion en recta, potencia y duelos), y Domingo 22 de noviembre, `Track Day` (autos en pista, curvas y tandas). La ticketera debe explicar ambas experiencias antes de los precios, reiterar junto a cada jornada que la entrada sirve exclusivamente para ese dia y nombrar el dia en el boton de compra. El landing muestra la fecha doble `21-22 de noviembre de 2026`.
 - Cada jornada publica Galeria y Parque Cerrado: preventa Galeria $7.000 neto sin limite; preventa Parque Cerrado $10.000 neto, cupo 100 por dia; Galeria en puerta $10.000 neto. Todas aplican IVA y cargo de servicio 8%.
+- El resumen del carrito obtiene el porcentaje de cargo desde el precio resuelto de cada linea; no se debe fijar un texto de `12%`, porque las entradas historicas conservan su cargo anterior y las nuevas usan 8%.
 - No basta cambiar `server/config/catalog.js`: mientras exista `ticketing_config` en la base, ese registro es la fuente del catalogo publico. `scripts/migrate-hfc-two-day-catalog.js --apply` migra el registro conservando el catalogo heredado oculto y verifica las dos jornadas publicas.
 - Estacionamiento Galeria: gratis. El estacionamiento de Parque Cerrado esta incluido con la entrada y nunca se cobra por separado.
 - La ticketera y el carrito invitan a elegir un Pase como Upgrade de experiencia. Sus Pistones definen las posibilidades registradas en el sorteo y cada Pase incluye un refresco extra, siempre con el aviso visible de que no reemplaza la entrada al evento.
@@ -59,5 +60,4 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 
 ## Pendientes
 
-- Migrar el catalogo persistido de Honda Fest a dos jornadas sin alterar ordenes, QR ni montos historicos.
 - Mejorar escaneo QR con libreria fallback para navegadores sin `BarcodeDetector`.

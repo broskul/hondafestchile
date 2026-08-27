@@ -26,9 +26,32 @@ function isManagedParticipationTicket(ticket) {
   );
 }
 
+function eventPurchaseDetails(event) {
+  const detailsByEventId = {
+    "hfc-2026-sabado-drag-day": {
+      day: "Sábado 21",
+      meaning: "Aceleración en recta, potencia y duelos durante toda la jornada.",
+      exclusivity: "Esta entrada es válida exclusivamente para el sábado 21."
+    },
+    "hfc-2026-domingo-track-day": {
+      day: "Domingo 22",
+      meaning: "Autos en pista, curvas, tandas y manejo vuelta a vuelta.",
+      exclusivity: "Esta entrada es válida exclusivamente para el domingo 22."
+    }
+  };
+  return (
+    detailsByEventId[event.id] || {
+      day: event.dateLabel || "jornada seleccionada",
+      meaning: event.summary || "Revisa los detalles de esta jornada antes de comprar.",
+      exclusivity: `Esta entrada es válida exclusivamente para ${event.dateLabel || "la jornada seleccionada"}.`
+    }
+  );
+}
+
 function renderTicketCard(ticket, event) {
   const availability = HFC.ticketAvailability(ticket, event.id);
   const pricing = HFC.priceBreakdownFromAvailability(availability);
+  const details = eventPurchaseDetails(event);
   return `
     <article class="product-card">
       <div>
@@ -49,7 +72,7 @@ function renderTicketCard(ticket, event) {
       </label>
       <button class="button primary full" type="button" data-add-ticket ${availability.available ? "" : "disabled"}
         data-event-id="${event.id}" data-ticket-type-id="${ticket.id}">
-        ${availability.available ? "Agregar al carrito" : "No disponible"}
+        ${availability.available ? `Agregar entrada del ${details.day}` : "No disponible"}
       </button>
     </article>
   `;
@@ -92,6 +115,7 @@ async function renderProducts() {
   grid.innerHTML = catalog.events
     .map(
       (event) => {
+        const details = eventPurchaseDetails(event);
         const tickets = catalog.ticketTypes.filter(
           (ticket) =>
             ticket.entryType !== "guest" &&
@@ -101,10 +125,17 @@ async function renderProducts() {
         return `
           <section class="event-products">
             <div class="event-products-heading">
-              <p class="section-kicker">${event.eyebrow}</p>
-              <h3>${event.name}</h3>
-              <span>Compra para: ${event.dateLabel}</span>
+              <div>
+                <p class="section-kicker">${event.eyebrow}</p>
+                <h3>${event.name}</h3>
+                <p class="event-purchase-meaning">${details.meaning}</p>
+              </div>
+              <div class="event-purchase-date">
+                <strong>${details.day}</strong>
+                <span>Compra para: ${event.dateLabel}</span>
+              </div>
             </div>
+            <p class="event-single-day-notice">${details.exclusivity} Para asistir ambos días, agrega una entrada para cada jornada.</p>
             <div class="ticket-product-grid">
               ${renderTicketCards(tickets, event)}
             </div>
