@@ -7,9 +7,16 @@
 - El catalogo base del repo mantiene `japon-fest-chile-2026` con `active: false` para evitar que reaparezca si no existe configuracion persistente.
 - Corte de calculo productivo: 2026-07-08 15:55 hrs. Chile aprox.
 
+### Cierre de accesos y comunicaciones
+
+- Japon Fest Chile 2026 es un evento cancelado y reembolsado: ninguna orden asociada puede volver a completar pago, emitir entradas, emitir DTE ni recibir un enlace de enrolamiento.
+- La carga de `/api/backoffice/summary` es exclusivamente de lectura. No puede enviar recordatorios de enrolamiento ni otro correo como efecto secundario.
+- La auditoria administrativa de este caso esta disponible en `GET /api/backoffice/japon-fest-cancellation/audit`; `POST /api/backoffice/japon-fest-cancellation/repair` solo aplica cambios con `{ "apply": true }`.
+- La reparacion marca las ordenes como `cancelled_refunded`, anula las entradas, revoca y elimina tokens de enrolamiento y suprime nuevos envios. No crea reembolsos, notas de credito ni correos; esos movimientos tienen su propio respaldo operativo.
+
 ### Corte verificado 2026-07-29
 
-- Fuente Supabase productiva: `/api/backoffice/summary`, storage `postgres`, sin recordatorios enviados durante la lectura.
+- Fuente Supabase productiva: `/api/backoffice/summary`, storage `postgres`. Desde el cierre de accesos, esa ruta es estrictamente de lectura y no envía recordatorios.
 - Supabase local directo no fue fuente valida en este corte porque la URL Postgres local respondio `password authentication failed`; la app productiva si reporta Supabase activo.
 - Mercado Pago API confirma 10 ordenes Japon Fest con reembolso aprobado por total `$183.392`.
 - Haulmer/OpenFactura directo confirma 6 boletas reales con estado `Aceptado`, folios `15351` a `15356`, por total registrado `$126.082`.

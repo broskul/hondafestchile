@@ -24,6 +24,7 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 8. Al completar datos desde token o portal privado, se emiten tickets con codigo y QR.
 9. `/mis-compras` recupera tickets y boleta por correo/RUT.
 10. `/validar` usa `BarcodeDetector` si el navegador lo soporta, o ingreso manual de codigo.
+11. Japon Fest Chile 2026 esta permanentemente excluido del flujo: sus enlaces de enrolamiento son invalidos, no aparece en el portal privado y no se puede completar o reemitir desde backoffice.
 
 ## Uso correcto de WhatsApp
 

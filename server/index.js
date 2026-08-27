@@ -101,6 +101,8 @@ const TICKET_SERVICE_CHARGE_RATE = 0.08;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
 const ONLINE_SALES_RESUME_AT = new Date("2026-08-29T12:00:00-04:00");
 const ONLINE_SALES_RESUME_LABEL = "sábado 29 de agosto a las 12:00";
+const JAPAN_FEST_2026_EVENT_ID = "japon-fest-chile-2026";
+const JAPAN_FEST_CANCELLATION_REASON = "event_cancelled_refunded";
 const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
 const TICKET_ENTRY_TYPE_LABELS = {
   attendee: "Asistente",
@@ -1385,7 +1387,9 @@ function enrollmentTokenIsActive(order) {
     order?.enrollmentToken &&
       !order.enrollmentTokenConsumedAt &&
       order.status === "paid" &&
-      order.profileRequired
+      order.profileRequired &&
+      order.cancellationReason !== JAPAN_FEST_CANCELLATION_REASON &&
+      order.enrollmentTokenStatus !== "revoked"
   );
 }
 
@@ -1394,7 +1398,10 @@ function findOrderByEnrollmentToken(state, token) {
   if (!normalized) return null;
   return (
     state.orders.find(
-      (order) => enrollmentTokenIsActive(order) && safeEqualString(order.enrollmentToken, normalized)
+      (order) =>
+        !orderIncludesJapanFest2026(order, state) &&
+        enrollmentTokenIsActive(order) &&
+        safeEqualString(order.enrollmentToken, normalized)
     ) || null
   );
 }
@@ -1652,6 +1659,157 @@ function getOrderItems(order, state = null) {
       total: order.total
     }
   ];
+}
+
+function isJapanFest2026EventId(eventId) {
+  return String(eventId || "").trim() === JAPAN_FEST_2026_EVENT_ID;
+}
+
+function orderIncludesJapanFest2026(order, state = null) {
+  if (!order) return false;
+  if (isJapanFest2026EventId(order.eventId)) return true;
+  return getOrderItems(order, state).some((item) => isJapanFest2026EventId(item.eventId));
+}
+
+function orderHasCancelledRefundStatus(order) {
+  return Boolean(
+    order &&
+      (order.cancellationReason === JAPAN_FEST_CANCELLATION_REASON ||
+        order.status === "cancelled_refunded" ||
+        order.fulfillmentStatus === "cancelled_refunded")
+  );
+}
+
+function orderIsCancelledOrRefunded(order, state = null) {
+  return orderHasCancelledRefundStatus(order) || orderIncludesJapanFest2026(order, state);
+}
+
+function cancelledJapanFestOrderError() {
+  const error = new Error("La orden corresponde a Japon Fest Chile 2026, un evento cancelado y reembolsado.");
+  error.status = 409;
+  error.code = "event_cancelled_refunded";
+  return error;
+}
+
+function maskEmailForAudit(email = "") {
+  const normalized = normalizeEmail(email);
+  const [local = "", domain = ""] = normalized.split("@");
+  if (!local || !domain) return "";
+  return `${local.slice(0, 2)}${local.length > 2 ? "***" : ""}@${domain}`;
+}
+
+function japanFestCancellationAudit(state) {
+  const orders = (state.orders || []).filter((order) => orderIncludesJapanFest2026(order, state));
+  const orderIds = new Set(orders.map((order) => order.id));
+  const tickets = (state.tickets || []).filter(
+    (ticket) => orderIds.has(ticket.orderId) || isJapanFest2026EventId(ticket.eventId)
+  );
+  const emailLogs = (state.emailLogs || []).filter((entry) => orderIds.has(entry.orderId));
+  const group = (entries, key) =>
+    Object.entries(
+      entries.reduce((summary, entry) => {
+        const value = String(entry[key] || "unknown");
+        summary[value] = (summary[value] || 0) + 1;
+        return summary;
+      }, {})
+    )
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => a.value.localeCompare(b.value));
+
+  return {
+    eventId: JAPAN_FEST_2026_EVENT_ID,
+    orders: orders.length,
+    ordersByStatus: group(orders, "status"),
+    ordersWithProfilePending: orders.filter((order) => order.profileRequired).length,
+    ordersWithActiveEnrollmentToken: orders.filter((order) => enrollmentTokenIsActive(order)).length,
+    tickets: tickets.length,
+    ticketsByStatus: group(tickets, "status"),
+    emailLogs: {
+      total: emailLogs.length,
+      byType: group(emailLogs, "type"),
+      byStatus: group(emailLogs, "status"),
+      recent: emailLogs
+        .slice()
+        .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+        .slice(0, 40)
+        .map((entry) => ({
+          orderId: entry.orderId,
+          type: entry.type || "unknown",
+          status: entry.status || "unknown",
+          sentAt: entry.createdAt || null,
+          recipient: maskEmailForAudit(entry.to)
+        }))
+    }
+  };
+}
+
+function cancelAndRefundJapanFestOrders(state, now = new Date().toISOString()) {
+  const orders = (state.orders || []).filter((order) => orderIncludesJapanFest2026(order, state));
+  const orderIds = new Set(orders.map((order) => order.id));
+  let ordersChanged = 0;
+  let tokensRevoked = 0;
+  let ticketsCancelled = 0;
+
+  for (const order of orders) {
+    const needsCancellation =
+      order.status !== "cancelled_refunded" ||
+      order.fulfillmentStatus !== "cancelled_refunded" ||
+      order.profileRequired ||
+      order.requiresPilotInfo ||
+      order.cancellationReason !== JAPAN_FEST_CANCELLATION_REASON ||
+      order.enrollmentEmailStatus !== "suppressed" ||
+      Boolean(order.enrollmentToken);
+
+    if (!needsCancellation) continue;
+
+    if (order.enrollmentToken) tokensRevoked += 1;
+    order.status = "cancelled_refunded";
+    order.fulfillmentStatus = "cancelled_refunded";
+    order.profileRequired = false;
+    order.requiresPilotInfo = false;
+    order.cancellationReason = JAPAN_FEST_CANCELLATION_REASON;
+    order.cancelledAt = order.cancelledAt || now;
+    order.refundedAt = order.refundedAt || now;
+    order.enrollmentToken = null;
+    order.enrollmentTokenStatus = "revoked";
+    order.enrollmentTokenRevokedAt = order.enrollmentTokenRevokedAt || now;
+    order.enrollmentEmailStatus = "suppressed";
+    order.enrollmentEmailSuppressedAt = order.enrollmentEmailSuppressedAt || now;
+    order.enrollmentEmailSuppressionReason = JAPAN_FEST_CANCELLATION_REASON;
+    order.updatedAt = now;
+    ordersChanged += 1;
+    state.audit.push({
+      id: id("audit"),
+      type: "japan_fest_order_cancelled_refunded",
+      orderId: order.id,
+      eventId: JAPAN_FEST_2026_EVENT_ID,
+      reason: JAPAN_FEST_CANCELLATION_REASON,
+      createdAt: now
+    });
+  }
+
+  for (const ticket of state.tickets || []) {
+    if (!orderIds.has(ticket.orderId) && !isJapanFest2026EventId(ticket.eventId)) continue;
+    if (ticket.status === "cancelled") continue;
+    ticket.status = "cancelled";
+    ticket.cancelledAt = ticket.cancelledAt || now;
+    ticket.cancellationReason = JAPAN_FEST_CANCELLATION_REASON;
+    ticket.updatedAt = now;
+    ticketsCancelled += 1;
+  }
+
+  if (ticketsCancelled) {
+    state.audit.push({
+      id: id("audit"),
+      type: "japan_fest_tickets_cancelled",
+      eventId: JAPAN_FEST_2026_EVENT_ID,
+      count: ticketsCancelled,
+      reason: JAPAN_FEST_CANCELLATION_REASON,
+      createdAt: now
+    });
+  }
+
+  return { ordersFound: orders.length, ordersChanged, tokensRevoked, ticketsCancelled };
 }
 
 function createTickets({ order, user, items }) {
@@ -1931,6 +2089,19 @@ async function updateOrderPaymentStatus(orderId, paymentData = {}) {
       throw error;
     }
 
+    if (orderIsCancelledOrRefunded(order, state)) {
+      state.audit.push({
+        id: id("audit"),
+        type: "payment_status_ignored_for_cancelled_event",
+        orderId: order.id,
+        eventId: JAPAN_FEST_2026_EVENT_ID,
+        status: paymentData.status || null,
+        createdAt: new Date().toISOString()
+      });
+      result = { order, payment: order.payment || null, ignored: true };
+      return;
+    }
+
     const paymentRecord = upsertPaymentRecord(state, order, paymentData);
     if (order.status !== "paid") {
       order.status = orderStatusForPaymentStatus(paymentRecord.status);
@@ -1973,6 +2144,9 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     const error = new Error("Orden incompleta");
     error.status = 409;
     throw error;
+  }
+  if (orderIsCancelledOrRefunded(order, state)) {
+    throw cancelledJapanFestOrderError();
   }
 
   let tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
@@ -2255,6 +2429,9 @@ async function completeOrderProfileFromExistingData(orderId) {
       error.status = 404;
       throw error;
     }
+    if (orderIsCancelledOrRefunded(order, state)) {
+      throw cancelledJapanFestOrderError();
+    }
     if (order.status !== "paid" || !order.profileRequired) {
       const error = new Error("La orden no esta pendiente de perfil");
       error.status = 409;
@@ -2326,6 +2503,9 @@ async function reissueOrderDte({
     const error = new Error("Orden no encontrada");
     error.status = 404;
     throw error;
+  }
+  if (orderIsCancelledOrRefunded(order, state)) {
+    throw cancelledJapanFestOrderError();
   }
 
   if (order.status !== "paid") {
@@ -2590,6 +2770,10 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
   const isSpecialPassOrder = order.kind === "special_pass" || firstItem?.productKind === "special_pass";
   const passConfig = specialPassConfigFromState(state);
 
+  if (orderIsCancelledOrRefunded(order, state)) {
+    throw cancelledJapanFestOrderError();
+  }
+
   if (!user) {
     const error = new Error("Usuario no encontrado para enviar enrolamiento");
     error.status = 409;
@@ -2755,8 +2939,8 @@ function profilePendingReminderHours() {
   return envPositiveNumber("PROFILE_PENDING_REMINDER_HOURS", 24);
 }
 
-function profilePendingReminderDue(order, now = new Date()) {
-  if (order?.status !== "paid" || !order.profileRequired) return false;
+function profilePendingReminderDue(state, order, now = new Date()) {
+  if (order?.status !== "paid" || !order.profileRequired || orderIsCancelledOrRefunded(order, state)) return false;
   const lastSent = orderReferenceDate(order, ["enrollmentEmailSentAt", "enrollmentReminderSentAt"]);
   return !lastSent || minutesSince(lastSent, now) >= profilePendingReminderHours() * 60;
 }
@@ -2765,7 +2949,7 @@ async function sendDueProfilePendingEnrollmentReminders({ req = null } = {}) {
   const state = await readState();
   const now = new Date();
   const candidates = (state.orders || [])
-    .filter((order) => profilePendingReminderDue(order, now))
+    .filter((order) => profilePendingReminderDue(state, order, now))
     .slice(0, envPositiveNumber("PROFILE_PENDING_REMINDER_BATCH", 5));
   const results = [];
 
@@ -4143,7 +4327,7 @@ app.get("/api/enrollment/portal/orders", async (req, res, next) => {
     let changed = false;
 
     const orders = state.orders
-      .filter((order) => order.status === "paid" && order.profileRequired)
+      .filter((order) => order.status === "paid" && order.profileRequired && !orderIsCancelledOrRefunded(order, state))
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
 
     for (const order of orders) {
@@ -4161,7 +4345,7 @@ app.get("/api/enrollment/portal/orders", async (req, res, next) => {
     res.json({
       ok: true,
       orders: state.orders
-        .filter((order) => order.status === "paid" && order.profileRequired)
+        .filter((order) => order.status === "paid" && order.profileRequired && !orderIsCancelledOrRefunded(order, state))
         .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
         .map((order) => publicEnrollmentOrder({ state, order, req }))
     });
@@ -4175,7 +4359,7 @@ app.post("/api/enrollment/portal/orders/:orderId/send-link", async (req, res, ne
     const state = await readState();
     requireEnrollmentPortalSession(req, state);
     const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
-    if (!order || order.status !== "paid" || !order.profileRequired) {
+    if (!order || order.status !== "paid" || !order.profileRequired || orderIsCancelledOrRefunded(order, state)) {
       const error = new Error("Orden pendiente de enrolamiento no encontrada");
       error.status = 404;
       throw error;
@@ -4611,8 +4795,12 @@ async function sendCampaignBatch({ req, state, body }) {
 app.get("/api/backoffice/summary", async (req, res, next) => {
   try {
     requireAdmin(req);
-    const reminderSummary = await sendDueProfilePendingEnrollmentReminders({ req });
     const { state, expiredOrders } = await readStateWithCheckoutMaintenance();
+    const reminderSummary = {
+      sent: 0,
+      failed: 0,
+      pending: state.orders.filter((order) => profilePendingReminderDue(state, order)).length
+    };
     const paidOrders = state.orders.filter((order) => order.status === "paid");
     const revenue = paidOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
 
@@ -4649,7 +4837,8 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         enrolados: state.users.filter((user) => user.emailVerified).length,
         contacts: (state.contacts || []).length,
         expiredOrders,
-        enrollmentRemindersSent: reminderSummary.sent
+        enrollmentRemindersSent: reminderSummary.sent,
+        enrollmentRemindersPending: reminderSummary.pending
       },
       bi: salesBi(state),
       ticketing: ticketingConfig(state),
@@ -4671,6 +4860,37 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         email: mailProviderStatus()
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/backoffice/japon-fest-cancellation/audit", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const state = await readState();
+    res.json({ ok: true, generatedAt: new Date().toISOString(), audit: japanFestCancellationAudit(state) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/japon-fest-cancellation/repair", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const apply = req.body?.apply === true;
+    const before = japanFestCancellationAudit(await readState());
+    if (!apply) {
+      res.json({ ok: true, applied: false, before });
+      return;
+    }
+
+    let repair;
+    await updateState((state) => {
+      repair = cancelAndRefundJapanFestOrders(state);
+    });
+    const after = japanFestCancellationAudit(await readState());
+    res.json({ ok: true, applied: true, repair, before, after });
   } catch (error) {
     next(error);
   }
@@ -5247,7 +5467,7 @@ app.post("/api/backoffice/orders/:orderId/resend-enrollment", async (req, res, n
     requireAdmin(req);
     const state = await readState();
     const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
-    if (!order || order.status !== "paid" || !order.profileRequired) {
+    if (!order || order.status !== "paid" || !order.profileRequired || orderIsCancelledOrRefunded(order, state)) {
       const error = new Error("Orden pendiente de enrolamiento no encontrada");
       error.status = 404;
       throw error;
