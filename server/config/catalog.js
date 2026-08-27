@@ -43,13 +43,13 @@ const ticketTypes = [
   {
     id: "hfc-2026-parque-cerrado",
     name: "Entrada Parque Cerrado",
-    description: "Acceso a parque cerrado de Honda Fest Chile.",
+    description: "Acceso a Parque Cerrado de Honda Fest Chile con estacionamiento incluido.",
     entryType: "attendee",
     netPrice: 10000,
     price: 13328,
     maxQuantity: 6,
     eventIds: ["honda-fest-chile-2026"],
-    parkingNote: "Estacionamiento parque cerrado: $15.000, pago directo en el recinto."
+    parkingNote: "Estacionamiento en Parque Cerrado incluido con tu entrada."
   }
 ];
 

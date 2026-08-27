@@ -38,7 +38,7 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 - Al 2026-08-26 el catalogo publico reporta 192 cupos disponibles de esos 200. Esa cifra incluye ordenes pagadas y reservas aun vigentes; no se debe usar como total tributario ni como confirmacion exclusiva de pagos.
 - La siguiente migracion debe vender por jornada y conservar las compras heredadas sin reasignarlas: sabado `Drag Day` (28 de noviembre) y domingo `Track Day` (29 de noviembre). Antes de aplicarla debe confirmarse si el cupo de Parque Cerrado de 100 es por jornada o compartido entre ambas.
 - El precio objetivo de preventa acordado es Galeria $7.000 neto y Parque Cerrado $10.000 neto, mas IVA y cargo de servicio 8%; Galeria en puerta sera $10.000 neto. No basta cambiar `server/config/catalog.js`: mientras exista `ticketing_config` en la base, ese registro es la fuente del catalogo publico.
-- Estacionamiento galeria: gratis. Estacionamiento parque cerrado: $15.000, se paga directamente en el recinto y nunca se agrega al carrito.
+- Estacionamiento Galeria: gratis. El estacionamiento de Parque Cerrado esta incluido con la entrada y nunca se cobra por separado.
 - La ticketera y el carrito invitan a elegir un Pase como Upgrade de experiencia. Sus Pistones definen las posibilidades registradas en el sorteo y cada Pase incluye un refresco extra, siempre con el aviso visible de que no reemplaza la entrada al evento.
 
 ## Archivos clave
