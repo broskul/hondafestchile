@@ -97,7 +97,7 @@ function clone(value) {
 const TICKETING_SETTING_ID = "ticketing_config";
 const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
-const TICKET_SERVICE_CHARGE_RATE = 0.12;
+const TICKET_SERVICE_CHARGE_RATE = 0.08;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
 const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
 const TICKET_ENTRY_TYPE_LABELS = {
@@ -111,11 +111,20 @@ function roundCurrency(value) {
   return Math.max(0, Math.round(Number(value || 0)));
 }
 
-function ticketPricingFromNet(netPrice) {
+function normalizedServiceChargeRate(...candidates) {
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value) && value >= 0) return value;
+  }
+  return TICKET_SERVICE_CHARGE_RATE;
+}
+
+function ticketPricingFromNet(netPrice, serviceChargeRate = TICKET_SERVICE_CHARGE_RATE) {
   const net = roundCurrency(netPrice);
+  const chargeRate = normalizedServiceChargeRate(serviceChargeRate);
   const netWithVat = roundCurrency(net * (1 + TICKET_VAT_RATE));
-  const netWithServiceCharge = roundCurrency(net * (1 + TICKET_SERVICE_CHARGE_RATE));
-  const serviceCharge = roundCurrency(netWithVat * TICKET_SERVICE_CHARGE_RATE);
+  const netWithServiceCharge = roundCurrency(net * (1 + chargeRate));
+  const serviceCharge = roundCurrency(netWithVat * chargeRate);
   const total = roundCurrency(netWithVat + serviceCharge);
   return {
     netPrice: net,
@@ -124,7 +133,7 @@ function ticketPricingFromNet(netPrice) {
     serviceCharge,
     total,
     vatRate: TICKET_VAT_RATE,
-    serviceChargeRate: TICKET_SERVICE_CHARGE_RATE
+    serviceChargeRate: chargeRate
   };
 }
 
@@ -162,7 +171,10 @@ function normalizeTicketEntryType(value) {
 }
 
 function defaultTicketPhases(ticket) {
-  const pricing = ticketPricingFromNet(explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(ticket.price));
+  const pricing = ticketPricingFromNet(
+    explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(ticket.price),
+    ticket.serviceChargeRate ?? ticket.pricing?.serviceChargeRate
+  );
   return [
     {
       id: "preventa",
@@ -215,7 +227,7 @@ function defaultTicketingConfig() {
     ticketTypes: defaultTicketTypes.map((ticket) => ({
       ...clone(ticket),
       active: true,
-      phases: defaultTicketPhases(ticket)
+      phases: Array.isArray(ticket.phases) && ticket.phases.length ? clone(ticket.phases) : defaultTicketPhases(ticket)
     }))
   };
 }
@@ -231,7 +243,13 @@ function normalizePhase(phase = {}, ticket = {}, index = 0) {
   const netPrice =
     explicitNetPrice(phase.netPrice ?? phase.basePrice ?? phase.priceNet) ??
     inferNetPriceFromGross(rawPrice);
-  const pricing = ticketPricingFromNet(netPrice);
+  const serviceChargeRate = normalizedServiceChargeRate(
+    phase.serviceChargeRate,
+    phase.pricing?.serviceChargeRate,
+    ticket.serviceChargeRate,
+    ticket.pricing?.serviceChargeRate
+  );
+  const pricing = ticketPricingFromNet(netPrice, serviceChargeRate);
   const quota = phase.quota === "" || phase.quota === null || phase.quota === undefined ? null : Number(phase.quota);
   const perOrderLimit =
     phase.perOrderLimit === "" || phase.perOrderLimit === null || phase.perOrderLimit === undefined
@@ -244,6 +262,7 @@ function normalizePhase(phase = {}, ticket = {}, index = 0) {
     kind,
     price: pricing.total,
     netPrice: pricing.netPrice,
+    serviceChargeRate,
     pricing,
     quota: Number.isFinite(quota) && quota > 0 ? Math.floor(quota) : null,
     startsAt: String(phase.startsAt || phase.startAt || "").trim(),
@@ -261,7 +280,16 @@ function normalizeTicket(ticket = {}) {
     .replace(/[^a-z0-9_-]+/g, "-");
   const base = defaultTicketTypes.find((candidate) => candidate.id === idValue) || {};
   const rawPrice = Math.max(0, Math.round(Number(ticket.price ?? base.price ?? 0)));
-  const pricing = ticketPricingFromNet(explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(rawPrice));
+  const serviceChargeRate = normalizedServiceChargeRate(
+    ticket.serviceChargeRate,
+    ticket.pricing?.serviceChargeRate,
+    base.serviceChargeRate,
+    base.pricing?.serviceChargeRate
+  );
+  const pricing = ticketPricingFromNet(
+    explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(rawPrice),
+    serviceChargeRate
+  );
   const normalized = {
     ...base,
     ...ticket,
@@ -271,6 +299,7 @@ function normalizeTicket(ticket = {}) {
     parkingNote: String(ticket.parkingNote ?? base.parkingNote ?? "").trim(),
     price: pricing.total,
     netPrice: pricing.netPrice,
+    serviceChargeRate,
     pricing,
     entryType: normalizeTicketEntryType(ticket.entryType || ticket.ticketType || ticket.kind || base.entryType),
     entryTypeLabel:
@@ -592,12 +621,14 @@ function activePhaseForTicket(state, eventOrId, ticket, now = new Date()) {
 
 function catalogForClient(state) {
   const config = ticketingConfig(state);
-  const primaryEventId = config.events[0]?.id || DEFAULT_EVENT_ID;
+  const visibleEvents = config.events.filter((event) => event.visible !== false);
+  const visibleTickets = config.ticketTypes.filter((ticket) => ticket.visible !== false);
+  const primaryEventId = visibleEvents[0]?.id || DEFAULT_EVENT_ID;
   return {
-    events: config.events,
-    ticketTypes: config.ticketTypes.map((ticket) => {
+    events: visibleEvents,
+    ticketTypes: visibleTickets.map((ticket) => {
       const availabilityByEvent = Object.fromEntries(
-        config.events.map((event) => {
+        visibleEvents.map((event) => {
           const phase = activePhaseForTicket(state, event, ticket);
           const pricing = phase?.pricing || ticket.pricing || ticketPricingFromNet(phase?.netPrice ?? ticket.netPrice ?? 0);
           return [

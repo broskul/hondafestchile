@@ -8,8 +8,8 @@ const DEFAULT_SPECIAL_PASS_CONFIG = {
   name: "Pase HFC 2026",
   shortName: "Pase",
   eventName: "Honda Fest Chile 2026",
-  eventDate: "2026-11-29",
-  eventDateLabel: "29 de noviembre de 2026",
+  eventDate: "2026-11-21",
+  eventDateLabel: "21 y 22 de noviembre de 2026",
   physicalFormat: "Lanyard con credencial impresa",
   notEntryLabel: "NO ES VÁLIDO COMO ENTRADA",
   purchaseNotice:

@@ -34,10 +34,11 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 
 ## Honda Fest Chile 2026
 
-- La configuracion persistida de produccion sigue siendo una preventa heredada unica para `28 y 29 de noviembre`, no separa sabado y domingo: `ticket-honda-fest-preventa-2026`, $8.600 neto, IVA 19%, cargo 12%, cupo 200 y maximo 5 por compra.
+- La configuracion heredada de produccion mantiene una preventa unica para `28 y 29 de noviembre`: `ticket-honda-fest-preventa-2026`, $8.600 neto, IVA 19%, cargo 12%, cupo 200 y maximo 5 por compra. Se conserva oculta despues de migrar para que sus compras, QR y montos historicos sigan resolviendo correctamente.
 - Al 2026-08-26 el catalogo publico reporta 192 cupos disponibles de esos 200. Esa cifra incluye ordenes pagadas y reservas aun vigentes; no se debe usar como total tributario ni como confirmacion exclusiva de pagos.
-- La siguiente migracion debe vender por jornada y conservar las compras heredadas sin reasignarlas: sabado `Drag Day` (28 de noviembre) y domingo `Track Day` (29 de noviembre). Antes de aplicarla debe confirmarse si el cupo de Parque Cerrado de 100 es por jornada o compartido entre ambas.
-- El precio objetivo de preventa acordado es Galeria $7.000 neto y Parque Cerrado $10.000 neto, mas IVA y cargo de servicio 8%; Galeria en puerta sera $10.000 neto. No basta cambiar `server/config/catalog.js`: mientras exista `ticketing_config` en la base, ese registro es la fuente del catalogo publico.
+- Las nuevas ventas se separan por jornada: Sabado 21 de noviembre, `Drag Day`, y Domingo 22 de noviembre, `Track Day`. Cada entrada indica que solo es valida para el dia seleccionado y el landing muestra la fecha doble `21-22 de noviembre de 2026`.
+- Cada jornada publica Galeria y Parque Cerrado: preventa Galeria $7.000 neto sin limite; preventa Parque Cerrado $10.000 neto, cupo 100 por dia; Galeria en puerta $10.000 neto. Todas aplican IVA y cargo de servicio 8%.
+- No basta cambiar `server/config/catalog.js`: mientras exista `ticketing_config` en la base, ese registro es la fuente del catalogo publico. `scripts/migrate-hfc-two-day-catalog.js --apply` migra el registro conservando el catalogo heredado oculto y verifica las dos jornadas publicas.
 - Estacionamiento Galeria: gratis. El estacionamiento de Parque Cerrado esta incluido con la entrada y nunca se cobra por separado.
 - La ticketera y el carrito invitan a elegir un Pase como Upgrade de experiencia. Sus Pistones definen las posibilidades registradas en el sorteo y cada Pase incluye un refresco extra, siempre con el aviso visible de que no reemplaza la entrada al evento.
 

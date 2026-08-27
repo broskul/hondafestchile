@@ -145,6 +145,8 @@ function initRacingHero() {
   let animationFrame = 0;
   let animationStartedAt = 0;
   let lastPosition = 0;
+  let frameTimeline = [];
+  let sequenceDuration = 0;
   let sequenceReady = false;
   let sequencePlaying = false;
   let pendingActivation = false;
@@ -242,6 +244,28 @@ function initRacingHero() {
     stage.dataset.heroFrame = String(currentIndex + 1);
   }
 
+  function buildFrameTimeline() {
+    const standardDuration = 1000 / manifest.fps;
+    const transitions = manifest.transitionMsAfterFrame || {};
+    let elapsed = 0;
+
+    frameTimeline = frames.map((_, index) => {
+      const frameNumber = index + 1;
+      const duration = index === frames.length - 1 ? 0 : Math.max(standardDuration, Number(transitions[frameNumber]) || standardDuration);
+      const segment = { index, start: elapsed, duration };
+      elapsed += duration;
+      return segment;
+    });
+    sequenceDuration = elapsed;
+  }
+
+  function timelinePositionAt(elapsed) {
+    if (!frameTimeline.length || elapsed >= sequenceDuration) return frames.length - 1;
+    const segment = frameTimeline.find(({ start, duration }) => elapsed < start + duration);
+    if (!segment || !segment.duration) return frames.length - 1;
+    return segment.index + (elapsed - segment.start) / segment.duration;
+  }
+
   function finishSequence() {
     sequencePlaying = false;
     animationFrame = 0;
@@ -252,8 +276,7 @@ function initRacingHero() {
 
   function animationTick(now) {
     if (!sequencePlaying) return;
-    const frameDuration = 1000 / manifest.fps;
-    const position = Math.min(frames.length - 1, (now - animationStartedAt) / frameDuration);
+    const position = timelinePositionAt(now - animationStartedAt);
     renderPosition(position);
     if (position >= frames.length - 1) {
       finishSequence();
@@ -335,6 +358,7 @@ function initRacingHero() {
       }
 
       sequenceReady = true;
+      buildFrameTimeline();
       resizeCanvas();
       renderPosition(0);
       stage.dataset.heroState = "ready";
@@ -1235,11 +1259,14 @@ function renderGallery() {
   requestAnimationFrame(() => positionSlideWatermarks(viewer));
   viewer.querySelector(".gallery-slide__image img")?.addEventListener("load", () => positionSlideWatermarks(viewer), { once: true });
   thumbs.innerHTML = items.map((item, index) => galleryThumb(item, index, index === state.gallery.activeIndex)).join("");
-  thumbs.querySelector(".gallery-thumb.is-active")?.scrollIntoView({
-    behavior: "smooth",
-    inline: "center",
-    block: "nearest"
-  });
+  const activeThumb = thumbs.querySelector(".gallery-thumb.is-active");
+  if (activeThumb) {
+    const left = Math.max(0, activeThumb.offsetLeft - (thumbs.clientWidth - activeThumb.offsetWidth) / 2);
+    thumbs.scrollTo({
+      left,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    });
+  }
   registerGalleryReveal(viewer);
 }
 

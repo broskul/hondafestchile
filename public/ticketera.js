@@ -103,7 +103,7 @@ async function renderProducts() {
             <div class="event-products-heading">
               <p class="section-kicker">${event.eyebrow}</p>
               <h3>${event.name}</h3>
-              <span>${event.dateLabel}</span>
+              <span>Compra para: ${event.dateLabel}</span>
             </div>
             <div class="ticket-product-grid">
               ${renderTicketCards(tickets, event)}
