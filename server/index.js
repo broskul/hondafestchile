@@ -407,6 +407,66 @@ function hasTicketingSetting(state) {
   return (state.settings || []).some((candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing");
 }
 
+const HFC_EVENT_DATE_UPDATES = {
+  "hfc-2026-sabado-drag-day": {
+    dateLabel: "Sábado 28 de noviembre de 2026",
+    eventDate: "2026-11-28T09:00:00-03:00",
+    highlight: "Sábado 28 de noviembre"
+  },
+  "hfc-2026-domingo-track-day": {
+    dateLabel: "Domingo 29 de noviembre de 2026",
+    eventDate: "2026-11-29T09:00:00-03:00",
+    highlight: "Domingo 29 de noviembre"
+  }
+};
+
+const HFC_PREVENTA_ENDS_AT = {
+  "hfc-2026-sabado-galeria": "2026-11-28T00:00:00-03:00",
+  "hfc-2026-sabado-parque-cerrado": "2026-11-28T00:00:00-03:00",
+  "hfc-2026-domingo-galeria": "2026-11-29T00:00:00-03:00",
+  "hfc-2026-domingo-parque-cerrado": "2026-11-29T00:00:00-03:00"
+};
+
+function hfcDateCorrection(ticketing) {
+  const changes = [];
+  const events = ticketing.events.map((event) => {
+    const update = HFC_EVENT_DATE_UPDATES[event.id];
+    if (!update) return event;
+    const highlights = Array.isArray(event.highlights)
+      ? event.highlights.map((highlight) =>
+          /^(Sábado|Domingo) \d{1,2} de noviembre$/i.test(highlight) ? update.highlight : highlight
+        )
+      : event.highlights;
+    const corrected = { ...event, dateLabel: update.dateLabel, eventDate: update.eventDate, highlights };
+    if (JSON.stringify(corrected) !== JSON.stringify(event)) changes.push(`event:${event.id}`);
+    return corrected;
+  });
+  const ticketTypes = ticketing.ticketTypes.map((ticket) => {
+    const endsAt = HFC_PREVENTA_ENDS_AT[ticket.id];
+    if (!endsAt) return ticket;
+    const phases = (ticket.phases || []).map((phase) => {
+      if (String(phase.id || phase.kind).toLowerCase() !== "preventa") return phase;
+      return { ...phase, endsAt };
+    });
+    const corrected = { ...ticket, phases };
+    if (JSON.stringify(corrected) !== JSON.stringify(ticket)) changes.push(`ticket:${ticket.id}`);
+    return corrected;
+  });
+  return { ticketing: { ...ticketing, events, ticketTypes }, changes };
+}
+
+function hfcSpecialPassDateCorrection(config) {
+  const corrected = {
+    ...config,
+    eventDate: "2026-11-28",
+    eventDateLabel: "28 y 29 de noviembre de 2026"
+  };
+  return {
+    specialPass: corrected,
+    changed: corrected.eventDate !== config.eventDate || corrected.eventDateLabel !== config.eventDateLabel
+  };
+}
+
 function upsertSetting(state, setting) {
   const now = new Date().toISOString();
   const record = {
@@ -4668,6 +4728,61 @@ app.put("/api/backoffice/ticketing", async (req, res, next) => {
       });
     });
     res.json({ ok: true, ticketing: saved.payload });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/hfc-event-dates", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const apply = req.body?.apply === true;
+    let result;
+    const correct = (state) => {
+      const ticketingSetting = (state.settings || []).find(
+        (candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing"
+      );
+      const specialPassSetting = (state.settings || []).find(
+        (candidate) => candidate.id === SPECIAL_PASS_SETTING_ID || candidate.type === "special_pass"
+      );
+      const ticketingCorrection = hfcDateCorrection(ticketingConfig(state));
+      const specialPassCorrection = hfcSpecialPassDateCorrection(specialPassConfigFromState(state));
+      return { ticketingSetting, specialPassSetting, ticketingCorrection, specialPassCorrection };
+    };
+
+    if (!apply) {
+      result = correct(await readState());
+    } else {
+      await updateState((state) => {
+        result = correct(state);
+        const now = new Date().toISOString();
+        if (result.ticketingSetting && result.ticketingCorrection.changes.length) {
+          upsertSetting(state, {
+            id: result.ticketingSetting.id,
+            type: "ticketing",
+            payload: result.ticketingCorrection.ticketing
+          });
+          state.audit.push({ id: id("audit"), type: "hfc_event_dates_corrected", createdAt: now });
+        }
+        if (result.specialPassSetting && result.specialPassCorrection.changed) {
+          upsertSetting(state, {
+            id: result.specialPassSetting.id,
+            type: "special_pass",
+            payload: result.specialPassCorrection.specialPass
+          });
+          state.audit.push({ id: id("audit"), type: "hfc_special_pass_dates_corrected", createdAt: now });
+        }
+      });
+    }
+
+    res.json({
+      ok: true,
+      applied: apply,
+      ticketingSettingFound: Boolean(result.ticketingSetting),
+      ticketingChanges: result.ticketingCorrection.changes,
+      specialPassSettingFound: Boolean(result.specialPassSetting),
+      specialPassChanged: result.specialPassCorrection.changed
+    });
   } catch (error) {
     next(error);
   }
