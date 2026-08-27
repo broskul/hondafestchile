@@ -28,6 +28,7 @@ Definir la interfaz publica de Honda Fest Chile y Japon Fest Chile con un estilo
 - Tarjetas con radio maximo de 8px y layouts responsivos por grillas CSS.
 - La ticketera es pagina propia; el carrito existe como lightbox lateral compartido y como pagina completa.
 - La ticketera abre con un hero editorial basado en el poster local `hfc-hero-poster-1920.webp`, presenta las dos jornadas con una sola jerarquia clara y evita duplicar llamados de upgrade o soporte dentro del catalogo.
+- El calendario vigente de Honda Fest Chile 2026 es sábado 28 de noviembre (Drag Day) y domingo 29 de noviembre (Track Day), en Autodromo Huachalalume, La Serena. La portada, ticketera, pases y tarjetas de eventos deben conservar esa misma fecha.
 - Las tarjetas de entrada muestran el desglose comercial completo: neto predominante, IVA secundario, cargo de servicio y total online. Los controles de cantidad usan botones `- / +`, tanto antes de agregar como dentro del carrito.
 - Las tarjetas pueden llevar la ilustracion local `assets/pistons/pistons-watermark.webp` sobre un fondo solido al 50% de opacidad. No usar cintas rojas decorativas en entradas: se interpretan como error o alerta.
 - `mis-compras`, `validar` y `backoffice-hfc` comparten lenguaje visual operativo mas denso.
@@ -35,5 +36,4 @@ Definir la interfaz publica de Honda Fest Chile y Japon Fest Chile con un estilo
 
 ## Pendientes
 
-- Reemplazar fechas genericas por calendario oficial cuando produccion lo confirme.
 - Agregar imagenes reales del evento con autorizacion de uso.
