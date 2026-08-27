@@ -5727,3 +5727,588 @@ a:focus-visible {
     margin-top: 3px;
   }
 }
+
+/* Ticketera editorial: keeps the purchase journey focused on the selected day. */
+.ticketera-page {
+  background: #f1f3ef;
+}
+
+.ticketera-page .floating-action--participate {
+  display: none;
+}
+
+.ticketera-editorial-hero {
+  position: relative;
+  display: grid;
+  min-height: clamp(460px, 64vh, 700px);
+  overflow: hidden;
+  color: #fff;
+  background: #080a0c;
+}
+
+.ticketera-editorial-hero-media,
+.ticketera-editorial-hero-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ticketera-editorial-hero-media {
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(1.04) contrast(1.08) brightness(0.72);
+}
+
+.ticketera-editorial-hero-overlay {
+  background: rgba(5, 7, 9, 0.62);
+}
+
+.ticketera-editorial-hero-content {
+  position: relative;
+  z-index: 1;
+  align-self: end;
+  width: min(1120px, 100%);
+  padding: clamp(44px, 8vw, 96px) clamp(22px, 6vw, 84px) clamp(46px, 7vw, 76px);
+}
+
+.ticketera-editorial-hero .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ticketera-editorial-hero .eyebrow span {
+  padding: 7px 9px;
+  color: #fff;
+  background: var(--racing-red, var(--red));
+}
+
+.ticketera-editorial-hero h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(3.7rem, 9.2vw, 8rem);
+  font-style: italic;
+  line-height: 0.8;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ticketera-editorial-hero h1 span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.86);
+}
+
+.ticketera-editorial-hero-content > p:not(.eyebrow) {
+  max-width: 650px;
+  margin: 22px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.ticketera-hero-days {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  margin-top: 26px;
+  border-block: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.ticketera-hero-days span {
+  display: grid;
+  gap: 4px;
+  min-width: 158px;
+  padding: 12px 18px 12px 0;
+}
+
+.ticketera-hero-days span + span {
+  padding-left: 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.ticketera-hero-days small {
+  color: var(--racing-cyan, var(--cyan));
+  font-size: 0.67rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ticketera-hero-days strong {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.ticketera-page .ticketera-shop-section {
+  width: min(1320px, 100%);
+  margin-inline: auto;
+  padding-block: clamp(44px, 7vw, 88px);
+}
+
+.ticketera-page .ticketera-shop-section .inline-heading {
+  max-width: 780px;
+  margin-bottom: clamp(34px, 5vw, 58px);
+}
+
+.ticketera-page .ticketera-shop-section .inline-heading h2 {
+  margin: 5px 0 0;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  font-style: italic;
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ticketera-page .ticketera-shop-section .inline-heading p:not(.section-kicker) {
+  max-width: 670px;
+}
+
+.ticketera-page .event-products {
+  gap: 20px;
+  padding-top: clamp(34px, 5vw, 54px);
+  border-top: 1px solid #cdd4d1;
+}
+
+.ticketera-page .event-products + .event-products {
+  margin-top: clamp(48px, 7vw, 88px);
+}
+
+.ticketera-page .event-products-heading {
+  align-items: end;
+  gap: 24px;
+}
+
+.ticketera-page .event-products-heading h2 {
+  margin: 3px 0 0;
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+  font-style: italic;
+  line-height: 0.84;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.event-sequence {
+  margin: 0;
+  color: var(--racing-cyan, var(--cyan));
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ticketera-page .event-purchase-meaning {
+  max-width: 640px;
+  margin-top: 14px;
+  font-weight: 650;
+}
+
+.ticketera-page .event-purchase-date {
+  min-width: 146px;
+  gap: 1px;
+  padding: 14px 16px;
+  color: #fff;
+  border: 0;
+  background: #181c21;
+}
+
+.ticketera-page .event-purchase-date span {
+  color: var(--racing-cyan, var(--cyan));
+  font-size: 0.67rem;
+  text-transform: uppercase;
+}
+
+.ticketera-page .event-purchase-date strong {
+  font-size: 1.62rem;
+  font-style: italic;
+  line-height: 0.95;
+}
+
+.ticketera-page .event-purchase-date small {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.ticketera-page .event-single-day-notice {
+  margin: 0;
+  padding: 0 0 15px;
+  color: var(--muted);
+  border: 0;
+  border-bottom: 1px solid #d7ddda;
+  background: transparent;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.ticketera-page .ticket-product-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 26px);
+}
+
+.ticketera-page .ticket-product-card {
+  position: relative;
+  min-height: 510px;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(22px, 3vw, 30px);
+  border: 1px solid #d4dbd8;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.ticketera-page .ticket-product-card::before,
+.ticketera-page .ticket-product-card::after {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+}
+
+.ticketera-page .ticket-product-card::before {
+  top: -32px;
+  right: -32px;
+  width: min(46%, 250px);
+  aspect-ratio: 1;
+  background: #dce8e5;
+  opacity: 0.5;
+}
+
+.ticketera-page .ticket-product-card::after {
+  top: -26px;
+  right: -40px;
+  width: min(52%, 280px);
+  aspect-ratio: 1;
+  background: url("/assets/pistons/pistons-watermark.webp") center / contain no-repeat;
+  opacity: 0.5;
+}
+
+.ticketera-page .ticket-product-card--paddock {
+  color: #fff;
+  border-color: #171b20;
+  background: #171b20;
+}
+
+.ticketera-page .ticket-product-card--paddock::before {
+  background: #1c5d5c;
+}
+
+.ticketera-page .ticket-product-card--paddock .ticket-phase,
+.ticketera-page .ticket-product-card--paddock h3 {
+  color: #fff;
+}
+
+.ticketera-page .ticket-product-card--paddock > div > p:not(.ticket-phase),
+.ticketera-page .ticket-product-card--paddock .parking-reference {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.ticketera-page .ticket-product-card h3 {
+  max-width: 72%;
+  margin: 4px 0 10px;
+  font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+  line-height: 1.05;
+}
+
+.ticketera-page .ticket-product-card > div > p:not(.ticket-phase) {
+  max-width: 78%;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ticketera-page .ticket-phase {
+  width: fit-content;
+  margin: 0;
+  color: #215a53;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ticket-price-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 2px 0 0;
+  border-block: 1px solid #d6ddda;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.ticket-price-breakdown > div {
+  display: grid;
+  gap: 4px;
+  padding: 11px 0;
+}
+
+.ticket-price-breakdown > div:nth-child(odd) {
+  padding-left: 12px;
+}
+
+.ticket-price-breakdown > div:nth-child(even) {
+  padding-right: 12px;
+  text-align: right;
+}
+
+.ticket-price-breakdown dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.ticket-price-breakdown dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.ticket-price-breakdown .ticket-price-net dd {
+  color: var(--ink);
+  font-size: 1.8rem;
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.ticket-price-breakdown .ticket-price-total {
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  padding: 13px 12px;
+  color: #fff;
+  background: #183a37;
+}
+
+.ticket-price-breakdown .ticket-price-total dt {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.ticket-price-breakdown .ticket-price-total dd {
+  font-size: 1.25rem;
+  font-weight: 950;
+}
+
+.ticket-product-card--paddock .ticket-price-breakdown {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ticket-product-card--paddock .ticket-price-breakdown dt {
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.ticket-product-card--paddock .ticket-price-breakdown dd,
+.ticket-product-card--paddock .ticket-price-breakdown .ticket-price-net dd {
+  color: #fff;
+}
+
+.ticket-product-card--paddock .ticket-price-breakdown .ticket-price-total {
+  background: #e9b949;
+}
+
+.ticket-product-card--paddock .ticket-price-breakdown .ticket-price-total dt,
+.ticket-product-card--paddock .ticket-price-breakdown .ticket-price-total dd {
+  color: #171b20;
+}
+
+.ticketera-page .parking-reference {
+  margin: 0;
+  padding: 0;
+  color: #315b3b;
+  border: 0;
+  background: transparent;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.ticket-quantity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.quantity-stepper {
+  display: grid;
+  grid-template-columns: 42px 54px 42px;
+  align-items: stretch;
+  height: 42px;
+  overflow: hidden;
+  border: 1px solid #cfd7d3;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.quantity-step {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--ink);
+  border: 0;
+  background: #e8eeeb;
+  cursor: pointer;
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+.quantity-step:hover:not(:disabled) {
+  color: #fff;
+  background: #183a37;
+}
+
+.quantity-step:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.quantity-stepper input {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  color: var(--ink);
+  text-align: center;
+  border: 0;
+  background: #fff;
+  font-weight: 900;
+  appearance: textfield;
+}
+
+.quantity-stepper input::-webkit-outer-spin-button,
+.quantity-stepper input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.ticket-product-card--paddock .ticket-quantity {
+  color: #fff;
+}
+
+.ticket-product-card--paddock .quantity-stepper {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ticket-product-card--paddock .quantity-step {
+  color: #fff;
+  background: #275250;
+}
+
+.ticket-product-card--paddock .quantity-stepper input {
+  color: #fff;
+  background: #101315;
+}
+
+.ticketera-page .ticket-product-card .button {
+  position: relative;
+  z-index: 1;
+  min-height: 48px;
+}
+
+.cart-line {
+  grid-template-columns: 1fr auto auto 38px;
+}
+
+.cart-quantity-control {
+  display: grid;
+  grid-template-columns: 32px 28px 32px;
+  align-items: center;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.cart-quantity-control .icon-button {
+  width: 32px;
+  height: 36px;
+  border: 0;
+  border-radius: 0;
+  background: #edf1ee;
+}
+
+.cart-quantity-control .icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cart-quantity-control > strong {
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .ticketera-editorial-hero {
+    min-height: 500px;
+  }
+
+  .ticketera-editorial-hero-media {
+    object-position: 60% center;
+  }
+
+  .ticketera-editorial-hero-overlay {
+    background: rgba(5, 7, 9, 0.7);
+  }
+
+  .ticketera-editorial-hero h1 {
+    font-size: clamp(3.35rem, 16vw, 5.2rem);
+  }
+
+  .ticketera-hero-days {
+    width: 100%;
+  }
+
+  .ticketera-hero-days span {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .ticketera-page .event-products-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ticketera-page .event-purchase-date {
+    width: 100%;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+  }
+
+  .ticketera-page .event-purchase-date small {
+    text-align: right;
+  }
+
+  .ticketera-page .ticket-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ticketera-page .ticket-product-card {
+    min-height: 0;
+  }
+
+  .ticketera-page .ticket-product-card h3,
+  .ticketera-page .ticket-product-card > div > p:not(.ticket-phase) {
+    max-width: 72%;
+  }
+
+  .ticketera-page .ticket-product-card::before {
+    width: 44%;
+  }
+
+  .ticketera-page .ticket-product-card::after {
+    width: 52%;
+  }
+
+  .cart-line {
+    grid-template-columns: 1fr auto;
+  }
+
+  .cart-line > strong,
+  .cart-line .icon-button {
+    justify-self: start;
+  }
+}

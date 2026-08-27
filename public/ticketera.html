@@ -10,7 +10,7 @@
     <script defer src="/shared.js"></script>
     <script defer src="/ticketera.js"></script>
   </head>
-  <body>
+  <body class="racing-site ticketera-page">
     <header class="site-header">
       <a class="brand" href="/">
         <span class="brand-mark"><img src="/logo-hfc.avif" alt="" width="72" height="48" /></span>
@@ -27,39 +27,32 @@
     </header>
 
     <main>
-      <section class="page-hero compact-hero">
-        <div>
-          <p class="section-kicker">Ticketera oficial</p>
-          <h1>Tu entrada es para un día.</h1>
-          <p>Fecha doble: Honda Fest Chile se vive el Sábado 21 y Domingo 22 de noviembre de 2026. Elige Drag Day o Track Day: cada entrada es válida solo para la jornada indicada.</p>
+      <section class="ticketera-editorial-hero">
+        <img
+          class="ticketera-editorial-hero-media"
+          src="/assets/racing/hfc-hero-poster-1920.webp"
+          alt="Autos Honda en pista durante Honda Fest Chile"
+          width="1920"
+          height="1080"
+        />
+        <div class="ticketera-editorial-hero-overlay"></div>
+        <div class="ticketera-editorial-hero-content">
+          <p class="eyebrow"><span>Fecha doble</span> 21-22 NOV · 2026</p>
+          <h1>Elige tu <span>jornada.</span></h1>
+          <p>La entrada se vende por día: vive la potencia del Drag Day el sábado o el Track Day en pista el domingo.</p>
+          <div class="ticketera-hero-days" aria-label="Fechas del evento">
+            <span><small>Sábado 21</small><strong>Drag Day</strong></span>
+            <span><small>Domingo 22</small><strong>Track Day</strong></span>
+          </div>
         </div>
       </section>
 
-      <section class="ticketera-pass-callout">
-        <div><p class="section-kicker">Upgrade de experiencia</p><h2>Tu entrada abre la puerta. Tu Pase multiplica la experiencia.</h2><p>Elige un Pase de 1 a 9 Pistones con lanyard, credencial, experiencias, un refresco extra y posibilidades de ganar el Honda.</p></div>
-        <div><strong>EL PASE NO REEMPLAZA TU ENTRADA</strong><a class="button primary" href="/pases-especiales">Elegir mi Pase</a></div>
-      </section>
-
-      <section class="section split-section ticketera-shop-section">
+      <section class="section ticketera-shop-section">
         <div>
           <div class="section-heading inline-heading">
             <p class="section-kicker">Entradas</p>
             <h2>Elige tu jornada antes de comprar.</h2>
-            <p>Cada entrada sirve para un solo día. Si quieres vivir el fin de semana completo, agrega una entrada para cada jornada.</p>
-          </div>
-          <div class="day-choice-grid" aria-label="Jornadas de Honda Fest Chile">
-            <article class="day-choice-card day-choice-card--drag">
-              <p class="day-choice-date">Sábado 21 de noviembre</p>
-              <h3>Drag Day</h3>
-              <p>Aceleración en recta, potencia, duelos y exhibiciones para vivir la velocidad de frente.</p>
-              <strong>Tu entrada del sábado no es válida el domingo.</strong>
-            </article>
-            <article class="day-choice-card day-choice-card--track">
-              <p class="day-choice-date">Domingo 22 de noviembre</p>
-              <h3>Track Day</h3>
-              <p>Autos en pista, curvas, tandas y manejo para seguir la acción vuelta a vuelta.</p>
-              <strong>Tu entrada del domingo no es válida el sábado.</strong>
-            </article>
+            <p>Selecciona una entrada por cada día al que quieras asistir. Verás el detalle neto, IVA, cargo y total antes de agregarla al carrito.</p>
           </div>
           <div class="product-grid" id="productGrid" aria-live="polite"></div>
         </div>

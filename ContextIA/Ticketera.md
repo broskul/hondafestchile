@@ -41,7 +41,8 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 - El resumen del carrito obtiene el porcentaje de cargo desde el precio resuelto de cada linea; no se debe fijar un texto de `12%`, porque las entradas historicas conservan su cargo anterior y las nuevas usan 8%.
 - No basta cambiar `server/config/catalog.js`: mientras exista `ticketing_config` en la base, ese registro es la fuente del catalogo publico. `scripts/migrate-hfc-two-day-catalog.js --apply` migra el registro conservando el catalogo heredado oculto y verifica las dos jornadas publicas.
 - Estacionamiento Galeria: gratis. El estacionamiento de Parque Cerrado esta incluido con la entrada y nunca se cobra por separado.
-- La ticketera y el carrito invitan a elegir un Pase como Upgrade de experiencia. Sus Pistones definen las posibilidades registradas en el sorteo y cada Pase incluye un refresco extra, siempre con el aviso visible de que no reemplaza la entrada al evento.
+- `/ticketera` prioriza la decision de jornada y entrada: cada producto expone valor neto, IVA, cargo y total online, con control de cantidad `- / +`. El upgrade de Pistones queda como opcion secundaria y nunca bloquea ni distrae de la compra de la entrada.
+- No usar cintas, franjas ni avisos rojos para comunicar la validez por dia: el rojo se reserva para acciones principales o estados de error. La vigencia se explica con texto editorial y contraste neutro.
 
 ## Archivos clave
 

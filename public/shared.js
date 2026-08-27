@@ -460,11 +460,15 @@
                   <span>${item.eventName}</span>
                   <small>${formatCurrency(item.unitPrice)} c/u</small>
                 </div>
-                <label>
-                  Cant.
-                  <input class="cart-qty" type="number" min="1" max="${item.maxQuantity}" value="${item.quantity}"
-                    data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" />
-                </label>
+                <div class="cart-quantity-control" aria-label="Cantidad de ${escapeHtml(item.ticketTypeName)}">
+                  <button class="icon-button" type="button" data-cart-quantity-step="-1"
+                    data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" data-quantity="${item.quantity}"
+                    aria-label="Disminuir cantidad de ${escapeHtml(item.ticketTypeName)}" ${item.quantity <= 1 ? "disabled" : ""}>−</button>
+                  <strong aria-live="polite">${item.quantity}</strong>
+                  <button class="icon-button" type="button" data-cart-quantity-step="1"
+                    data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" data-quantity="${item.quantity}" data-max-quantity="${item.maxQuantity}"
+                    aria-label="Aumentar cantidad de ${escapeHtml(item.ticketTypeName)}" ${item.quantity >= item.maxQuantity ? "disabled" : ""}>+</button>
+                </div>
                 <strong>${formatCurrency(item.subtotal)}</strong>
                 <button class="icon-button" type="button" data-cart-remove data-event-id="${item.eventId}"
                   data-ticket-type-id="${item.ticketTypeId}" aria-label="Quitar">x</button>
@@ -498,9 +502,15 @@
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;
 
-    $$(".cart-qty", container).forEach((input) => {
-      input.addEventListener("change", async () => {
-        updateQuantity(input.dataset.eventId, input.dataset.ticketTypeId, input.value);
+    $$('[data-cart-quantity-step]', container).forEach((button) => {
+      button.addEventListener("click", async () => {
+        const current = Number(button.dataset.quantity || 1);
+        const maxQuantity = Number(button.dataset.maxQuantity || Number.MAX_SAFE_INTEGER);
+        const next = Math.min(
+          maxQuantity,
+          Math.max(1, current + Number(button.dataset.cartQuantityStep || 0))
+        );
+        updateQuantity(button.dataset.eventId, button.dataset.ticketTypeId, next);
         await renderAllCarts();
       });
     });
