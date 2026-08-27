@@ -14,6 +14,13 @@
 - La auditoria administrativa de este caso esta disponible en `GET /api/backoffice/japon-fest-cancellation/audit`; `POST /api/backoffice/japon-fest-cancellation/repair` solo aplica cambios con `{ "apply": true }`.
 - La reparacion marca las ordenes como `cancelled_refunded`, anula las entradas, revoca y elimina tokens de enrolamiento y suprime nuevos envios. No crea reembolsos, notas de credito ni correos; esos movimientos tienen su propio respaldo operativo.
 
+### Aplicacion productiva 2026-08-27
+
+- Auditoria previa: 35 ordenes JFC (`11 paid`, `21 payment_expired`, `3 payment_failed`), 26 con perfil pendiente, 2 tokens de enrolamiento activos y 15 entradas emitidas (`14 valid`, `1 checked_in`).
+- Se registraron 29 correos historicos asociados: 22 `enrollment_invitation` enviados (el ultimo el 2026-08-26), 3 `dte_reissued`, 3 `payment_failed_retry` y 1 `resend_order` historico.
+- Reparacion aplicada una vez: 35 ordenes cambiadas a `cancelled_refunded`, 2 tokens revocados y 15 entradas anuladas. Resultado verificado: 0 perfiles pendientes, 0 tokens activos y 15 tickets con estado `cancelled`.
+- Prueba de no-regresion: cargar `/api/backoffice/summary` no altero los 29 logs historicos y devolvio `enrollmentRemindersSent: 0`.
+
 ### Corte verificado 2026-07-29
 
 - Fuente Supabase productiva: `/api/backoffice/summary`, storage `postgres`. Desde el cierre de accesos, esa ruta es estrictamente de lectura y no envía recordatorios.
