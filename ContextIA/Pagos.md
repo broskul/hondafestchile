@@ -14,7 +14,7 @@ Crear ordenes de ticketera y conectar el checkout con Mercado Pago.
 6. Si no hay public key o se desactiva `MERCADOPAGO_INTERNAL_CHECKOUT`, se mantiene fallback Checkout Pro.
 7. Si no hay token, se usa modo demo con `POST /api/orders/:orderId/simulate-payment`.
 8. Si el pago fue aprobado y faltan nombre, RUT o telefono, la app muestra el formulario de perfil post-pago.
-9. `POST /api/orders/:orderId/profile` completa datos, emite tickets con QR, solicita boleta y envia correo.
+9. `POST /api/orders/:orderId/profile` completa datos, emite tickets con QR, solicita boleta y envia correo. Si Haulmer no responde, las entradas siguen entregandose y la boleta queda pendiente de reintento.
 10. `POST /api/webhooks/mercadopago` valida firma si `MERCADOPAGO_WEBHOOK_SECRET` esta configurado, consulta el pago y sincroniza la orden.
 
 ## Archivos clave

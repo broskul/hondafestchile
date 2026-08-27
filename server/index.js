@@ -1739,8 +1739,8 @@ function retryCheckoutUrl(order, req = null) {
 function supportWhatsappUrl(order = null) {
   const eventName = orderEventName(order);
   const message = order?.id
-    ? `Hola, necesito ayuda con mi compra ${eventName}. Orden ${order.id}.`
-    : `Hola, necesito ayuda con mi compra ${eventName}.`;
+    ? `Hola, necesito ayuda con mi compra o entrada ${eventName}. Orden ${order.id}.`
+    : `Hola, necesito ayuda con mi compra o entrada ${eventName}.`;
   return `https://wa.me/56972934950?text=${encodeURIComponent(message)}`;
 }
 
@@ -2727,7 +2727,7 @@ async function sendPaymentRetryEmail({ orderId, req = null, reason = "", force =
     rendered.html = `${rendered.html}
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212;margin-top:18px">
         <p><a href="${htmlEscape(retryUrl)}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Intentar nuevamente</a></p>
-        <p><a href="${htmlEscape(whatsappUrl)}" style="color:#1b5e20;font-weight:bold;text-decoration:none">Necesito ayuda por WhatsApp</a></p>
+        <p><a href="${htmlEscape(whatsappUrl)}" style="color:#1b5e20;font-weight:bold;text-decoration:none">Ayuda compra/entrada por WhatsApp</a></p>
       </div>`;
   }
 

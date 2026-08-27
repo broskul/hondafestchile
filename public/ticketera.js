@@ -1,7 +1,8 @@
 const PARTICIPATION_WHATSAPP_URL =
+  window.HFC_CONTACT_LINKS?.eventUrl ||
   window.HFC_CONTACT_LINKS?.participationUrl ||
   `https://wa.me/56975766596?text=${encodeURIComponent(
-    "Hola Pablo, quiero participar en Honda Fest Chile como piloto, foodtruck o stand."
+    "Hola Pablo, tengo una pregunta sobre el evento Honda Fest Chile."
   )}`;
 
 function escapeHtml(value) {
@@ -59,15 +60,15 @@ function renderParticipationTicketCard() {
     <article class="product-card participation-ticket-card">
       <div>
         <small class="ticket-participation-eyebrow">Coordinacion directa</small>
-        <h4>Pilotos, Foodtrucks y Stands</h4>
-        <p>Pista, puestos de comida y stands se coordinan por WhatsApp con Pablo.</p>
+        <h4>Preguntas del evento</h4>
+        <p>Horarios, ubicacion, pilotos, foodtrucks, stands y participacion se coordinan por WhatsApp con Pablo.</p>
       </div>
       <div class="ticket-display-price ticket-display-price--contact">
         <span>Gestion</span>
         <strong>WhatsApp</strong>
       </div>
       <a class="button secondary full" href="${PARTICIPATION_WHATSAPP_URL}" target="_blank" rel="noreferrer">
-        Quiero participar
+        Preguntar a Pablo
       </a>
     </article>
   `;

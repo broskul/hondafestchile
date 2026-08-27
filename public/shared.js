@@ -729,14 +729,14 @@
     const supportEventName = orderEventNameForSupport(order);
     const whatsappUrl =
       data.whatsappUrl ||
-      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra ${supportEventName}. Orden ${order.id}.`)}`;
+      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra o entrada ${supportEventName}. Orden ${order.id}.`)}`;
     if (order.status === "payment_failed") {
       setStatus(
         statusElement,
-        `<strong>Compra no finalizada.</strong><br />Te enviamos un correo para que puedas intentar nuevamente o hablarnos por WhatsApp.
+        `<strong>Compra no finalizada.</strong><br />Te enviamos un correo para que puedas intentar nuevamente. Si tienes problemas con el pago, orden, QR o entrada, escribe a soporte de ticketera.
         <div class="status-actions">
           <a class="button primary" href="${escapeHtml(retryUrl)}">Intentar nuevamente</a>
-          <a class="button secondary" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
+          <a class="button secondary" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Ayuda compra</a>
         </div>`,
         true
       );
@@ -745,10 +745,10 @@
 
     setStatus(
       statusElement,
-      `<strong>Estamos comprobando la transaccion.</strong><br />Apenas Mercado Pago confirme el pago, te enviaremos el correo de confirmacion. Si cancelaste o no pudiste pagar, puedes intentarlo nuevamente o hablarnos por WhatsApp.
+      `<strong>Estamos comprobando la transaccion.</strong><br />Apenas Mercado Pago confirme el pago, te enviaremos el correo de confirmacion. Si cancelaste o no pudiste pagar, puedes intentarlo nuevamente o escribir a soporte de ticketera.
       <div class="status-actions">
         <a class="button secondary" href="${escapeHtml(retryUrl)}">Intentar nuevamente</a>
-        <a class="button ghost-light" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
+        <a class="button ghost-light" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Ayuda compra</a>
       </div>`
     );
   }

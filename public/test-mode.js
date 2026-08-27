@@ -1,14 +1,15 @@
 (() => {
   const SUPPORT_WHATSAPP_URL =
-    "https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra";
-  const PARTICIPATION_WHATSAPP_URL = `https://wa.me/56975766596?text=${encodeURIComponent(
-    "Hola Pablo, quiero participar en Honda Fest Chile como piloto, foodtruck o stand."
+    "https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra%20o%20entrada";
+  const EVENT_WHATSAPP_URL = `https://wa.me/56975766596?text=${encodeURIComponent(
+    "Hola Pablo, tengo una pregunta sobre el evento Honda Fest Chile."
   )}`;
 
   window.HFC_CONTACT_LINKS = {
     ...(window.HFC_CONTACT_LINKS || {}),
     supportUrl: SUPPORT_WHATSAPP_URL,
-    participationUrl: PARTICIPATION_WHATSAPP_URL
+    eventUrl: EVENT_WHATSAPP_URL,
+    participationUrl: EVENT_WHATSAPP_URL
   };
 
   async function loadCatalog() {
@@ -48,20 +49,20 @@
     actions.dataset.floatingActions = "true";
     actions.setAttribute("aria-label", "Accesos rapidos por WhatsApp");
     actions.innerHTML = `
-      <a class="floating-action floating-action--participate" data-participation-whatsapp="true"
-        href="${PARTICIPATION_WHATSAPP_URL}" target="_blank" rel="noreferrer"
-        aria-label="Quiero participar como piloto, foodtruck o stand por WhatsApp">
+      <a class="floating-action floating-action--participate" data-event-whatsapp="true"
+        href="${EVENT_WHATSAPP_URL}" target="_blank" rel="noreferrer"
+        aria-label="Preguntas del evento por WhatsApp con Pablo">
         <span aria-hidden="true">+</span>
         <span class="floating-action-copy">
-          <strong>Quiero participar</strong>
-          <small>Pilotos, foodtrucks y stands</small>
+          <strong>Preguntas evento</strong>
+          <small>Horario, ubicacion, participacion</small>
         </span>
       </a>
       <a class="floating-action floating-action--help" data-help-whatsapp="true"
         href="${SUPPORT_WHATSAPP_URL}" target="_blank" rel="noreferrer"
-        aria-label="Necesitas ayuda por WhatsApp">
+        aria-label="Ayuda con compra o entradas por WhatsApp">
         <span aria-hidden="true">?</span>
-        <strong>Necesitas ayuda?</strong>
+        <strong>Ayuda compra</strong>
       </a>
     `;
     document.body.appendChild(actions);

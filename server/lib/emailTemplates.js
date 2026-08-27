@@ -1,4 +1,5 @@
-const SUPPORT_WHATSAPP_URL = "https://wa.me/56972934950";
+const SUPPORT_WHATSAPP_URL =
+  "https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra%20o%20entrada";
 
 function emailButton(href, label, variant = "primary") {
   const background = variant === "dark" ? "#143b36" : "#d71920";
@@ -67,7 +68,7 @@ function orderItemsTable() {
 }
 
 function helpLine() {
-  return `<p style="color:#4c5563;font-size:14px;line-height:1.5;margin:18px 0 0;">Si necesitas ayuda, responde este correo o escribenos por WhatsApp: <a href="${SUPPORT_WHATSAPP_URL}" style="color:#143b36;font-weight:700;text-decoration:none;">+56 9 7293 4950</a>.</p>`;
+  return `<p style="color:#4c5563;font-size:14px;line-height:1.5;margin:18px 0 0;">Si tienes problemas con tu compra, entrada, QR o boleta, responde este correo o escribenos por WhatsApp: <a href="${SUPPORT_WHATSAPP_URL}" style="color:#143b36;font-weight:700;text-decoration:none;">+56 9 7293 4950</a>.</p>`;
 }
 
 const defaultEmailTemplates = [
@@ -248,7 +249,7 @@ const defaultEmailTemplates = [
       "{{order_items_text}}",
       "Puedes intentarlo nuevamente aqui:",
       "{{retry_url}}",
-      "Si necesitas ayuda, escribenos por WhatsApp:",
+      "Si tienes problemas con el pago, orden, QR o entrada, escribe a soporte de ticketera por WhatsApp:",
       "{{whatsapp_url}}"
     ].join("\n"),
     html: emailShell({
@@ -260,7 +261,7 @@ const defaultEmailTemplates = [
         orderSummaryBlock(),
         orderItemsTable(),
         `<p style="margin:0 0 12px;text-align:center;">${emailButton("{{retry_url}}", "Intentar nuevamente")}</p>`,
-        `<p style="margin:0;text-align:center;">${emailButton("{{whatsapp_url}}", "Necesito ayuda por WhatsApp", "dark")}</p>`
+        `<p style="margin:0;text-align:center;">${emailButton("{{whatsapp_url}}", "Ayuda compra/entrada", "dark")}</p>`
       ].join("")
     })
   },

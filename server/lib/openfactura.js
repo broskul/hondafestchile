@@ -9,9 +9,14 @@ function openFacturaConfigured() {
   );
 }
 
+function automaticInvoiceIssuanceEnabled() {
+  return /^(1|true|yes|si|sí)$/i.test(cleanEnv("OPENFACTURA_AUTO_ISSUE"));
+}
+
 function openFacturaRuntimeStatus() {
   return {
     configured: openFacturaConfigured(),
+    automaticIssueEnabled: automaticInvoiceIssuanceEnabled(),
     endpointConfigured: Boolean(cleanEnv("OPENFACTURA_ENDPOINT")),
     apiKeyConfigured: Boolean(cleanEnv("OPENFACTURA_API_KEY") || cleanEnv("OPENFACTURA_SUBSCRIPTION_KEY")),
     companyRutConfigured: Boolean(cleanEnv("OPENFACTURA_COMPANY_RUT")),
@@ -284,6 +289,7 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
 module.exports = {
   buildOpenFacturaPayload,
   issueBoleta,
+  automaticInvoiceIssuanceEnabled,
   openFacturaConfigured,
   openFacturaRuntimeStatus
 };
