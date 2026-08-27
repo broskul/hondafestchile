@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-07-29T21:38:12.763Z",
+  "source": "https://api.haulmer.com/v2/dte/registry/sales/2026/07",
+  "documentCount": 0,
+  "creditNotes": [],
+  "types": {},
+  "responses": [
+    {
+      "url": "https://api.haulmer.com/v2/dte/registry/sales/2026/7",
+      "http": 400,
+      "ok": false
+    },
+    {
+      "url": "https://api.haulmer.com/v2/dte/registry/sales/2026/07",
+      "http": 200,
+      "ok": true
+    }
+  ]
+}

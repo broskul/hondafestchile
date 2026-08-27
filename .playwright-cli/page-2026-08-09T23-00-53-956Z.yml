@@ -1,0 +1,194 @@
+- generic [active] [ref=f5e1]:
+  - banner [ref=f5e2]:
+    - link "HFC Honda Fest Chile Backoffice" [ref=f5e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f5e4]: HFC
+      - generic [ref=f5e5]:
+        - strong [ref=f5e6]: Honda Fest Chile
+        - generic [ref=f5e7]: Backoffice
+    - navigation "Backoffice" [ref=f5e8]:
+      - link "Ticketera" [ref=f5e9] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Validar" [ref=f5e10] [cursor=pointer]:
+        - /url: /validar
+  - main [ref=f5e11]:
+    - generic [ref=f5e13]:
+      - paragraph [ref=f5e14]: Backoffice oculto
+      - heading "Ventas, entradas y enrolados." [level=1] [ref=f5e15]
+    - generic [ref=f5e16]:
+      - generic [ref=f5e17]:
+        - generic [ref=f5e18]:
+          - generic [ref=f5e19]:
+            - text: Contraseña backoffice
+            - textbox "Contraseña backoffice" [ref=f5e20]:
+              - /placeholder: Contraseña administrativa
+              - text: qa-pass-token
+          - button "Entrar" [ref=f5e21] [cursor=pointer]
+        - generic [ref=f5e22]: Backoffice cargado.
+      - generic [ref=f5e23]:
+        - generic [ref=f5e105]: "Datos: JSON local - Correo: demo - remitente no configurado"
+        - tablist [ref=f5e106]:
+          - button "BI" [ref=f5e107] [cursor=pointer]
+          - button "Entradas" [ref=f5e108] [cursor=pointer]
+          - button "Pases" [ref=f5e109] [cursor=pointer]
+          - button "Invitados" [ref=f5e110] [cursor=pointer]
+          - button "Enrolados" [ref=f5e111] [cursor=pointer]
+          - button "Contactos CSV" [ref=f5e112] [cursor=pointer]
+          - button "Correos" [ref=f5e113] [cursor=pointer]
+          - button "Plantillas" [ref=f5e114] [cursor=pointer]
+          - button "Ventas" [ref=f5e115] [cursor=pointer]
+          - button "QR" [ref=f5e116] [cursor=pointer]
+        - generic [ref=f5e117]:
+          - generic [ref=f5e118]:
+            - generic [ref=f5e119]:
+              - generic [ref=f5e120]: Pases emitidos
+              - strong [ref=f5e121]: "1"
+            - generic [ref=f5e122]:
+              - generic [ref=f5e123]: Pistones
+              - strong [ref=f5e124]: "5"
+            - generic [ref=f5e125]:
+              - generic [ref=f5e126]: Retirados
+              - strong [ref=f5e127]: "1"
+            - generic [ref=f5e128]:
+              - generic [ref=f5e129]: Con acceso
+              - strong [ref=f5e130]: "1"
+          - generic [ref=f5e131]:
+            - generic [ref=f5e132]:
+              - generic [ref=f5e133]:
+                - paragraph [ref=f5e134]: Producto físico
+                - heading "Pase Especial HFC 2026" [level=2] [ref=f5e135]
+              - generic [ref=f5e136]:
+                - text: Venta activa
+                - checkbox "Venta activa" [checked] [ref=f5e137]
+            - generic [ref=f5e138]:
+              - generic [ref=f5e139]:
+                - text: Aviso de compra
+                - textbox "Aviso de compra" [ref=f5e140]: Puedes comprarlo sin una entrada asociada. Para ingresar al evento debes contar además con una entrada válida; es responsabilidad del comprador.
+              - generic [ref=f5e141]:
+                - text: Retiro día del evento
+                - textbox "Retiro día del evento" [ref=f5e142]: Retiro disponible el día del evento presentando el QR y la identificación del titular.
+              - generic [ref=f5e143]:
+                - text: Retiro previo
+                - textbox "Retiro previo" [ref=f5e144]: "Punto de retiro previo al evento: por confirmar."
+              - generic [ref=f5e145]:
+                - text: Beneficios, uno por línea
+                - textbox "Beneficios, uno por línea" [ref=f5e146]: Lanyard y credencial impresa de Pase Especial Acceso a experiencias especiales el día del evento Participación en premios especiales, incluido un automóvil Nuevos beneficios serán publicados próximamente
+            - generic [ref=f5e147]:
+              - article [ref=f5e148]:
+                - strong [ref=f5e149]: Pase de 1 Pistón
+                - generic [ref=f5e150]:
+                  - text: Nombre
+                  - textbox "Nombre" [ref=f5e151]: Pase de 1 Pistón
+                - generic [ref=f5e152]:
+                  - text: Pistones
+                  - spinbutton "Pistones" [ref=f5e153]: "1"
+                - generic [ref=f5e154]:
+                  - text: Precio final
+                  - spinbutton "Precio final" [ref=f5e155]: "5000"
+              - article [ref=f5e156]:
+                - strong [ref=f5e157]: Pase de 3 Pistones
+                - generic [ref=f5e158]:
+                  - text: Nombre
+                  - textbox "Nombre" [ref=f5e159]: Pase de 3 Pistones
+                - generic [ref=f5e160]:
+                  - text: Pistones
+                  - spinbutton "Pistones" [ref=f5e161]: "3"
+                - generic [ref=f5e162]:
+                  - text: Precio final
+                  - spinbutton "Precio final" [ref=f5e163]: "10000"
+              - article [ref=f5e164]:
+                - strong [ref=f5e165]: Pase de 5 Pistones
+                - generic [ref=f5e166]:
+                  - text: Nombre
+                  - textbox "Nombre" [ref=f5e167]: Pase de 5 Pistones
+                - generic [ref=f5e168]:
+                  - text: Pistones
+                  - spinbutton "Pistones" [ref=f5e169]: "5"
+                - generic [ref=f5e170]:
+                  - text: Precio final
+                  - spinbutton "Precio final" [ref=f5e171]: "15000"
+              - article [ref=f5e172]:
+                - strong [ref=f5e173]: Pase de 7 Pistones
+                - generic [ref=f5e174]:
+                  - text: Nombre
+                  - textbox "Nombre" [ref=f5e175]: Pase de 7 Pistones
+                - generic [ref=f5e176]:
+                  - text: Pistones
+                  - spinbutton "Pistones" [ref=f5e177]: "7"
+                - generic [ref=f5e178]:
+                  - text: Precio final
+                  - spinbutton "Precio final" [ref=f5e179]: "20000"
+              - article [ref=f5e180]:
+                - strong [ref=f5e181]: Pase de 9 Pistones
+                - generic [ref=f5e182]:
+                  - text: Nombre
+                  - textbox "Nombre" [ref=f5e183]: Pase de 9 Pistones
+                - generic [ref=f5e184]:
+                  - text: Pistones
+                  - spinbutton "Pistones" [ref=f5e185]: "9"
+                - generic [ref=f5e186]:
+                  - text: Precio final
+                  - spinbutton "Precio final" [ref=f5e187]: "25000"
+            - generic [ref=f5e188]:
+              - button "Guardar Pases Especiales" [ref=f5e189] [cursor=pointer]
+              - button "Descargar Pistones CSV" [ref=f5e190] [cursor=pointer]
+              - link "Abrir control de pases" [ref=f5e191] [cursor=pointer]:
+                - /url: /validar-pase
+          - generic [ref=f5e192]:
+            - heading "Pases emitidos" [level=2] [ref=f5e193]
+            - table [ref=f5e195]:
+              - rowgroup [ref=f5e196]:
+                - row [ref=f5e197]:
+                  - columnheader "Código" [ref=f5e198]
+                  - columnheader "Nivel" [ref=f5e199]
+                  - columnheader "Titular" [ref=f5e200]
+                  - columnheader "Retiro" [ref=f5e201]
+                  - columnheader "Acceso" [ref=f5e202]
+                  - columnheader "Operar" [ref=f5e203]
+              - rowgroup [ref=f5e204]:
+                - row [ref=f5e205]:
+                  - cell [ref=f5e206]:
+                    - code [ref=f5e207]: HFC-PASE-2026-C8A9E64502
+                  - cell [ref=f5e208]:
+                    - strong [ref=f5e209]: 5 Pistones
+                    - text: Pase de 5 Pistones
+                  - cell "Qa Browser Pase 12.345.678-5" [ref=f5e210]: Qa Browser Pase12.345.678-5
+                  - cell "picked_up" [ref=f5e211]
+                  - cell "checked_in" [ref=f5e212]
+                  - cell [ref=f5e213]:
+                    - link "Validar" [ref=f5e214] [cursor=pointer]:
+                      - /url: /validar-pase?code=HFC-PASE-2026-C8A9E64502
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+            - text: qa.browser.pase@example.com
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic:
+          - checkbox [checked]
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - generic:
+          - text: ✓
+          - strong: Email verificado
+        - button: Pagar ahora

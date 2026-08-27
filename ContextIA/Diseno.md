@@ -32,7 +32,7 @@ El usuario aprobo expresamente el mockup generado el 26 de agosto de 2026, con l
 ## Hero Racing
 
 - Poster local prioritario: `public/assets/racing/hfc-hero-poster-2560.avif`, con fallback WebP 1920 para que la primera pintura no dependa de red externa.
-- Movimiento: secuencia unica de 28 frames a 12 fps sobre `canvas`, con interpolacion visual entre frames y ultimo frame sostenido.
+- Movimiento: secuencia unica de 28 frames a 6 fps sobre `canvas`, con interpolacion visual entre frames y ultimo frame sostenido. La duracion aproximada es 4,5 segundos.
 - En escritorio, hover o foco reproduce la secuencia desde el inicio; salir devuelve el poster. El control permite detenerla o fijar una repeticion completa.
 - En movil, la secuencia se activa una vez al entrar al viewport y usa la variante AVIF 1280 con crop `cover` centrado horizontalmente. El auto debe permanecer grande y protagonista.
 - La reproduccion solo comienza cuando la variante completa fue descargada y decodificada. La resolucion desktop se selecciona por ancho renderizado para limitar memoria y evitar tirones.

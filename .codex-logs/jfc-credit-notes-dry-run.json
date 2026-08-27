@@ -1,0 +1,486 @@
+{
+  "generatedAt": "2026-07-29T21:44:04.528Z",
+  "mode": "dry-run",
+  "stateSource": "production-backoffice-summary",
+  "productionStorage": {
+    "mode": "postgres",
+    "supabase": true,
+    "warning": null
+  },
+  "expectedOriginalFolios": [
+    "15351",
+    "15352",
+    "15353",
+    "15354",
+    "15355",
+    "15356"
+  ],
+  "candidates": [
+    {
+      "orderId": "order_e3ae886becd7ebcf6446",
+      "originalFolio": "15351",
+      "amount": 11462,
+      "amountText": "$11.462",
+      "receptorRut": "23257749-5",
+      "receptorName": "C Mancillavalencia",
+      "existingCreditNoteFolio": null,
+      "payload": {
+        "response": [
+          "XML",
+          "PDF",
+          "TIMBRE",
+          "LOGO",
+          "FOLIO",
+          "RESOLUCION",
+          "LETTER"
+        ],
+        "dte": {
+          "Encabezado": {
+            "IdDoc": {
+              "TipoDTE": 61,
+              "Folio": 0,
+              "FchEmis": "2026-07-29",
+              "TpoTranVenta": "1",
+              "FmaPago": "2"
+            },
+            "Emisor": {
+              "RUTEmisor": "77918779-9",
+              "RznSoc": "PYR EVENTOS SPA",
+              "GiroEmis": "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO, CONCIERTOS, ESPECTACULOS D",
+              "DirOrigen": "AV. FRANCISCO BILBAO 538",
+              "CmnaOrigen": "PEÑAFLOR",
+              "CiudadOrigen": "TALAGANTE",
+              "CdgSIISucur": 90061542
+            },
+            "Receptor": {
+              "RUTRecep": "23257749-5",
+              "RznSocRecep": "C Mancillavalencia",
+              "DirRecep": "AV. FRANCISCO BILBAO 538",
+              "CmnaRecep": "PEÑAFLOR"
+            },
+            "Totales": {
+              "MntNeto": 9632,
+              "TasaIVA": "19",
+              "IVA": 1830,
+              "MntTotal": 11462,
+              "MontoPeriodo": 11462,
+              "VlrPagar": 11462
+            }
+          },
+          "Detalle": [
+            {
+              "NroLinDet": 1,
+              "NmbItem": "Preventa - Japon Fest Chile",
+              "QtyItem": 1,
+              "PrcItem": 11462,
+              "MontoItem": 11462
+            }
+          ],
+          "Referencia": [
+            {
+              "NroLinRef": 1,
+              "TpoDocRef": "39",
+              "FolioRef": "15351",
+              "FchRef": "2026-06-23",
+              "CodRef": "1",
+              "RazonRef": "Anula boleta por cancelacion Japon Fest Chile"
+            }
+          ]
+        },
+        "referenciaExterna": "jfc-cancel-order_e3ae886becd7ebcf6446-15351"
+      }
+    },
+    {
+      "orderId": "order_192d69ddf5c003e48edd",
+      "originalFolio": "15352",
+      "amount": 34386,
+      "amountText": "$34.386",
+      "receptorRut": "21534573-4",
+      "receptorName": "Matiasignacio713",
+      "existingCreditNoteFolio": null,
+      "payload": {
+        "response": [
+          "XML",
+          "PDF",
+          "TIMBRE",
+          "LOGO",
+          "FOLIO",
+          "RESOLUCION",
+          "LETTER"
+        ],
+        "dte": {
+          "Encabezado": {
+            "IdDoc": {
+              "TipoDTE": 61,
+              "Folio": 0,
+              "FchEmis": "2026-07-29",
+              "TpoTranVenta": "1",
+              "FmaPago": "2"
+            },
+            "Emisor": {
+              "RUTEmisor": "77918779-9",
+              "RznSoc": "PYR EVENTOS SPA",
+              "GiroEmis": "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO, CONCIERTOS, ESPECTACULOS D",
+              "DirOrigen": "AV. FRANCISCO BILBAO 538",
+              "CmnaOrigen": "PEÑAFLOR",
+              "CiudadOrigen": "TALAGANTE",
+              "CdgSIISucur": 90061542
+            },
+            "Receptor": {
+              "RUTRecep": "21534573-4",
+              "RznSocRecep": "Matiasignacio713",
+              "DirRecep": "AV. FRANCISCO BILBAO 538",
+              "CmnaRecep": "PEÑAFLOR"
+            },
+            "Totales": {
+              "MntNeto": 28896,
+              "TasaIVA": "19",
+              "IVA": 5490,
+              "MntTotal": 34386,
+              "MontoPeriodo": 34386,
+              "VlrPagar": 34386
+            }
+          },
+          "Detalle": [
+            {
+              "NroLinDet": 1,
+              "NmbItem": "Preventa - Japon Fest Chile",
+              "QtyItem": 3,
+              "PrcItem": 11462,
+              "MontoItem": 34386
+            }
+          ],
+          "Referencia": [
+            {
+              "NroLinRef": 1,
+              "TpoDocRef": "39",
+              "FolioRef": "15352",
+              "FchRef": "2026-06-25",
+              "CodRef": "1",
+              "RazonRef": "Anula boleta por cancelacion Japon Fest Chile"
+            }
+          ]
+        },
+        "referenciaExterna": "jfc-cancel-order_192d69ddf5c003e48edd-15352"
+      }
+    },
+    {
+      "orderId": "order_eb195b20b512cdae165f",
+      "originalFolio": "15353",
+      "amount": 22924,
+      "amountText": "$22.924",
+      "receptorRut": "20162010-4",
+      "receptorName": "Bsaezrivera6",
+      "existingCreditNoteFolio": null,
+      "payload": {
+        "response": [
+          "XML",
+          "PDF",
+          "TIMBRE",
+          "LOGO",
+          "FOLIO",
+          "RESOLUCION",
+          "LETTER"
+        ],
+        "dte": {
+          "Encabezado": {
+            "IdDoc": {
+              "TipoDTE": 61,
+              "Folio": 0,
+              "FchEmis": "2026-07-29",
+              "TpoTranVenta": "1",
+              "FmaPago": "2"
+            },
+            "Emisor": {
+              "RUTEmisor": "77918779-9",
+              "RznSoc": "PYR EVENTOS SPA",
+              "GiroEmis": "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO, CONCIERTOS, ESPECTACULOS D",
+              "DirOrigen": "AV. FRANCISCO BILBAO 538",
+              "CmnaOrigen": "PEÑAFLOR",
+              "CiudadOrigen": "TALAGANTE",
+              "CdgSIISucur": 90061542
+            },
+            "Receptor": {
+              "RUTRecep": "20162010-4",
+              "RznSocRecep": "Bsaezrivera6",
+              "DirRecep": "AV. FRANCISCO BILBAO 538",
+              "CmnaRecep": "PEÑAFLOR"
+            },
+            "Totales": {
+              "MntNeto": 19264,
+              "TasaIVA": "19",
+              "IVA": 3660,
+              "MntTotal": 22924,
+              "MontoPeriodo": 22924,
+              "VlrPagar": 22924
+            }
+          },
+          "Detalle": [
+            {
+              "NroLinDet": 1,
+              "NmbItem": "Preventa - Japon Fest Chile",
+              "QtyItem": 2,
+              "PrcItem": 11462,
+              "MontoItem": 22924
+            }
+          ],
+          "Referencia": [
+            {
+              "NroLinRef": 1,
+              "TpoDocRef": "39",
+              "FolioRef": "15353",
+              "FchRef": "2026-07-02",
+              "CodRef": "1",
+              "RazonRef": "Anula boleta por cancelacion Japon Fest Chile"
+            }
+          ]
+        },
+        "referenciaExterna": "jfc-cancel-order_eb195b20b512cdae165f-15353"
+      }
+    },
+    {
+      "orderId": "order_29d1226b785d35d0f941",
+      "originalFolio": "15354",
+      "amount": 22924,
+      "amountText": "$22.924",
+      "receptorRut": "22064382-4",
+      "receptorName": "Catalinapoletterc",
+      "existingCreditNoteFolio": null,
+      "payload": {
+        "response": [
+          "XML",
+          "PDF",
+          "TIMBRE",
+          "LOGO",
+          "FOLIO",
+          "RESOLUCION",
+          "LETTER"
+        ],
+        "dte": {
+          "Encabezado": {
+            "IdDoc": {
+              "TipoDTE": 61,
+              "Folio": 0,
+              "FchEmis": "2026-07-29",
+              "TpoTranVenta": "1",
+              "FmaPago": "2"
+            },
+            "Emisor": {
+              "RUTEmisor": "77918779-9",
+              "RznSoc": "PYR EVENTOS SPA",
+              "GiroEmis": "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO, CONCIERTOS, ESPECTACULOS D",
+              "DirOrigen": "AV. FRANCISCO BILBAO 538",
+              "CmnaOrigen": "PEÑAFLOR",
+              "CiudadOrigen": "TALAGANTE",
+              "CdgSIISucur": 90061542
+            },
+            "Receptor": {
+              "RUTRecep": "22064382-4",
+              "RznSocRecep": "Catalinapoletterc",
+              "DirRecep": "AV. FRANCISCO BILBAO 538",
+              "CmnaRecep": "PEÑAFLOR"
+            },
+            "Totales": {
+              "MntNeto": 19264,
+              "TasaIVA": "19",
+              "IVA": 3660,
+              "MntTotal": 22924,
+              "MontoPeriodo": 22924,
+              "VlrPagar": 22924
+            }
+          },
+          "Detalle": [
+            {
+              "NroLinDet": 1,
+              "NmbItem": "Preventa - Japon Fest Chile",
+              "QtyItem": 2,
+              "PrcItem": 11462,
+              "MontoItem": 22924
+            }
+          ],
+          "Referencia": [
+            {
+              "NroLinRef": 1,
+              "TpoDocRef": "39",
+              "FolioRef": "15354",
+              "FchRef": "2026-07-02",
+              "CodRef": "1",
+              "RazonRef": "Anula boleta por cancelacion Japon Fest Chile"
+            }
+          ]
+        },
+        "referenciaExterna": "jfc-cancel-order_29d1226b785d35d0f941-15354"
+      }
+    },
+    {
+      "orderId": "order_9703ff904d8c50853702",
+      "originalFolio": "15355",
+      "amount": 22924,
+      "amountText": "$22.924",
+      "receptorRut": "19082284-2",
+      "receptorName": "Ruthfuentealba60",
+      "existingCreditNoteFolio": null,
+      "payload": {
+        "response": [
+          "XML",
+          "PDF",
+          "TIMBRE",
+          "LOGO",
+          "FOLIO",
+          "RESOLUCION",
+          "LETTER"
+        ],
+        "dte": {
+          "Encabezado": {
+            "IdDoc": {
+              "TipoDTE": 61,
+              "Folio": 0,
+              "FchEmis": "2026-07-29",
+              "TpoTranVenta": "1",
+              "FmaPago": "2"
+            },
+            "Emisor": {
+              "RUTEmisor": "77918779-9",
+              "RznSoc": "PYR EVENTOS SPA",
+              "GiroEmis": "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO, CONCIERTOS, ESPECTACULOS D",
+              "DirOrigen": "AV. FRANCISCO BILBAO 538",
+              "CmnaOrigen": "PEÑAFLOR",
+              "CiudadOrigen": "TALAGANTE",
+              "CdgSIISucur": 90061542
+            },
+            "Receptor": {
+              "RUTRecep": "19082284-2",
+              "RznSocRecep": "Ruthfuentealba60",
+              "DirRecep": "AV. FRANCISCO BILBAO 538",
+              "CmnaRecep": "PEÑAFLOR"
+            },
+            "Totales": {
+              "MntNeto": 19264,
+              "TasaIVA": "19",
+              "IVA": 3660,
+              "MntTotal": 22924,
+              "MontoPeriodo": 22924,
+              "VlrPagar": 22924
+            }
+          },
+          "Detalle": [
+            {
+              "NroLinDet": 1,
+              "NmbItem": "Preventa - Japon Fest Chile",
+              "QtyItem": 2,
+              "PrcItem": 11462,
+              "MontoItem": 22924
+            }
+          ],
+          "Referencia": [
+            {
+              "NroLinRef": 1,
+              "TpoDocRef": "39",
+              "FolioRef": "15355",
+              "FchRef": "2026-07-06",
+              "CodRef": "1",
+              "RazonRef": "Anula boleta por cancelacion Japon Fest Chile"
+            }
+          ]
+        },
+        "referenciaExterna": "jfc-cancel-order_9703ff904d8c50853702-15355"
+      }
+    },
+    {
+      "orderId": "order_c53309f755c5fca73dd0",
+      "originalFolio": "15356",
+      "amount": 11462,
+      "amountText": "$11.462",
+      "receptorRut": "23257749-5",
+      "receptorName": "C Mancillavalencia",
+      "existingCreditNoteFolio": null,
+      "payload": {
+        "response": [
+          "XML",
+          "PDF",
+          "TIMBRE",
+          "LOGO",
+          "FOLIO",
+          "RESOLUCION",
+          "LETTER"
+        ],
+        "dte": {
+          "Encabezado": {
+            "IdDoc": {
+              "TipoDTE": 61,
+              "Folio": 0,
+              "FchEmis": "2026-07-29",
+              "TpoTranVenta": "1",
+              "FmaPago": "2"
+            },
+            "Emisor": {
+              "RUTEmisor": "77918779-9",
+              "RznSoc": "PYR EVENTOS SPA",
+              "GiroEmis": "SERVICIOS DE PRODUCCION DE OBRAS DE TEATRO, CONCIERTOS, ESPECTACULOS D",
+              "DirOrigen": "AV. FRANCISCO BILBAO 538",
+              "CmnaOrigen": "PEÑAFLOR",
+              "CiudadOrigen": "TALAGANTE",
+              "CdgSIISucur": 90061542
+            },
+            "Receptor": {
+              "RUTRecep": "23257749-5",
+              "RznSocRecep": "C Mancillavalencia",
+              "DirRecep": "AV. FRANCISCO BILBAO 538",
+              "CmnaRecep": "PEÑAFLOR"
+            },
+            "Totales": {
+              "MntNeto": 9632,
+              "TasaIVA": "19",
+              "IVA": 1830,
+              "MntTotal": 11462,
+              "MontoPeriodo": 11462,
+              "VlrPagar": 11462
+            }
+          },
+          "Detalle": [
+            {
+              "NroLinDet": 1,
+              "NmbItem": "Preventa - Japon Fest Chile",
+              "QtyItem": 1,
+              "PrcItem": 11462,
+              "MontoItem": 11462
+            }
+          ],
+          "Referencia": [
+            {
+              "NroLinRef": 1,
+              "TpoDocRef": "39",
+              "FolioRef": "15356",
+              "FchRef": "2026-07-07",
+              "CodRef": "1",
+              "RazonRef": "Anula boleta por cancelacion Japon Fest Chile"
+            }
+          ]
+        },
+        "referenciaExterna": "jfc-cancel-order_c53309f755c5fca73dd0-15356"
+      }
+    }
+  ],
+  "missingCount": 6,
+  "totalToIssue": 126082,
+  "totalToIssueText": "$126.082",
+  "haulmerDocuments": {
+    "rut": "77918779-9",
+    "documentos": [
+      {
+        "dte": 39,
+        "disponibles": 72,
+        "vencimiento": "2026-11-02"
+      },
+      {
+        "dte": 41,
+        "disponibles": 100,
+        "vencimiento": "2026-02-09"
+      }
+    ]
+  },
+  "creditNoteAvailability": null,
+  "issued": [],
+  "skipped": [],
+  "auditRows": 0
+}

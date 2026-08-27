@@ -1,0 +1,104 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - link "HFC Honda Fest Chile Control de Pases" [ref=f2e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f2e4]: HFC
+      - generic [ref=f2e5]:
+        - strong [ref=f2e6]: Honda Fest Chile
+        - generic [ref=f2e7]: Control de Pases
+    - navigation [ref=f2e8]:
+      - link "Pases Especiales" [ref=f2e9] [cursor=pointer]:
+        - /url: /pases-especiales
+      - link "Validar entrada" [ref=f2e10] [cursor=pointer]:
+        - /url: /validar
+      - link "Backoffice" [ref=f2e11] [cursor=pointer]:
+        - /url: /backoffice-hfc
+    - link "Ver pases" [ref=f2e12] [cursor=pointer]:
+      - /url: /pases-especiales
+  - main [ref=f2e13]:
+    - generic [ref=f2e15]:
+      - paragraph [ref=f2e16]: Retiro y acceso especial
+      - heading "Valida una credencial física." [level=1] [ref=f2e17]
+      - paragraph [ref=f2e18]: Consulta el QR y registra por separado el retiro del lanyard y el acceso a experiencias especiales.
+    - generic [ref=f2e19]:
+      - generic [ref=f2e20]:
+        - generic [ref=f2e23]:
+          - button "Usar cámara" [ref=f2e24] [cursor=pointer]
+          - button "Detener" [ref=f2e25] [cursor=pointer]
+        - generic [ref=f2e26]:
+          - generic [ref=f2e27]:
+            - text: Código del Pase Especial
+            - textbox "Código del Pase Especial" [ref=f2e28]:
+              - /placeholder: HFC-PASE-2026-XXXXXXXXXX
+              - text: HFC-PASE-2026-C8A9E64502
+          - button "Consultar pase" [ref=f2e29] [cursor=pointer]
+        - group [ref=f2e30]:
+          - generic "Acceso del equipo HFC" [ref=f2e31] [cursor=pointer]
+      - complementary [ref=f2e32]:
+        - paragraph [ref=f2e33]: Resultado
+        - generic [ref=f2e34]:
+          - generic [ref=f2e35]:
+            - generic [ref=f2e36]: Vigente
+            - strong [ref=f2e37]: 5 Pistones
+          - heading "Pase de 5 Pistones" [level=2] [ref=f2e38]
+          - code [ref=f2e39]: HFC-PASE-2026-C8A9E64502
+          - generic [ref=f2e40]:
+            - generic [ref=f2e41]:
+              - term [ref=f2e42]: Titular
+              - definition [ref=f2e43]: Qa Browser Pase
+            - generic [ref=f2e44]:
+              - term [ref=f2e45]: Retiro
+              - definition [ref=f2e46]: Pendiente de retiro
+            - generic [ref=f2e47]:
+              - term [ref=f2e48]: Acceso
+              - definition [ref=f2e49]: Sin acceso registrado
+            - generic [ref=f2e50]:
+              - term [ref=f2e51]: Formato
+              - definition [ref=f2e52]: Lanyard con credencial impresa
+          - generic [ref=f2e53]: NO ES VÁLIDO COMO ENTRADA
+          - paragraph [ref=f2e54]: Consulta informativa. Ingresa la clave del equipo HFC para registrar acciones.
+  - generic "Accesos rapidos por WhatsApp" [ref=f2e55]:
+    - link "Quiero participar como piloto, foodtruck o stand por WhatsApp" [ref=f2e56] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20quiero%20participar%20en%20Honda%20Fest%20Chile%20como%20piloto%2C%20foodtruck%20o%20stand.
+      - generic [ref=f2e57]: +
+      - generic [ref=f2e58]:
+        - strong [ref=f2e59]: Quiero participar
+        - generic [ref=f2e60]: Pilotos, foodtrucks y stands
+    - link "Necesitas ayuda por WhatsApp" [ref=f2e61] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra
+      - generic [ref=f2e62]: "?"
+      - strong: Necesitas ayuda?
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+            - text: qa.browser.pase@example.com
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic:
+          - checkbox [checked]
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - generic:
+          - text: ✓
+          - strong: Email verificado
+        - button: Pagar ahora

@@ -1,0 +1,914 @@
+{
+  "generatedAt": "2026-07-29T13:47:17.474Z",
+  "sources": {
+    "supabase": {
+      "mode": "production-backoffice-summary",
+      "sideEffects": {
+        "enrollmentRemindersSent": 0,
+        "storage": {
+          "mode": "postgres",
+          "supabase": true,
+          "warning": null
+        }
+      },
+      "orders": 42,
+      "tickets": 17,
+      "invoices": 14,
+      "payments": 0
+    },
+    "mercadoPagoApi": {
+      "queriedPaymentIds": 11
+    },
+    "mercadoPagoWalletExport": {
+      "available": true,
+      "path": "C:\\Users\\Usuario\\Prof3sional Chile SpA\\Prof3sional - Documentos\\Contabilidad\\Conciliaciones\\MercadoPago\\_movimientos_mercadopago_2025-07-28_a_2026-07-24.json",
+      "extractedAt": "2026-07-27",
+      "source": "Mercado Pago > Actividades (navegador interno)",
+      "rows": 463,
+      "directReferenceHits": 0,
+      "amountAndRefundDateHits": 0
+    }
+  },
+  "totals": {
+    "jfcOrders": 35,
+    "jfcTicketsFromOrders": 15,
+    "jfcOrderGrossTotal": 656288,
+    "mpRefundedOrders": 10,
+    "mpRefundedTotal": 183392,
+    "realInvoiceRefundedOrders": 6,
+    "realInvoiceRefundedTotal": 126082,
+    "realInvoiceMpRefundedTotal": 126082,
+    "demoInvoiceRefundedOrders": 3,
+    "demoInvoiceRefundedTotal": 45848,
+    "demoInvoiceMpRefundedTotal": 45848,
+    "noInvoiceRefundedOrders": 1,
+    "noInvoiceMpRefundedTotal": 11462
+  },
+  "rows": [
+    {
+      "orderId": "order_c53309f755c5fca73dd0",
+      "createdAt": "2026-07-08T02:29:51.283Z",
+      "name": "C Mancillavalencia",
+      "email": "c.mancillavalencia@icloud.com",
+      "rut": "23.257.749-5",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "166892030085"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 11462,
+      "mpRefunds": [
+        {
+          "id": 3122498511,
+          "amount": 11462,
+          "status": "approved",
+          "date": "2026-07-15T16:12:32.000-04:00"
+        }
+      ],
+      "invoiceClass": "real",
+      "invoiceFolio": "15356",
+      "invoiceAmount": 11462,
+      "tickets": 1,
+      "notes": ""
+    },
+    {
+      "orderId": "order_9703ff904d8c50853702",
+      "createdAt": "2026-07-06T19:34:34.904Z",
+      "name": "Ruthfuentealba60",
+      "email": "ruthfuentealba60@gmail.com",
+      "rut": "19.082.284-2",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "167502433146"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 22924,
+      "mpRefunds": [
+        {
+          "id": 3122499177,
+          "amount": 22924,
+          "status": "approved",
+          "date": "2026-07-15T16:13:36.000-04:00"
+        }
+      ],
+      "invoiceClass": "real",
+      "invoiceFolio": "15355",
+      "invoiceAmount": 22924,
+      "tickets": 2,
+      "notes": ""
+    },
+    {
+      "orderId": "order_133d02f02abc3501ba3b",
+      "createdAt": "2026-07-06T13:53:18.581Z",
+      "name": "Crcriveros88",
+      "email": "crcriveros88@gmail.com",
+      "rut": "16.910.242-2",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_c948a80bf9b55e4b5244",
+      "createdAt": "2026-07-06T13:21:54.738Z",
+      "name": "Crcriveros88",
+      "email": "crcriveros88@gmail.com",
+      "rut": "16.910.242-2",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_3ef7099460a7264d57a7",
+      "createdAt": "2026-07-06T13:19:51.303Z",
+      "name": "Crcriveros88",
+      "email": "crcriveros88@gmail.com",
+      "rut": "16.910.242-2",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_038ae306024a00fc5770",
+      "createdAt": "2026-07-06T13:19:30.194Z",
+      "name": "Crcriveros88",
+      "email": "crcriveros88@gmail.com",
+      "rut": "16.910.242-2",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_7703afbfb866cedcd9a7",
+      "createdAt": "2026-07-03T01:33:06.398Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_29d1226b785d35d0f941",
+      "createdAt": "2026-07-03T01:33:02.958Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "166899345660"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 22924,
+      "mpRefunds": [
+        {
+          "id": 3122503555,
+          "amount": 22924,
+          "status": "approved",
+          "date": "2026-07-15T16:14:12.000-04:00"
+        }
+      ],
+      "invoiceClass": "real",
+      "invoiceFolio": "15354",
+      "invoiceAmount": 22924,
+      "tickets": 2,
+      "notes": ""
+    },
+    {
+      "orderId": "order_be91937498dd55e836c3",
+      "createdAt": "2026-07-03T01:23:33.603Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_c6d5099bed00f1345e8d",
+      "createdAt": "2026-07-03T01:23:30.649Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_7de55b17172315997bb3",
+      "createdAt": "2026-07-03T01:20:12.137Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_355ea5d21dc8ab59c714",
+      "createdAt": "2026-07-03T01:20:10.102Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_eb195b20b512cdae165f",
+      "createdAt": "2026-07-03T01:18:15.445Z",
+      "name": "Bsaezrivera6",
+      "email": "bsaezrivera6@gmail.com",
+      "rut": "20.162.010-4",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "166900295398"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 22924,
+      "mpRefunds": [
+        {
+          "id": 3122499913,
+          "amount": 22924,
+          "status": "approved",
+          "date": "2026-07-15T16:14:56.000-04:00"
+        }
+      ],
+      "invoiceClass": "real",
+      "invoiceFolio": "15353",
+      "invoiceAmount": 22924,
+      "tickets": 2,
+      "notes": ""
+    },
+    {
+      "orderId": "order_1d5ec5f6606ab74e6ab4",
+      "createdAt": "2026-07-03T01:16:10.683Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_113cbd41a9f10e91664a",
+      "createdAt": "2026-07-03T01:16:06.275Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [
+        "pending"
+      ],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_06d34027b90570484c96",
+      "createdAt": "2026-07-03T01:15:44.929Z",
+      "name": "Catalinapoletterc",
+      "email": "catalinapoletterc@gmail.com",
+      "rut": "22.064.382-4",
+      "orderStatus": "payment_failed",
+      "savedPaymentStatuses": [
+        "cancelled"
+      ],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_192d69ddf5c003e48edd",
+      "createdAt": "2026-06-26T01:05:01.550Z",
+      "name": "Matiasignacio713",
+      "email": "matiasignacio713@gmail.com",
+      "rut": "21.534.573-4",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "165011191801"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 34386,
+      "jfcTotal": 34386,
+      "mpRefundTotal": 34386,
+      "mpRefunds": [
+        {
+          "id": 3178248710,
+          "amount": 34386,
+          "status": "approved",
+          "date": "2026-07-15T16:15:58.000-04:00"
+        }
+      ],
+      "invoiceClass": "real",
+      "invoiceFolio": "15352",
+      "invoiceAmount": 34386,
+      "tickets": 3,
+      "notes": ""
+    },
+    {
+      "orderId": "order_e3ae886becd7ebcf6446",
+      "createdAt": "2026-06-23T22:18:20.046Z",
+      "name": "C Mancillavalencia",
+      "email": "c.mancillavalencia@icloud.com",
+      "rut": "23.257.749-5",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "164693570347"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 11462,
+      "mpRefunds": [
+        {
+          "id": 3178247124,
+          "amount": 11462,
+          "status": "approved",
+          "date": "2026-07-15T16:16:32.000-04:00"
+        }
+      ],
+      "invoiceClass": "real",
+      "invoiceFolio": "15351",
+      "invoiceAmount": 11462,
+      "tickets": 1,
+      "notes": ""
+    },
+    {
+      "orderId": "order_7e57b1e8d33c5cd329fb",
+      "createdAt": "2026-06-22T03:22:44.151Z",
+      "name": "Matiasignacio713",
+      "email": "matiasignacio713@gmail.com",
+      "rut": "21.534.573-4",
+      "orderStatus": "payment_failed",
+      "savedPaymentStatuses": [
+        "cancelled"
+      ],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_c7062318fd984802f5b3",
+      "createdAt": "2026-06-17T18:42:51.247Z",
+      "name": "Rick Joker 02",
+      "email": "rick.joker.02@gmail.com",
+      "rut": "20.012.305-0",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "164571646696"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 11462,
+      "mpRefunds": [
+        {
+          "id": 3178249396,
+          "amount": 11462,
+          "status": "approved",
+          "date": "2026-07-15T16:17:12.000-04:00"
+        }
+      ],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "pagada sin DTE registrado"
+    },
+    {
+      "orderId": "order_bcabc3272a70f9f4b198",
+      "createdAt": "2026-06-15T23:49:54.237Z",
+      "name": "Velasquez Monshi",
+      "email": "velasquez.monshi@gmail.com",
+      "rut": "20.081.974-8",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_4a7ccd50269ed661aa73",
+      "createdAt": "2026-06-14T22:46:40.875Z",
+      "name": "Catalina Quiroga Castillo 711",
+      "email": "catalina.quiroga.castillo.711@gmail.com",
+      "rut": "20.611.582-3",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "164141317522"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 11462,
+      "mpRefunds": [
+        {
+          "id": 3178253442,
+          "amount": 11462,
+          "status": "approved",
+          "date": "2026-07-15T16:17:40.000-04:00"
+        }
+      ],
+      "invoiceClass": "demo",
+      "invoiceFolio": "DEMO-1781477348996",
+      "invoiceAmount": 11462,
+      "tickets": 1,
+      "notes": "DTE demo; no usar para NC tributaria real"
+    },
+    {
+      "orderId": "order_5dcc02bac28629c41ea8",
+      "createdAt": "2026-06-11T23:44:38.568Z",
+      "name": "Luis Leiva Salinas",
+      "email": "luisleiva2206@gmail.com",
+      "rut": "16.777.877-1",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "162893552619"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 22924,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 22924,
+      "mpRefunds": [
+        {
+          "id": 3178281170,
+          "amount": 22924,
+          "status": "approved",
+          "date": "2026-07-15T16:31:35.000-04:00"
+        }
+      ],
+      "invoiceClass": "demo",
+      "invoiceFolio": "DEMO-1781221556065",
+      "invoiceAmount": 22924,
+      "tickets": 2,
+      "notes": "DTE demo; no usar para NC tributaria real"
+    },
+    {
+      "orderId": "order_eacddd9e27d0f419b687",
+      "createdAt": "2026-06-07T17:49:08.929Z",
+      "name": "Bastianandresgonzalezpoblete",
+      "email": "bastianandresgonzalezpoblete@gmail.com",
+      "rut": "20.089.689-0",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "162196433787"
+      ],
+      "mpStatus": "refunded",
+      "mpStatusDetail": "refunded",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 11462,
+      "mpRefunds": [
+        {
+          "id": 3178279526,
+          "amount": 11462,
+          "status": "approved",
+          "date": "2026-07-15T16:32:01.000-04:00"
+        }
+      ],
+      "invoiceClass": "demo",
+      "invoiceFolio": "DEMO-1780854604724",
+      "invoiceAmount": 11462,
+      "tickets": 1,
+      "notes": "DTE demo; no usar para NC tributaria real"
+    },
+    {
+      "orderId": "order_1f8eddba0537756f3d62",
+      "createdAt": "2026-06-07T17:24:48.927Z",
+      "name": "Ajskak",
+      "email": "ajskak@ajdja.cl",
+      "rut": "20.012.820-6",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_70d119a225094ec306c5",
+      "createdAt": "2026-06-02T01:45:12.794Z",
+      "name": "Rick Joker 02",
+      "email": "rick.joker.02@gmail.com",
+      "rut": "20.012.305-0",
+      "orderStatus": "payment_failed",
+      "savedPaymentStatuses": [
+        "cancelled"
+      ],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_96afd25fe6f463dd682d",
+      "createdAt": "2026-06-01T02:58:41.274Z",
+      "name": "Carlosr Rodriguezs",
+      "email": "carlosr.rodriguezs@gmail.com",
+      "rut": "17.660.908-7",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 34386,
+      "jfcTotal": 22924,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_75df387ed3a5c1ce5d84",
+      "createdAt": "2026-06-01T02:12:17.829Z",
+      "name": "Carlos+mp Test 20260531105756",
+      "email": "carlos+checkoutpro-smoke-20260531221216@prof3sional.com",
+      "rut": "12.345.678-5",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 11462,
+      "jfcTotal": 11462,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_e9f81040230f71604973",
+      "createdAt": "2026-05-31T14:57:57.496Z",
+      "name": "Carlos+mp Test 20260531105756",
+      "email": "carlos+checkoutpro-smoke-20260531221216@prof3sional.com",
+      "rut": "12.345.678-5",
+      "orderStatus": "paid",
+      "savedPaymentStatuses": [
+        "approved"
+      ],
+      "paymentIds": [
+        "1346874607"
+      ],
+      "mpStatus": "404:Payment not found",
+      "mpStatusDetail": "",
+      "orderTotal": 9330,
+      "jfcTotal": 9330,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "MP no consultado para algun paymentId | pagada sin DTE registrado"
+    },
+    {
+      "orderId": "order_d526bc600df61e11c6c8",
+      "createdAt": "2026-05-31T14:48:28.471Z",
+      "name": "Carlosr Rodriguezs",
+      "email": "carlosr.rodriguezs@gmail.com",
+      "rut": "17.660.908-7",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 37320,
+      "jfcTotal": 37320,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_07822bede70b9000bd9c",
+      "createdAt": "2026-05-31T03:12:04.275Z",
+      "name": "Carlos",
+      "email": "carlos@prof3sional.com",
+      "rut": "",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 8000,
+      "jfcTotal": 8000,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_9e96c4d8818945e26b9c",
+      "createdAt": "2026-05-31T03:12:01.407Z",
+      "name": "Carlos",
+      "email": "carlos@prof3sional.com",
+      "rut": "",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 8000,
+      "jfcTotal": 8000,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_22c28044bf10cb1e0d93",
+      "createdAt": "2026-05-31T03:04:58.604Z",
+      "name": "Carlos",
+      "email": "carlos@prof3sional.com",
+      "rut": "",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 8000,
+      "jfcTotal": 8000,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_f64d8a0fa4e0c6999aaa",
+      "createdAt": "2026-05-30T22:09:07.150Z",
+      "name": "Carlosr Rodriguezs",
+      "email": "carlosr.rodriguezs@gmail.com",
+      "rut": "17.660.908-7",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 16000,
+      "jfcTotal": 16000,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    },
+    {
+      "orderId": "order_48e390bed2a9b50a23ef",
+      "createdAt": "2026-05-30T21:44:56.962Z",
+      "name": "Carlosr Rodriguezs",
+      "email": "carlosr.rodriguezs@gmail.com",
+      "rut": "17.660.908-7",
+      "orderStatus": "payment_expired",
+      "savedPaymentStatuses": [],
+      "paymentIds": [],
+      "mpStatus": "",
+      "mpStatusDetail": "",
+      "orderTotal": 8000,
+      "jfcTotal": 8000,
+      "mpRefundTotal": 0,
+      "mpRefunds": [],
+      "invoiceClass": "none",
+      "invoiceFolio": "",
+      "invoiceAmount": 0,
+      "tickets": 0,
+      "notes": "sin paymentId numerico"
+    }
+  ],
+  "walletEvidence": {
+    "directReferenceHits": [],
+    "amountAndRefundDateHits": []
+  },
+  "notes": [
+    "La nota de credito tributaria debe calcularse sobre boletas reales, no sobre DTE demo ni ventas sin boleta emitida.",
+    "El export local de Mercado Pago usado como contraste corresponde a movimientos de wallet/actividades; si no aparecen IDs o nombres de checkout, se considera contraste parcial, no cartola bancaria final."
+  ]
+}

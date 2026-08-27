@@ -1,0 +1,36 @@
+[    1378ms] [LOG] %c
+▲
+
+    ____                               _ __
+   / __ \________  ____ _____ ___     (_) /_
+  / / / / ___/ _ \/ __ `/ __ `__ \   / / __/
+ / /_/ / /  /  __/ /_/ / / / / / /  / / /__
+/_____/_/   \___/\__,_/_/ /_/ /_/  /_/\__( )
+   _____ __    _          _ __           |/
+  / ___// /_  (_)___     (_) /_
+  \__ \/ __ \/ / __ \   / / __/
+ ___/ / / / / / /_/ /  / / /_
+/____/_/ /_/_/ .___/  /_/\__/
+            /_/
+  
+
+Hello!
+
+- Open Source https://vercel.com/oss
+- Careers https://vercel.com/careers
+- Status https://vercel-status.com
+
+ font-family: "Geist Mono", monospace; white-space: pre; line-height: 1; @ https://vercel.com/_next/static/immutable/chunks/376zg48e2q1_m.js:78
+[    2066ms] [WARNING] Deprecated API for given entry type. @ https://vercel.com/_next/static/immutable/chunks/2okpd0efl30i_.js:18
+[    2174ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://vercel.com/_next/static/immutable/chunks/2okpd0efl30i_.js:16
+[    2191ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vercel.com/api/jwt:0
+[    2277ms] [ERROR] Failed to load resource: the server responded with a status of 429 () @ https://o205439.ingest.sentry.io/api/1323670/envelope/?sentry_key=d00780d432ac4ccf882f60dd02062e14&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.111.0:0
+[    2278ms] [ERROR] Provider's accounts list is empty. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0
+[    5599ms] [WARNING] The resource https://vercel.com/_next/static/immutable/chunks/21rw_-yth3n_r.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0
+[    5600ms] [WARNING] The resource https://vercel.com/_next/static/immutable/chunks/0rp33hdt76ah5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0
+[    5600ms] [WARNING] The resource https://vercel.com/_next/static/immutable/chunks/3flhcz7cw314y.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0
+[   15383ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://vercel.com/_next/static/immutable/chunks/0yzwfrb5r5y5j.js:8
+[   15446ms] [ERROR] Failed to load resource: the server responded with a status of 429 () @ https://o205439.ingest.sentry.io/api/1323670/envelope/?sentry_key=d00780d432ac4ccf882f60dd02062e14&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.111.0:0
+[   18510ms] [WARNING] The resource https://vercel.com/_next/static/immutable/chunks/21rw_-yth3n_r.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0
+[   18510ms] [WARNING] The resource https://vercel.com/_next/static/immutable/chunks/0rp33hdt76ah5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0
+[   18511ms] [WARNING] The resource https://vercel.com/_next/static/immutable/chunks/3flhcz7cw314y.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fhondafestchile-skfy0qnzp-prof3sionalcl-2961s-projects.vercel.app%252Fpases-especiales%26nonce%3D3c3779ba70b2c4c9ad27c239d9194f36c82592672108a7ca9c31bed5eeaaf49a:0

@@ -1,0 +1,57 @@
+- generic [active] [ref=f5e1]:
+  - banner [ref=f5e2]:
+    - link "HFC Honda Fest Chile Backoffice" [ref=f5e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f5e4]: HFC
+      - generic [ref=f5e5]:
+        - strong [ref=f5e6]: Honda Fest Chile
+        - generic [ref=f5e7]: Backoffice
+    - navigation "Backoffice" [ref=f5e8]:
+      - link "Ticketera" [ref=f5e9] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Validar" [ref=f5e10] [cursor=pointer]:
+        - /url: /validar
+  - main [ref=f5e11]:
+    - generic [ref=f5e13]:
+      - paragraph [ref=f5e14]: Backoffice oculto
+      - heading "Ventas, entradas y enrolados." [level=1] [ref=f5e15]
+    - generic [ref=f5e18]:
+      - generic [ref=f5e19]:
+        - text: Contraseña backoffice
+        - textbox "Contraseña backoffice" [ref=f5e20]:
+          - /placeholder: Contraseña administrativa
+      - button "Entrar" [ref=f5e21] [cursor=pointer]
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+            - text: qa.browser.pase@example.com
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic:
+          - checkbox [checked]
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - generic:
+          - text: ✓
+          - strong: Email verificado
+        - button: Pagar ahora

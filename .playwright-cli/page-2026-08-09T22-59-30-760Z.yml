@@ -1,0 +1,115 @@
+- generic [active] [ref=f4e1]:
+  - banner [ref=f4e2]:
+    - link "HFC Honda Fest Chile Control de Pases" [ref=f4e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f4e4]: HFC
+      - generic [ref=f4e5]:
+        - strong [ref=f4e6]: Honda Fest Chile
+        - generic [ref=f4e7]: Control de Pases
+    - navigation [ref=f4e8]:
+      - link "Pases Especiales" [ref=f4e9] [cursor=pointer]:
+        - /url: /pases-especiales
+      - link "Validar entrada" [ref=f4e10] [cursor=pointer]:
+        - /url: /validar
+      - link "Backoffice" [ref=f4e11] [cursor=pointer]:
+        - /url: /backoffice-hfc
+    - link "Ver pases" [ref=f4e12] [cursor=pointer]:
+      - /url: /pases-especiales
+  - main [ref=f4e13]:
+    - generic [ref=f4e15]:
+      - paragraph [ref=f4e16]: Retiro y acceso especial
+      - heading "Valida una credencial física." [level=1] [ref=f4e17]
+      - paragraph [ref=f4e18]: Consulta el QR y registra por separado el retiro del lanyard y el acceso a experiencias especiales.
+    - generic [ref=f4e19]:
+      - generic [ref=f4e20]:
+        - generic [ref=f4e23]:
+          - button "Usar cámara" [ref=f4e24] [cursor=pointer]
+          - button "Detener" [ref=f4e25] [cursor=pointer]
+        - generic [ref=f4e26]:
+          - generic [ref=f4e27]:
+            - text: Código del Pase Especial
+            - textbox "Código del Pase Especial" [ref=f4e28]:
+              - /placeholder: HFC-PASE-2026-XXXXXXXXXX
+              - text: HFC-PASE-2026-C8A9E64502
+          - button "Consultar pase" [ref=f4e29] [cursor=pointer]
+        - group [ref=f4e30]:
+          - generic "Acceso del equipo HFC" [ref=f4e31] [cursor=pointer]
+          - generic [ref=f4e63]:
+            - generic [ref=f4e64]:
+              - text: Clave de operación
+              - textbox "Clave de operación" [ref=f4e65]:
+                - /placeholder: Clave backoffice
+                - text: qa-pass-token
+            - paragraph [ref=f4e66]: La clave solo se usa para registrar retiro y acceso; una consulta pública no modifica el pase.
+      - complementary [ref=f4e32]:
+        - paragraph [ref=f4e33]: Resultado
+        - generic [ref=f4e34]:
+          - generic [ref=f4e90]:
+            - generic [ref=f4e91]: Vigente
+            - strong [ref=f4e92]: 5 Pistones
+          - heading "Pase de 5 Pistones" [level=2] [ref=f4e93]
+          - code [ref=f4e94]: HFC-PASE-2026-C8A9E64502
+          - generic [ref=f4e95]:
+            - generic [ref=f4e96]:
+              - term [ref=f4e97]: Titular
+              - definition [ref=f4e98]: Qa Browser Pase
+            - generic [ref=f4e99]:
+              - term [ref=f4e100]: Retiro
+              - definition [ref=f4e101]: Retirado
+            - generic [ref=f4e102]:
+              - term [ref=f4e103]: Acceso
+              - definition [ref=f4e104]: Sin acceso registrado
+            - generic [ref=f4e105]:
+              - term [ref=f4e106]: Formato
+              - definition [ref=f4e107]: Lanyard con credencial impresa
+          - generic [ref=f4e108]: NO ES VÁLIDO COMO ENTRADA
+          - generic [ref=f4e109]:
+            - button "Registrar retiro" [disabled] [ref=f4e110]
+            - button "Registrar acceso" [ref=f4e111] [cursor=pointer]
+            - button "Retiro + acceso" [ref=f4e112] [cursor=pointer]
+  - generic "Accesos rapidos por WhatsApp" [ref=f4e55]:
+    - link "Quiero participar como piloto, foodtruck o stand por WhatsApp" [ref=f4e56] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20quiero%20participar%20en%20Honda%20Fest%20Chile%20como%20piloto%2C%20foodtruck%20o%20stand.
+      - generic [ref=f4e57]: +
+      - generic [ref=f4e58]:
+        - strong [ref=f4e59]: Quiero participar
+        - generic [ref=f4e60]: Pilotos, foodtrucks y stands
+    - link "Necesitas ayuda por WhatsApp" [ref=f4e61] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra
+      - generic [ref=f4e62]: "?"
+      - strong: Necesitas ayuda?
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+            - text: qa.browser.pase@example.com
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic:
+          - checkbox [checked]
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - generic:
+          - text: ✓
+          - strong: Email verificado
+        - button: Pagar ahora
+  - status [ref=f4e113]: Estado del Pase Especial actualizado.

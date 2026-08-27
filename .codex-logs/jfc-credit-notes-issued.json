@@ -1,0 +1,100 @@
+{
+  "generatedAt": "2026-07-29T21:44:15.407Z",
+  "mode": "issue",
+  "stateSource": "production-backoffice-summary",
+  "productionStorage": {
+    "mode": "postgres",
+    "supabase": true,
+    "warning": null
+  },
+  "expectedOriginalFolios": [
+    "15351",
+    "15352",
+    "15353",
+    "15354",
+    "15355",
+    "15356"
+  ],
+  "candidates": [
+    {
+      "orderId": "order_e3ae886becd7ebcf6446",
+      "originalFolio": "15351",
+      "amount": 11462,
+      "amountText": "$11.462",
+      "receptorRut": "23257749-5",
+      "receptorName": "C Mancillavalencia",
+      "existingCreditNoteFolio": null
+    },
+    {
+      "orderId": "order_192d69ddf5c003e48edd",
+      "originalFolio": "15352",
+      "amount": 34386,
+      "amountText": "$34.386",
+      "receptorRut": "21534573-4",
+      "receptorName": "Matiasignacio713",
+      "existingCreditNoteFolio": null
+    },
+    {
+      "orderId": "order_eb195b20b512cdae165f",
+      "originalFolio": "15353",
+      "amount": 22924,
+      "amountText": "$22.924",
+      "receptorRut": "20162010-4",
+      "receptorName": "Bsaezrivera6",
+      "existingCreditNoteFolio": null
+    },
+    {
+      "orderId": "order_29d1226b785d35d0f941",
+      "originalFolio": "15354",
+      "amount": 22924,
+      "amountText": "$22.924",
+      "receptorRut": "22064382-4",
+      "receptorName": "Catalinapoletterc",
+      "existingCreditNoteFolio": null
+    },
+    {
+      "orderId": "order_9703ff904d8c50853702",
+      "originalFolio": "15355",
+      "amount": 22924,
+      "amountText": "$22.924",
+      "receptorRut": "19082284-2",
+      "receptorName": "Ruthfuentealba60",
+      "existingCreditNoteFolio": null
+    },
+    {
+      "orderId": "order_c53309f755c5fca73dd0",
+      "originalFolio": "15356",
+      "amount": 11462,
+      "amountText": "$11.462",
+      "receptorRut": "23257749-5",
+      "receptorName": "C Mancillavalencia",
+      "existingCreditNoteFolio": null
+    }
+  ],
+  "missingCount": 6,
+  "totalToIssue": 126082,
+  "totalToIssueText": "$126.082",
+  "haulmerDocuments": {
+    "rut": "77918779-9",
+    "documentos": [
+      {
+        "dte": 39,
+        "disponibles": 72,
+        "vencimiento": "2026-11-02"
+      },
+      {
+        "dte": 41,
+        "disponibles": 100,
+        "vencimiento": "2026-02-09"
+      }
+    ]
+  },
+  "creditNoteAvailability": null,
+  "issued": [],
+  "skipped": [],
+  "auditRows": 0,
+  "blocked": {
+    "reason": "missing_dte_61_folios",
+    "message": "Haulmer no informa folios disponibles para DTE 61; disponibles: 0, necesarios: 6"
+  }
+}

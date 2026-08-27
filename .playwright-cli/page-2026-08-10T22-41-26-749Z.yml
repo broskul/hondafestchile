@@ -1,0 +1,176 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "HFC Honda Fest Chile Pases Especiales" [ref=e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e4]: HFC
+      - generic [ref=e5]:
+        - strong [ref=e6]: Honda Fest Chile
+        - generic [ref=e7]: Pases Especiales
+    - navigation "Pases Especiales" [ref=e8]:
+      - link "Niveles" [ref=e9] [cursor=pointer]:
+        - /url: "#niveles"
+      - link "Beneficios" [ref=e10] [cursor=pointer]:
+        - /url: "#beneficios"
+      - link "Retiro" [ref=e11] [cursor=pointer]:
+        - /url: "#retiro"
+      - link "Mi Pit Lane" [ref=e12] [cursor=pointer]:
+        - /url: /mi-pit-lane
+    - link "Elegir pase" [ref=e13] [cursor=pointer]:
+      - /url: "#comprar"
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - img "Automóvil rojo incluido entre los premios especiales de Honda Fest Chile 2026" [ref=e16]
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Honda Fest Chile · 29 noviembre 2026
+        - heading "Un automóvil. Entre los premios especiales." [level=1] [ref=e21]:
+          - text: Un automóvil.
+          - generic [ref=e22]: Entre los premios especiales.
+        - paragraph [ref=e23]: Elige tu Pase Especial, suma de 1 a 9 Pistones y participa en las experiencias y premios especiales de Honda Fest Chile 2026.
+        - generic "Niveles medidos en Pistones" [ref=e24]:
+          - strong [ref=e26]: Niveles de 1 · 3 · 5 · 7 · 9 Pistones
+        - generic [ref=e27]:
+          - link "Elegir Pase Especial" [ref=e28] [cursor=pointer]:
+            - /url: "#niveles"
+          - link "Cómo funciona" [ref=e29] [cursor=pointer]:
+            - /url: "#como-funciona"
+        - generic [ref=e30]:
+          - strong [ref=e31]: NO ES VÁLIDO COMO ENTRADA
+          - generic [ref=e32]: Necesitas una entrada válida para ingresar al evento.
+    - region "Formato y beneficios principales" [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e35]: "01"
+        - strong [ref=e36]: Un automóvil
+        - generic [ref=e37]: Entre los premios especiales
+      - generic [ref=e38]:
+        - generic [ref=e39]: "02"
+        - strong [ref=e40]: 1 a 9 Pistones
+        - generic [ref=e41]: Elige tu nivel
+      - generic [ref=e42]:
+        - generic [ref=e43]: "03"
+        - strong [ref=e44]: Credencial impresa
+        - generic [ref=e45]: Lanyard y pase físico
+    - generic [ref=e46]:
+      - generic [ref=e47]:
+        - paragraph [ref=e48]: Elige tu nivel
+        - heading "Más Pistones. Más experiencia." [level=2] [ref=e49]
+        - paragraph [ref=e50]: Cada alternativa es un nivel de Pase Especial; no son boletos ni promociones de “compra y regalo”. Más beneficios por nivel serán anunciados próximamente.
+      - generic [ref=e51]: Cargando niveles...
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - paragraph [ref=e55]: Pase físico
+        - heading "Una credencial impresa que activa experiencias." [level=2] [ref=e56]
+        - paragraph [ref=e57]: El mismo QR permite enrolar al titular, registrar el retiro del lanyard y validar el acceso especial. Los Pistones quedan registrados en el sistema para una participación auditable en los premios.
+      - generic [ref=e58]:
+        - img "Lanyard sencillo con credencial impresa dentro de un porta credencial transparente" [ref=e59]
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Lo que recibes
+          - heading "Lanyard + credencial impresa." [level=3] [ref=e62]
+          - paragraph [ref=e63]: Un pase físico sencillo, individualizado con QR, para retirar y validar tus accesos especiales el día del evento.
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - paragraph [ref=e66]: Simple y trazable
+        - heading "Compra, enrola y retira." [level=2] [ref=e67]
+      - generic [ref=e68]:
+        - article [ref=e69]:
+          - text: "1"
+          - heading "Elige Pistones" [level=3] [ref=e70]
+          - paragraph [ref=e71]: Selecciona el nivel de Pase Especial que quieres comprar.
+        - article [ref=e72]:
+          - text: "2"
+          - heading "Completa el titular" [level=3] [ref=e73]
+          - paragraph [ref=e74]: Después del pago recibirás un enlace seguro de enrolamiento.
+        - article [ref=e75]:
+          - text: "3"
+          - heading "Presenta tu QR" [level=3] [ref=e76]
+          - paragraph [ref=e77]: Úsalo para retirar el lanyard y la credencial impresa.
+        - article [ref=e78]:
+          - text: "4"
+          - heading "Activa el acceso" [level=3] [ref=e79]
+          - paragraph [ref=e80]: El equipo validará tu pase en las experiencias especiales.
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - paragraph [ref=e83]: Retiro de credencial
+        - heading "Tu pase te espera." [level=2] [ref=e84]
+      - generic [ref=e85]:
+        - article [ref=e86]:
+          - generic [ref=e88]:
+            - strong [ref=e89]: Día del evento
+            - paragraph [ref=e90]: Retiro disponible presentando QR e identificación.
+        - article [ref=e91]:
+          - generic [ref=e93]:
+            - strong [ref=e94]: Antes del evento
+            - paragraph [ref=e95]: Punto de retiro por confirmar.
+    - generic [ref=e96]:
+      - generic [ref=e97]:
+        - paragraph [ref=e98]: Tu selección
+        - heading "Elige un nivel arriba." [level=2] [ref=e99]
+        - paragraph [ref=e100]: Luego completa los datos del comprador para continuar al pago.
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - text: Correo electrónico
+          - textbox "Correo electrónico" [ref=e104]:
+            - /placeholder: tu@correo.cl
+        - generic [ref=e105]:
+          - text: Teléfono
+          - textbox "Teléfono" [ref=e106]:
+            - /placeholder: +56 9 1234 5678
+        - generic [ref=e107]:
+          - checkbox "Acepto el uso de mis datos personales." [ref=e108]
+          - generic [ref=e109]:
+            - text: Acepto el
+            - link "uso de mis datos personales" [ref=e110] [cursor=pointer]:
+              - /url: /terminos-datos-personales
+            - text: .
+        - generic [ref=e111]:
+          - checkbox "Entiendo y acepto que este Pase Especial NO ES VÁLIDO COMO ENTRADA y que debo contar con una entrada válida para ingresar al evento." [ref=e112]
+          - generic [ref=e113]:
+            - text: Entiendo y acepto que este Pase Especial
+            - strong [ref=e114]: NO ES VÁLIDO COMO ENTRADA
+            - text: y que debo contar con una entrada válida para ingresar al evento.
+        - button "Selecciona un nivel" [disabled] [ref=e115]
+  - contentinfo [ref=e116]:
+    - paragraph [ref=e117]: Honda Fest Chile · Pase Especial HFC 2026
+    - generic [ref=e118]:
+      - link "Comprar entrada" [ref=e119] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Validar pase" [ref=e120] [cursor=pointer]:
+        - /url: /validar-pase
+  - generic "Accesos rapidos por WhatsApp" [ref=e121]:
+    - link "Quiero participar como piloto, foodtruck o stand por WhatsApp" [ref=e122] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20quiero%20participar%20en%20Honda%20Fest%20Chile%20como%20piloto%2C%20foodtruck%20o%20stand.
+      - generic [ref=e123]: +
+      - generic [ref=e124]:
+        - strong [ref=e125]: Quiero participar
+        - generic [ref=e126]: Pilotos, foodtrucks y stands
+    - link "Necesitas ayuda por WhatsApp" [ref=e127] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra
+      - generic [ref=e128]: "?"
+      - strong: Necesitas ayuda?
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+        - generic:
+          - checkbox
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - button: Pagar ahora

@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-07-29T13:48:00.000Z",
+  "source": "OpenFactura/Haulmer GET /v2/dte/document/{rut}/{type}/{folio}/status",
+  "issuerRut": "77918779-9",
+  "type": 39,
+  "folios": [
+    { "folio": "15351", "http": 200, "estado": "Aceptado" },
+    { "folio": "15352", "http": 200, "estado": "Aceptado" },
+    { "folio": "15353", "http": 200, "estado": "Aceptado" },
+    { "folio": "15354", "http": 200, "estado": "Aceptado" },
+    { "folio": "15355", "http": 200, "estado": "Aceptado" },
+    { "folio": "15356", "http": 200, "estado": "Aceptado" }
+  ]
+}

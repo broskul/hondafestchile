@@ -1,0 +1,226 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - link "HFC Honda Fest Chile" [ref=f1e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f1e4]: HFC
+      - strong [ref=f1e6]: Honda Fest Chile
+  - main [ref=f1e7]:
+    - generic [ref=f1e8]:
+      - img "Automóvil rojo incluido entre los premios especiales de Honda Fest Chile 2026" [ref=f1e9]
+      - generic [ref=f1e12]:
+        - paragraph [ref=f1e13]: Honda Fest Chile · 29 noviembre 2026
+        - heading "Un automóvil. Entre los premios especiales." [level=1] [ref=f1e14]:
+          - text: Un automóvil.
+          - generic [ref=f1e15]: Entre los premios especiales.
+        - paragraph [ref=f1e16]: Elige tu Pase Especial, suma de 1 a 9 Pistones y participa en las experiencias y premios especiales de Honda Fest Chile 2026.
+        - generic "Niveles medidos en Pistones" [ref=f1e17]:
+          - strong [ref=f1e19]: Niveles de 1 · 3 · 5 · 7 · 9 Pistones
+        - generic [ref=f1e20]:
+          - link "Elegir Pase Especial" [ref=f1e21] [cursor=pointer]:
+            - /url: "#niveles"
+          - link "Cómo funciona" [ref=f1e22] [cursor=pointer]:
+            - /url: "#como-funciona"
+        - generic [ref=f1e23]:
+          - strong [ref=f1e24]: NO ES VÁLIDO COMO ENTRADA
+          - generic [ref=f1e25]: Necesitas una entrada válida para ingresar al evento.
+    - region "Formato y beneficios principales" [ref=f1e26]:
+      - generic [ref=f1e27]:
+        - generic [ref=f1e28]: "01"
+        - strong [ref=f1e29]: Un automóvil
+        - generic [ref=f1e30]: Entre los premios especiales
+      - generic [ref=f1e31]:
+        - generic [ref=f1e32]: "02"
+        - strong [ref=f1e33]: 1 a 9 Pistones
+        - generic [ref=f1e34]: Elige tu nivel
+      - generic [ref=f1e35]:
+        - generic [ref=f1e36]: "03"
+        - strong [ref=f1e37]: Credencial impresa
+        - generic [ref=f1e38]: Lanyard y pase físico
+    - generic [ref=f1e39]:
+      - generic [ref=f1e40]:
+        - paragraph [ref=f1e41]: Elige tu nivel
+        - heading "Más Pistones. Más experiencia." [level=2] [ref=f1e42]
+        - paragraph [ref=f1e43]: Cada alternativa es un nivel de Pase Especial; no son boletos ni promociones de “compra y regalo”. Más beneficios por nivel serán anunciados próximamente.
+      - generic [ref=f1e44]:
+        - article [ref=f1e45]:
+          - generic [ref=f1e46]:
+            - strong [ref=f1e47]: "1"
+            - generic [ref=f1e48]: Pistón
+          - generic "1 Pistón" [ref=f1e49]
+          - heading "Pase de 1 Pistón" [level=3] [ref=f1e51]
+          - paragraph [ref=f1e52]: Lanyard con credencial impresa · Acceso y premios especiales.
+          - strong [ref=f1e53]: $5.000
+          - button "Elegir nivel" [ref=f1e54] [cursor=pointer]
+          - generic [ref=f1e55]: NO ES VÁLIDO COMO ENTRADA
+        - article [ref=f1e56]:
+          - generic [ref=f1e57]:
+            - strong [ref=f1e58]: "3"
+            - generic [ref=f1e59]: Pistones
+          - generic "3 Pistones" [ref=f1e60]
+          - heading "Pase de 3 Pistones" [level=3] [ref=f1e64]
+          - paragraph [ref=f1e65]: Lanyard con credencial impresa · Acceso y premios especiales.
+          - strong [ref=f1e66]: $10.000
+          - button "Elegir nivel" [ref=f1e67] [cursor=pointer]
+          - generic [ref=f1e68]: NO ES VÁLIDO COMO ENTRADA
+        - article [ref=f1e69]:
+          - generic [ref=f1e70]: Nivel destacado
+          - generic [ref=f1e71]:
+            - strong [ref=f1e72]: "5"
+            - generic [ref=f1e73]: Pistones
+          - generic "5 Pistones" [ref=f1e74]
+          - heading "Pase de 5 Pistones" [level=3] [ref=f1e80]
+          - paragraph [ref=f1e81]: Lanyard con credencial impresa · Acceso y premios especiales.
+          - strong [ref=f1e82]: $15.000
+          - button "Elegir nivel" [ref=f1e83] [cursor=pointer]
+          - generic [ref=f1e84]: NO ES VÁLIDO COMO ENTRADA
+        - article [ref=f1e85]:
+          - generic [ref=f1e86]:
+            - strong [ref=f1e87]: "7"
+            - generic [ref=f1e88]: Pistones
+          - generic "7 Pistones" [ref=f1e89]
+          - heading "Pase de 7 Pistones" [level=3] [ref=f1e97]
+          - paragraph [ref=f1e98]: Lanyard con credencial impresa · Acceso y premios especiales.
+          - strong [ref=f1e99]: $20.000
+          - button "Elegir nivel" [ref=f1e100] [cursor=pointer]
+          - generic [ref=f1e101]: NO ES VÁLIDO COMO ENTRADA
+        - article [ref=f1e102]:
+          - generic [ref=f1e103]:
+            - strong [ref=f1e104]: "9"
+            - generic [ref=f1e105]: Pistones
+          - generic "9 Pistones" [ref=f1e106]
+          - heading "Pase de 9 Pistones" [level=3] [ref=f1e116]
+          - paragraph [ref=f1e117]: Lanyard con credencial impresa · Acceso y premios especiales.
+          - strong [ref=f1e118]: $25.000
+          - button "Elegir nivel" [ref=f1e119] [cursor=pointer]
+          - generic [ref=f1e120]: NO ES VÁLIDO COMO ENTRADA
+    - generic [ref=f1e121]:
+      - generic [ref=f1e122]:
+        - paragraph [ref=f1e123]: Pase físico
+        - heading "Una credencial impresa que activa experiencias." [level=2] [ref=f1e124]
+        - paragraph [ref=f1e125]: El mismo QR permite enrolar al titular, registrar el retiro del lanyard y validar el acceso especial. Los Pistones quedan registrados en el sistema para una participación auditable en los premios.
+        - generic [ref=f1e126]:
+          - generic [ref=f1e127]:
+            - generic [ref=f1e128]: ✓
+            - paragraph [ref=f1e129]: Lanyard y credencial impresa de Pase Especial
+          - generic [ref=f1e130]:
+            - generic [ref=f1e131]: ✓
+            - paragraph [ref=f1e132]: Acceso a experiencias especiales el día del evento
+          - generic [ref=f1e133]:
+            - generic [ref=f1e134]: ✓
+            - paragraph [ref=f1e135]: Participación en premios especiales, incluido un automóvil
+          - generic [ref=f1e136]:
+            - generic [ref=f1e137]: ✓
+            - paragraph [ref=f1e138]: Nuevos beneficios serán publicados próximamente
+      - generic [ref=f1e139]:
+        - img "Lanyard sencillo con credencial impresa dentro de un porta credencial transparente" [ref=f1e140]
+        - generic [ref=f1e141]:
+          - paragraph [ref=f1e142]: Lo que recibes
+          - heading "Lanyard + credencial impresa." [level=3] [ref=f1e143]
+          - paragraph [ref=f1e144]: Un pase físico sencillo, individualizado con QR, para retirar y validar tus accesos especiales el día del evento.
+    - generic [ref=f1e145]:
+      - generic [ref=f1e146]:
+        - paragraph [ref=f1e147]: Simple y trazable
+        - heading "Compra, enrola y retira." [level=2] [ref=f1e148]
+      - generic [ref=f1e149]:
+        - article [ref=f1e150]:
+          - text: "1"
+          - heading "Elige Pistones" [level=3] [ref=f1e151]
+          - paragraph [ref=f1e152]: Selecciona el nivel de Pase Especial que quieres comprar.
+        - article [ref=f1e153]:
+          - text: "2"
+          - heading "Completa el titular" [level=3] [ref=f1e154]
+          - paragraph [ref=f1e155]: Después del pago recibirás un enlace seguro de enrolamiento.
+        - article [ref=f1e156]:
+          - text: "3"
+          - heading "Presenta tu QR" [level=3] [ref=f1e157]
+          - paragraph [ref=f1e158]: Úsalo para retirar el lanyard y la credencial impresa.
+        - article [ref=f1e159]:
+          - text: "4"
+          - heading "Activa el acceso" [level=3] [ref=f1e160]
+          - paragraph [ref=f1e161]: El equipo validará tu pase en las experiencias especiales.
+    - generic [ref=f1e162]:
+      - generic [ref=f1e163]:
+        - paragraph [ref=f1e164]: Retiro de credencial
+        - heading "Tu pase te espera." [level=2] [ref=f1e165]
+      - generic [ref=f1e166]:
+        - article [ref=f1e167]:
+          - generic [ref=f1e169]:
+            - strong [ref=f1e170]: Día del evento
+            - paragraph [ref=f1e171]: Retiro disponible el día del evento presentando el QR y la identificación del titular.
+        - article [ref=f1e172]:
+          - generic [ref=f1e174]:
+            - strong [ref=f1e175]: Antes del evento
+            - paragraph [ref=f1e176]: "Punto de retiro previo al evento: por confirmar."
+    - generic [ref=f1e177]:
+      - generic [ref=f1e178]:
+        - paragraph [ref=f1e179]: Tu selección
+        - heading "Elige un nivel arriba." [level=2] [ref=f1e180]
+        - paragraph [ref=f1e181]: Luego completa los datos del comprador para continuar al pago.
+      - generic [ref=f1e183]:
+        - generic [ref=f1e184]:
+          - text: Correo electrónico
+          - textbox "Correo electrónico" [ref=f1e185]:
+            - /placeholder: tu@correo.cl
+        - generic [ref=f1e186]:
+          - text: Teléfono
+          - textbox "Teléfono" [ref=f1e187]:
+            - /placeholder: +56 9 1234 5678
+        - generic [ref=f1e188]:
+          - checkbox "Acepto el uso de mis datos personales." [ref=f1e189]
+          - generic [ref=f1e190]:
+            - text: Acepto el
+            - link "uso de mis datos personales" [ref=f1e191] [cursor=pointer]:
+              - /url: /terminos-datos-personales
+            - text: .
+        - generic [ref=f1e192]:
+          - checkbox "Entiendo y acepto que este Pase Especial NO ES VÁLIDO COMO ENTRADA y que debo contar con una entrada válida para ingresar al evento." [ref=f1e193]
+          - generic [ref=f1e194]:
+            - text: Entiendo y acepto que este Pase Especial
+            - strong [ref=f1e195]: NO ES VÁLIDO COMO ENTRADA
+            - text: y que debo contar con una entrada válida para ingresar al evento.
+        - button "Selecciona un nivel" [disabled] [ref=f1e196]
+  - contentinfo [ref=f1e197]:
+    - paragraph [ref=f1e198]: Honda Fest Chile · Pase Especial HFC 2026
+    - generic [ref=f1e199]:
+      - link "Comprar entrada" [ref=f1e200] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Validar pase" [ref=f1e201] [cursor=pointer]:
+        - /url: /validar-pase
+  - generic "Accesos rapidos por WhatsApp" [ref=f1e202]:
+    - link "Quiero participar como piloto, foodtruck o stand por WhatsApp" [ref=f1e203] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20quiero%20participar%20en%20Honda%20Fest%20Chile%20como%20piloto%2C%20foodtruck%20o%20stand.
+      - generic [ref=f1e204]: +
+      - strong [ref=f1e206]: Quiero participar
+    - link "Necesitas ayuda por WhatsApp" [ref=f1e207] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra
+      - generic [ref=f1e208]: "?"
+      - strong: Necesitas ayuda?
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+        - generic:
+          - checkbox
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - button: Pagar ahora

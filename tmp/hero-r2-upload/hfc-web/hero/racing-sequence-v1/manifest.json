@@ -1,0 +1,494 @@
+{
+  "version": 1,
+  "aspectRatio": "16:9",
+  "frameCount": 28,
+  "playback": {
+    "fps": 12,
+    "loop": false,
+    "holdLastFrameMs": 1000
+  },
+  "variants": {
+    "2560-avif": {
+      "width": 2560,
+      "height": 1440,
+      "format": "avif",
+      "totalBytes": 3241923,
+      "files": [
+        {
+          "frame": 1,
+          "file": "frames/2560-avif/hfc-hero-frame-01.avif",
+          "bytes": 144690
+        },
+        {
+          "frame": 2,
+          "file": "frames/2560-avif/hfc-hero-frame-02.avif",
+          "bytes": 148291
+        },
+        {
+          "frame": 3,
+          "file": "frames/2560-avif/hfc-hero-frame-03.avif",
+          "bytes": 150246
+        },
+        {
+          "frame": 4,
+          "file": "frames/2560-avif/hfc-hero-frame-04.avif",
+          "bytes": 150154
+        },
+        {
+          "frame": 5,
+          "file": "frames/2560-avif/hfc-hero-frame-05.avif",
+          "bytes": 162333
+        },
+        {
+          "frame": 6,
+          "file": "frames/2560-avif/hfc-hero-frame-06.avif",
+          "bytes": 145571
+        },
+        {
+          "frame": 7,
+          "file": "frames/2560-avif/hfc-hero-frame-07.avif",
+          "bytes": 128950
+        },
+        {
+          "frame": 8,
+          "file": "frames/2560-avif/hfc-hero-frame-08.avif",
+          "bytes": 130934
+        },
+        {
+          "frame": 9,
+          "file": "frames/2560-avif/hfc-hero-frame-09.avif",
+          "bytes": 144167
+        },
+        {
+          "frame": 10,
+          "file": "frames/2560-avif/hfc-hero-frame-10.avif",
+          "bytes": 38989
+        },
+        {
+          "frame": 11,
+          "file": "frames/2560-avif/hfc-hero-frame-11.avif",
+          "bytes": 147686
+        },
+        {
+          "frame": 12,
+          "file": "frames/2560-avif/hfc-hero-frame-12.avif",
+          "bytes": 142860
+        },
+        {
+          "frame": 13,
+          "file": "frames/2560-avif/hfc-hero-frame-13.avif",
+          "bytes": 140537
+        },
+        {
+          "frame": 14,
+          "file": "frames/2560-avif/hfc-hero-frame-14.avif",
+          "bytes": 124492
+        },
+        {
+          "frame": 15,
+          "file": "frames/2560-avif/hfc-hero-frame-15.avif",
+          "bytes": 112190
+        },
+        {
+          "frame": 16,
+          "file": "frames/2560-avif/hfc-hero-frame-16.avif",
+          "bytes": 101501
+        },
+        {
+          "frame": 17,
+          "file": "frames/2560-avif/hfc-hero-frame-17.avif",
+          "bytes": 70827
+        },
+        {
+          "frame": 18,
+          "file": "frames/2560-avif/hfc-hero-frame-18.avif",
+          "bytes": 64135
+        },
+        {
+          "frame": 19,
+          "file": "frames/2560-avif/hfc-hero-frame-19.avif",
+          "bytes": 61777
+        },
+        {
+          "frame": 20,
+          "file": "frames/2560-avif/hfc-hero-frame-20.avif",
+          "bytes": 56624
+        },
+        {
+          "frame": 21,
+          "file": "frames/2560-avif/hfc-hero-frame-21.avif",
+          "bytes": 59326
+        },
+        {
+          "frame": 22,
+          "file": "frames/2560-avif/hfc-hero-frame-22.avif",
+          "bytes": 57577
+        },
+        {
+          "frame": 23,
+          "file": "frames/2560-avif/hfc-hero-frame-23.avif",
+          "bytes": 57599
+        },
+        {
+          "frame": 24,
+          "file": "frames/2560-avif/hfc-hero-frame-24.avif",
+          "bytes": 115192
+        },
+        {
+          "frame": 25,
+          "file": "frames/2560-avif/hfc-hero-frame-25.avif",
+          "bytes": 108073
+        },
+        {
+          "frame": 26,
+          "file": "frames/2560-avif/hfc-hero-frame-26.avif",
+          "bytes": 150736
+        },
+        {
+          "frame": 27,
+          "file": "frames/2560-avif/hfc-hero-frame-27.avif",
+          "bytes": 131351
+        },
+        {
+          "frame": 28,
+          "file": "frames/2560-avif/hfc-hero-frame-28.avif",
+          "bytes": 195115
+        }
+      ]
+    },
+    "1920-webp": {
+      "width": 1920,
+      "height": 1080,
+      "format": "webp",
+      "totalBytes": 4121968,
+      "files": [
+        {
+          "frame": 1,
+          "file": "frames/1920-webp/hfc-hero-frame-01.webp",
+          "bytes": 193370
+        },
+        {
+          "frame": 2,
+          "file": "frames/1920-webp/hfc-hero-frame-02.webp",
+          "bytes": 196728
+        },
+        {
+          "frame": 3,
+          "file": "frames/1920-webp/hfc-hero-frame-03.webp",
+          "bytes": 196958
+        },
+        {
+          "frame": 4,
+          "file": "frames/1920-webp/hfc-hero-frame-04.webp",
+          "bytes": 197134
+        },
+        {
+          "frame": 5,
+          "file": "frames/1920-webp/hfc-hero-frame-05.webp",
+          "bytes": 203104
+        },
+        {
+          "frame": 6,
+          "file": "frames/1920-webp/hfc-hero-frame-06.webp",
+          "bytes": 181380
+        },
+        {
+          "frame": 7,
+          "file": "frames/1920-webp/hfc-hero-frame-07.webp",
+          "bytes": 165814
+        },
+        {
+          "frame": 8,
+          "file": "frames/1920-webp/hfc-hero-frame-08.webp",
+          "bytes": 169910
+        },
+        {
+          "frame": 9,
+          "file": "frames/1920-webp/hfc-hero-frame-09.webp",
+          "bytes": 178918
+        },
+        {
+          "frame": 10,
+          "file": "frames/1920-webp/hfc-hero-frame-10.webp",
+          "bytes": 45070
+        },
+        {
+          "frame": 11,
+          "file": "frames/1920-webp/hfc-hero-frame-11.webp",
+          "bytes": 176148
+        },
+        {
+          "frame": 12,
+          "file": "frames/1920-webp/hfc-hero-frame-12.webp",
+          "bytes": 180970
+        },
+        {
+          "frame": 13,
+          "file": "frames/1920-webp/hfc-hero-frame-13.webp",
+          "bytes": 180050
+        },
+        {
+          "frame": 14,
+          "file": "frames/1920-webp/hfc-hero-frame-14.webp",
+          "bytes": 160580
+        },
+        {
+          "frame": 15,
+          "file": "frames/1920-webp/hfc-hero-frame-15.webp",
+          "bytes": 142142
+        },
+        {
+          "frame": 16,
+          "file": "frames/1920-webp/hfc-hero-frame-16.webp",
+          "bytes": 129162
+        },
+        {
+          "frame": 17,
+          "file": "frames/1920-webp/hfc-hero-frame-17.webp",
+          "bytes": 97724
+        },
+        {
+          "frame": 18,
+          "file": "frames/1920-webp/hfc-hero-frame-18.webp",
+          "bytes": 89126
+        },
+        {
+          "frame": 19,
+          "file": "frames/1920-webp/hfc-hero-frame-19.webp",
+          "bytes": 85836
+        },
+        {
+          "frame": 20,
+          "file": "frames/1920-webp/hfc-hero-frame-20.webp",
+          "bytes": 78942
+        },
+        {
+          "frame": 21,
+          "file": "frames/1920-webp/hfc-hero-frame-21.webp",
+          "bytes": 85332
+        },
+        {
+          "frame": 22,
+          "file": "frames/1920-webp/hfc-hero-frame-22.webp",
+          "bytes": 83244
+        },
+        {
+          "frame": 23,
+          "file": "frames/1920-webp/hfc-hero-frame-23.webp",
+          "bytes": 80686
+        },
+        {
+          "frame": 24,
+          "file": "frames/1920-webp/hfc-hero-frame-24.webp",
+          "bytes": 139962
+        },
+        {
+          "frame": 25,
+          "file": "frames/1920-webp/hfc-hero-frame-25.webp",
+          "bytes": 132354
+        },
+        {
+          "frame": 26,
+          "file": "frames/1920-webp/hfc-hero-frame-26.webp",
+          "bytes": 176018
+        },
+        {
+          "frame": 27,
+          "file": "frames/1920-webp/hfc-hero-frame-27.webp",
+          "bytes": 158288
+        },
+        {
+          "frame": 28,
+          "file": "frames/1920-webp/hfc-hero-frame-28.webp",
+          "bytes": 217018
+        }
+      ]
+    },
+    "1280-avif": {
+      "width": 1280,
+      "height": 720,
+      "format": "avif",
+      "totalBytes": 1356749,
+      "files": [
+        {
+          "frame": 1,
+          "file": "frames/1280-avif/hfc-hero-frame-01.avif",
+          "bytes": 64282
+        },
+        {
+          "frame": 2,
+          "file": "frames/1280-avif/hfc-hero-frame-02.avif",
+          "bytes": 65773
+        },
+        {
+          "frame": 3,
+          "file": "frames/1280-avif/hfc-hero-frame-03.avif",
+          "bytes": 66505
+        },
+        {
+          "frame": 4,
+          "file": "frames/1280-avif/hfc-hero-frame-04.avif",
+          "bytes": 66631
+        },
+        {
+          "frame": 5,
+          "file": "frames/1280-avif/hfc-hero-frame-05.avif",
+          "bytes": 68471
+        },
+        {
+          "frame": 6,
+          "file": "frames/1280-avif/hfc-hero-frame-06.avif",
+          "bytes": 61084
+        },
+        {
+          "frame": 7,
+          "file": "frames/1280-avif/hfc-hero-frame-07.avif",
+          "bytes": 56843
+        },
+        {
+          "frame": 8,
+          "file": "frames/1280-avif/hfc-hero-frame-08.avif",
+          "bytes": 56409
+        },
+        {
+          "frame": 9,
+          "file": "frames/1280-avif/hfc-hero-frame-09.avif",
+          "bytes": 58624
+        },
+        {
+          "frame": 10,
+          "file": "frames/1280-avif/hfc-hero-frame-10.avif",
+          "bytes": 10524
+        },
+        {
+          "frame": 11,
+          "file": "frames/1280-avif/hfc-hero-frame-11.avif",
+          "bytes": 58693
+        },
+        {
+          "frame": 12,
+          "file": "frames/1280-avif/hfc-hero-frame-12.avif",
+          "bytes": 59909
+        },
+        {
+          "frame": 13,
+          "file": "frames/1280-avif/hfc-hero-frame-13.avif",
+          "bytes": 59852
+        },
+        {
+          "frame": 14,
+          "file": "frames/1280-avif/hfc-hero-frame-14.avif",
+          "bytes": 53601
+        },
+        {
+          "frame": 15,
+          "file": "frames/1280-avif/hfc-hero-frame-15.avif",
+          "bytes": 47846
+        },
+        {
+          "frame": 16,
+          "file": "frames/1280-avif/hfc-hero-frame-16.avif",
+          "bytes": 42524
+        },
+        {
+          "frame": 17,
+          "file": "frames/1280-avif/hfc-hero-frame-17.avif",
+          "bytes": 29258
+        },
+        {
+          "frame": 18,
+          "file": "frames/1280-avif/hfc-hero-frame-18.avif",
+          "bytes": 26744
+        },
+        {
+          "frame": 19,
+          "file": "frames/1280-avif/hfc-hero-frame-19.avif",
+          "bytes": 25673
+        },
+        {
+          "frame": 20,
+          "file": "frames/1280-avif/hfc-hero-frame-20.avif",
+          "bytes": 23459
+        },
+        {
+          "frame": 21,
+          "file": "frames/1280-avif/hfc-hero-frame-21.avif",
+          "bytes": 23615
+        },
+        {
+          "frame": 22,
+          "file": "frames/1280-avif/hfc-hero-frame-22.avif",
+          "bytes": 23128
+        },
+        {
+          "frame": 23,
+          "file": "frames/1280-avif/hfc-hero-frame-23.avif",
+          "bytes": 22881
+        },
+        {
+          "frame": 24,
+          "file": "frames/1280-avif/hfc-hero-frame-24.avif",
+          "bytes": 46648
+        },
+        {
+          "frame": 25,
+          "file": "frames/1280-avif/hfc-hero-frame-25.avif",
+          "bytes": 45481
+        },
+        {
+          "frame": 26,
+          "file": "frames/1280-avif/hfc-hero-frame-26.avif",
+          "bytes": 59360
+        },
+        {
+          "frame": 27,
+          "file": "frames/1280-avif/hfc-hero-frame-27.avif",
+          "bytes": 54439
+        },
+        {
+          "frame": 28,
+          "file": "frames/1280-avif/hfc-hero-frame-28.avif",
+          "bytes": 78492
+        }
+      ]
+    }
+  },
+  "originalSources": [
+    "../storyboard-honda-frame-01-v3-close.png",
+    "../storyboard-honda-frame-02-lights-on-locked.png",
+    "../storyboard-honda-frame-03-start-red.png",
+    "../storyboard-honda-frame-04-start-amber.png",
+    "../storyboard-honda-frame-05-green-burnout-start.png",
+    "../storyboard-honda-frame-06-green-burnout-medium.png",
+    "../storyboard-honda-frame-07-burnout-heavy.png",
+    "../storyboard-honda-frame-08-burnout-peak.png",
+    "../storyboard-honda-frame-09-glitch-front.png",
+    "../storyboard-honda-frame-10-glitch-blink.png",
+    "../storyboard-honda-frame-11-glitch-side-reveal.png",
+    "../storyboard-honda-frame-12-glitch-stabilize.png",
+    "../storyboard-honda-frame-13-side-running-wide.png",
+    "../storyboard-honda-frame-14-camera-approach-01.png",
+    "../storyboard-honda-frame-15-camera-approach-02.png",
+    "../storyboard-honda-frame-16-camera-approach-03.png",
+    "../storyboard-honda-frame-17-side-running-close.png",
+    "../storyboard-honda-frame-18-driver-window-approach-01.png",
+    "../storyboard-honda-frame-19-driver-window-approach-02.png",
+    "../storyboard-honda-frame-20-driver-window-approach-03.png",
+    "../storyboard-honda-frame-21-window-exterior-close.png",
+    "../storyboard-honda-frame-22-window-exterior-tight.png",
+    "../storyboard-honda-frame-23-window-entry-begins.png",
+    "../storyboard-honda-frame-24-window-threshold.png",
+    "../storyboard-honda-frame-25-window-threshold-tight.png",
+    "../storyboard-honda-frame-26-cockpit-medium.png",
+    "../storyboard-honda-frame-27-cockpit-driver-close.png",
+    "../storyboard-honda-frame-28-driver-final-closeup.png"
+  ],
+  "poster": {
+    "avif": "posters/hfc-hero-poster-2560.avif",
+    "webp": "posters/hfc-hero-poster-1920.webp"
+  },
+  "preview": {
+    "animatedWebp": "preview/hfc-hero-sequence-1920.webp",
+    "contactSheet": "preview/hfc-hero-contact-sheet-01-28.png"
+  }
+}

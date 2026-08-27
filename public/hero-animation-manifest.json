@@ -1,7 +1,7 @@
 {
   "version": "racing-sequence-v1",
   "frameCount": 28,
-  "fps": 12,
+  "fps": 6,
   "holdLastFrameMs": 1000,
   "cdnBaseUrl": "https://pub-a4778145aed5476ca3ad2d9e9ca35aa3.r2.dev/hfc-web/HeroWeb",
   "posters": {

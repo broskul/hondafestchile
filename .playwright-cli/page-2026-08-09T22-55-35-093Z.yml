@@ -1,0 +1,92 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - link "HFC Honda Fest Chile Enrolamiento" [ref=f1e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f1e4]: HFC
+      - generic [ref=f1e5]:
+        - strong [ref=f1e6]: Honda Fest Chile
+        - generic [ref=f1e7]: Enrolamiento
+    - navigation "Enrolamiento" [ref=f1e8]:
+      - link "Ticketera" [ref=f1e9] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Mi Pit Lane" [ref=f1e10] [cursor=pointer]:
+        - /url: /mi-pit-lane
+      - link "Validar" [ref=f1e11] [cursor=pointer]:
+        - /url: /validar
+    - button "Carrito 0" [ref=f1e12] [cursor=pointer]:
+      - text: Carrito
+      - generic [ref=f1e13]: "0"
+  - main [ref=f1e14]:
+    - generic [ref=f1e16]:
+      - paragraph [ref=f1e17]: Acceso seguro
+      - heading "Completa los datos de tu compra." [level=1] [ref=f1e18]
+      - paragraph [ref=f1e19]: El pago ya quedó asegurado. Con estos datos emitimos tus entradas o tu Pase Especial y la boleta.
+    - generic [ref=f1e22]:
+      - paragraph [ref=f1e23]: Compra pagada
+      - heading "Pase de 5 Pistones - Honda Fest Chile 2026" [level=2] [ref=f1e24]
+      - paragraph [ref=f1e25]: Orden order_695505fd7a45b6354388 · $15.000
+      - generic [ref=f1e26]:
+        - generic [ref=f1e27]:
+          - text: Correo
+          - textbox "Correo" [ref=f1e28]: qa.browser.pase@example.com
+        - generic [ref=f1e29]:
+          - text: Nombre completo
+          - textbox "Nombre completo" [ref=f1e30]:
+            - /placeholder: Nombre y apellido
+            - text: Qa Browser Pase
+        - generic [ref=f1e31]:
+          - text: RUT
+          - textbox "RUT" [ref=f1e32]:
+            - /placeholder: 12.345.678-5
+        - generic [ref=f1e33]:
+          - text: Telefono
+          - textbox "Telefono" [ref=f1e34]:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic [ref=f1e35]: NO ES VÁLIDO COMO ENTRADA
+        - button "Emitir Pase Especial" [ref=f1e36] [cursor=pointer]
+  - generic "Accesos rapidos por WhatsApp" [ref=f1e37]:
+    - link "Quiero participar como piloto, foodtruck o stand por WhatsApp" [ref=f1e38] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20quiero%20participar%20en%20Honda%20Fest%20Chile%20como%20piloto%2C%20foodtruck%20o%20stand.
+      - generic [ref=f1e39]: +
+      - generic [ref=f1e40]:
+        - strong [ref=f1e41]: Quiero participar
+        - generic [ref=f1e42]: Pilotos, foodtrucks y stands
+    - link "Necesitas ayuda por WhatsApp" [ref=f1e43] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra
+      - generic [ref=f1e44]: "?"
+      - strong: Necesitas ayuda?
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+            - text: qa.browser.pase@example.com
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic:
+          - checkbox [checked]
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - generic:
+          - text: ✓
+          - strong: Email verificado
+        - button: Pagar ahora

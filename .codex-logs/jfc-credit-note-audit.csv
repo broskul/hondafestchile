@@ -1,0 +1,36 @@
+orderId;createdAt;name;email;rut;orderStatus;paymentIds;mpStatus;mpStatusDetail;orderTotal;jfcTotal;mpRefundTotal;invoiceClass;invoiceFolio;invoiceAmount;tickets;notes
+order_c53309f755c5fca73dd0;2026-07-08T02:29:51.283Z;C Mancillavalencia;c.mancillavalencia@icloud.com;23.257.749-5;paid;166892030085;refunded;refunded;11462;11462;11462;real;15356;11462;1;
+order_9703ff904d8c50853702;2026-07-06T19:34:34.904Z;Ruthfuentealba60;ruthfuentealba60@gmail.com;19.082.284-2;paid;167502433146;refunded;refunded;22924;22924;22924;real;15355;22924;2;
+order_133d02f02abc3501ba3b;2026-07-06T13:53:18.581Z;Crcriveros88;crcriveros88@gmail.com;16.910.242-2;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_c948a80bf9b55e4b5244;2026-07-06T13:21:54.738Z;Crcriveros88;crcriveros88@gmail.com;16.910.242-2;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_3ef7099460a7264d57a7;2026-07-06T13:19:51.303Z;Crcriveros88;crcriveros88@gmail.com;16.910.242-2;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_038ae306024a00fc5770;2026-07-06T13:19:30.194Z;Crcriveros88;crcriveros88@gmail.com;16.910.242-2;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_7703afbfb866cedcd9a7;2026-07-03T01:33:06.398Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_29d1226b785d35d0f941;2026-07-03T01:33:02.958Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;paid;166899345660;refunded;refunded;22924;22924;22924;real;15354;22924;2;
+order_be91937498dd55e836c3;2026-07-03T01:23:33.603Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_c6d5099bed00f1345e8d;2026-07-03T01:23:30.649Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_7de55b17172315997bb3;2026-07-03T01:20:12.137Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_355ea5d21dc8ab59c714;2026-07-03T01:20:10.102Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_eb195b20b512cdae165f;2026-07-03T01:18:15.445Z;Bsaezrivera6;bsaezrivera6@gmail.com;20.162.010-4;paid;166900295398;refunded;refunded;22924;22924;22924;real;15353;22924;2;
+order_1d5ec5f6606ab74e6ab4;2026-07-03T01:16:10.683Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_113cbd41a9f10e91664a;2026-07-03T01:16:06.275Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_06d34027b90570484c96;2026-07-03T01:15:44.929Z;Catalinapoletterc;catalinapoletterc@gmail.com;22.064.382-4;payment_failed;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_192d69ddf5c003e48edd;2026-06-26T01:05:01.550Z;Matiasignacio713;matiasignacio713@gmail.com;21.534.573-4;paid;165011191801;refunded;refunded;34386;34386;34386;real;15352;34386;3;
+order_e3ae886becd7ebcf6446;2026-06-23T22:18:20.046Z;C Mancillavalencia;c.mancillavalencia@icloud.com;23.257.749-5;paid;164693570347;refunded;refunded;11462;11462;11462;real;15351;11462;1;
+order_7e57b1e8d33c5cd329fb;2026-06-22T03:22:44.151Z;Matiasignacio713;matiasignacio713@gmail.com;21.534.573-4;payment_failed;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_c7062318fd984802f5b3;2026-06-17T18:42:51.247Z;Rick Joker 02;rick.joker.02@gmail.com;20.012.305-0;paid;164571646696;refunded;refunded;11462;11462;11462;none;;0;0;pagada sin DTE registrado
+order_bcabc3272a70f9f4b198;2026-06-15T23:49:54.237Z;Velasquez Monshi;velasquez.monshi@gmail.com;20.081.974-8;payment_expired;;;;22924;22924;0;none;;0;0;sin paymentId numerico
+order_4a7ccd50269ed661aa73;2026-06-14T22:46:40.875Z;Catalina Quiroga Castillo 711;catalina.quiroga.castillo.711@gmail.com;20.611.582-3;paid;164141317522;refunded;refunded;11462;11462;11462;demo;DEMO-1781477348996;11462;1;"DTE demo; no usar para NC tributaria real"
+order_5dcc02bac28629c41ea8;2026-06-11T23:44:38.568Z;Luis Leiva Salinas;luisleiva2206@gmail.com;16.777.877-1;paid;162893552619;refunded;refunded;22924;22924;22924;demo;DEMO-1781221556065;22924;2;"DTE demo; no usar para NC tributaria real"
+order_eacddd9e27d0f419b687;2026-06-07T17:49:08.929Z;Bastianandresgonzalezpoblete;bastianandresgonzalezpoblete@gmail.com;20.089.689-0;paid;162196433787;refunded;refunded;11462;11462;11462;demo;DEMO-1780854604724;11462;1;"DTE demo; no usar para NC tributaria real"
+order_1f8eddba0537756f3d62;2026-06-07T17:24:48.927Z;Ajskak;ajskak@ajdja.cl;20.012.820-6;payment_expired;;;;11462;11462;0;none;;0;0;sin paymentId numerico
+order_70d119a225094ec306c5;2026-06-02T01:45:12.794Z;Rick Joker 02;rick.joker.02@gmail.com;20.012.305-0;payment_failed;;;;11462;11462;0;none;;0;0;sin paymentId numerico
+order_96afd25fe6f463dd682d;2026-06-01T02:58:41.274Z;Carlosr Rodriguezs;carlosr.rodriguezs@gmail.com;17.660.908-7;payment_expired;;;;34386;22924;0;none;;0;0;sin paymentId numerico
+order_75df387ed3a5c1ce5d84;2026-06-01T02:12:17.829Z;Carlos+mp Test 20260531105756;carlos+checkoutpro-smoke-20260531221216@prof3sional.com;12.345.678-5;payment_expired;;;;11462;11462;0;none;;0;0;sin paymentId numerico
+order_e9f81040230f71604973;2026-05-31T14:57:57.496Z;Carlos+mp Test 20260531105756;carlos+checkoutpro-smoke-20260531221216@prof3sional.com;12.345.678-5;paid;1346874607;404:Payment not found;;9330;9330;0;none;;0;0;MP no consultado para algun paymentId | pagada sin DTE registrado
+order_d526bc600df61e11c6c8;2026-05-31T14:48:28.471Z;Carlosr Rodriguezs;carlosr.rodriguezs@gmail.com;17.660.908-7;payment_expired;;;;37320;37320;0;none;;0;0;sin paymentId numerico
+order_07822bede70b9000bd9c;2026-05-31T03:12:04.275Z;Carlos;carlos@prof3sional.com;;payment_expired;;;;8000;8000;0;none;;0;0;sin paymentId numerico
+order_9e96c4d8818945e26b9c;2026-05-31T03:12:01.407Z;Carlos;carlos@prof3sional.com;;payment_expired;;;;8000;8000;0;none;;0;0;sin paymentId numerico
+order_22c28044bf10cb1e0d93;2026-05-31T03:04:58.604Z;Carlos;carlos@prof3sional.com;;payment_expired;;;;8000;8000;0;none;;0;0;sin paymentId numerico
+order_f64d8a0fa4e0c6999aaa;2026-05-30T22:09:07.150Z;Carlosr Rodriguezs;carlosr.rodriguezs@gmail.com;17.660.908-7;payment_expired;;;;16000;16000;0;none;;0;0;sin paymentId numerico
+order_48e390bed2a9b50a23ef;2026-05-30T21:44:56.962Z;Carlosr Rodriguezs;carlosr.rodriguezs@gmail.com;17.660.908-7;payment_expired;;;;8000;8000;0;none;;0;0;sin paymentId numerico

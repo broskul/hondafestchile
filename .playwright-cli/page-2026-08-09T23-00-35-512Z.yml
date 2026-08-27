@@ -1,0 +1,140 @@
+- generic [ref=f5e1]:
+  - banner [ref=f5e2]:
+    - link "HFC Honda Fest Chile Backoffice" [ref=f5e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f5e4]: HFC
+      - generic [ref=f5e5]:
+        - strong [ref=f5e6]: Honda Fest Chile
+        - generic [ref=f5e7]: Backoffice
+    - navigation "Backoffice" [ref=f5e8]:
+      - link "Ticketera" [ref=f5e9] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Validar" [ref=f5e10] [cursor=pointer]:
+        - /url: /validar
+  - main [ref=f5e11]:
+    - generic [ref=f5e13]:
+      - paragraph [ref=f5e14]: Backoffice oculto
+      - heading "Ventas, entradas y enrolados." [level=1] [ref=f5e15]
+    - generic [ref=f5e16]:
+      - generic [ref=f5e17]:
+        - generic [ref=f5e18]:
+          - generic [ref=f5e19]:
+            - text: Contraseña backoffice
+            - textbox "Contraseña backoffice" [ref=f5e20]:
+              - /placeholder: Contraseña administrativa
+              - text: qa-pass-token
+          - button "Entrar" [active] [ref=f5e21] [cursor=pointer]
+        - generic [ref=f5e22]: Backoffice cargado.
+      - generic [ref=f5e23]:
+        - generic [ref=f5e24]: "Datos: JSON local - Correo: demo - remitente no configurado"
+        - tablist [ref=f5e25]:
+          - button "BI" [ref=f5e26] [cursor=pointer]
+          - button "Entradas" [ref=f5e27] [cursor=pointer]
+          - button "Pases" [ref=f5e28] [cursor=pointer]
+          - button "Invitados" [ref=f5e29] [cursor=pointer]
+          - button "Enrolados" [ref=f5e30] [cursor=pointer]
+          - button "Contactos CSV" [ref=f5e31] [cursor=pointer]
+          - button "Correos" [ref=f5e32] [cursor=pointer]
+          - button "Plantillas" [ref=f5e33] [cursor=pointer]
+          - button "Ventas" [ref=f5e34] [cursor=pointer]
+          - button "QR" [ref=f5e35] [cursor=pointer]
+        - generic [ref=f5e36]:
+          - generic [ref=f5e37]:
+            - generic [ref=f5e38]:
+              - generic [ref=f5e39]: Ventas
+              - strong [ref=f5e40]: "1"
+            - generic [ref=f5e41]:
+              - generic [ref=f5e42]: Pagadas
+              - strong [ref=f5e43]: "1"
+            - generic [ref=f5e44]:
+              - generic [ref=f5e45]: Ingresos
+              - strong [ref=f5e46]: $15.000
+            - generic [ref=f5e47]:
+              - generic [ref=f5e48]: Entradas
+              - strong [ref=f5e49]: "0"
+            - generic [ref=f5e50]:
+              - generic [ref=f5e51]: Invitados
+              - strong [ref=f5e52]: "0"
+            - generic [ref=f5e53]:
+              - generic [ref=f5e54]: Enrolados
+              - strong [ref=f5e55]: "1"
+          - generic [ref=f5e56]:
+            - generic [ref=f5e57]:
+              - heading "BI por evento" [level=2] [ref=f5e58]
+              - table [ref=f5e60]:
+                - rowgroup [ref=f5e61]:
+                  - row [ref=f5e62]:
+                    - columnheader "Nombre" [ref=f5e63]
+                    - columnheader "Vendidas" [ref=f5e64]
+                    - columnheader "Invitados" [ref=f5e65]
+                    - columnheader "Ingresos" [ref=f5e66]
+                - rowgroup [ref=f5e67]:
+                  - row [ref=f5e68]:
+                    - cell "Honda Fest Chile" [ref=f5e69]
+                    - cell "1" [ref=f5e70]
+                    - cell "0" [ref=f5e71]
+                    - cell "$15.000" [ref=f5e72]
+            - generic [ref=f5e73]:
+              - heading "BI por tipo de entrada" [level=2] [ref=f5e74]
+              - table [ref=f5e76]:
+                - rowgroup [ref=f5e77]:
+                  - row [ref=f5e78]:
+                    - columnheader "Nombre" [ref=f5e79]
+                    - columnheader "Vendidas" [ref=f5e80]
+                    - columnheader "Invitados" [ref=f5e81]
+                    - columnheader "Ingresos" [ref=f5e82]
+                - rowgroup [ref=f5e83]:
+                  - row [ref=f5e84]:
+                    - cell "Pase de 5 Pistones" [ref=f5e85]
+                    - cell "1" [ref=f5e86]
+                    - cell "0" [ref=f5e87]
+                    - cell "$15.000" [ref=f5e88]
+          - generic [ref=f5e89]:
+            - heading "BI por etapa de venta" [level=2] [ref=f5e90]
+            - table [ref=f5e92]:
+              - rowgroup [ref=f5e93]:
+                - row [ref=f5e94]:
+                  - columnheader "Nombre" [ref=f5e95]
+                  - columnheader "Vendidas" [ref=f5e96]
+                  - columnheader "Invitados" [ref=f5e97]
+                  - columnheader "Ingresos" [ref=f5e98]
+              - rowgroup [ref=f5e99]:
+                - row [ref=f5e100]:
+                  - cell "general" [ref=f5e101]
+                  - cell "1" [ref=f5e102]
+                  - cell "0" [ref=f5e103]
+                  - cell "$15.000" [ref=f5e104]
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+            - text: qa.browser.pase@example.com
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+            - text: +56 9 4444 1234
+        - generic:
+          - checkbox [checked]
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - generic:
+          - text: ✓
+          - strong: Email verificado
+        - button: Pagar ahora
