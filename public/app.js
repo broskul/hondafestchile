@@ -131,6 +131,7 @@ function toast(message) {
 function initRacingHero() {
   const stage = $("[data-hero-stage]");
   const canvas = $("[data-hero-frame-canvas]");
+  const video = $("[data-hero-motion-video]");
   const toggle = $("[data-hero-motion-toggle]");
   if (!stage || !canvas) return;
 
@@ -149,6 +150,7 @@ function initRacingHero() {
   let sequenceDuration = 0;
   let sequenceReady = false;
   let sequencePlaying = false;
+  let sequenceMode = "frames";
   let pendingActivation = false;
   let mobileVisible = false;
   let mobileAutoPlayed = false;
@@ -171,6 +173,11 @@ function initRacingHero() {
     const frame = String(index + 1).padStart(2, "0");
     const key = `${variant.filePrefix}${frame}.${variant.extension}`;
     return `${manifest.cdnBaseUrl.replace(/\/$/, "")}/${key}`;
+  }
+
+  function assetUrl(key) {
+    if (/^(https?:)?\/\//.test(key) || key.startsWith("/")) return key;
+    return `${manifest.cdnBaseUrl.replace(/\/$/, "")}/${String(key).replace(/^\//, "")}`;
   }
 
   function loadImage(url) {
@@ -238,10 +245,63 @@ function initRacingHero() {
     context.globalAlpha = 1;
     context.fillStyle = "#100d0b";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    drawCover(frames[currentIndex]);
-    if (nextIndex !== currentIndex && easedProgress > 0) drawCover(frames[nextIndex], easedProgress);
+    const usesShutterCut = manifest.cutAfterFrames?.includes(currentIndex + 1) && nextIndex !== currentIndex;
+    if (usesShutterCut) {
+      if (progress < 0.5) {
+        const fadeOut = 1 - (progress * 2) ** 2 * (3 - 2 * progress * 2);
+        drawCover(frames[currentIndex], fadeOut);
+      } else {
+        const fadeProgress = (progress - 0.5) * 2;
+        const fadeIn = fadeProgress * fadeProgress * (3 - 2 * fadeProgress);
+        drawCover(frames[nextIndex], fadeIn);
+      }
+    } else {
+      drawCover(frames[currentIndex]);
+      if (nextIndex !== currentIndex && easedProgress > 0) drawCover(frames[nextIndex], easedProgress);
+    }
     context.globalAlpha = 1;
-    stage.dataset.heroFrame = String(currentIndex + 1);
+    stage.dataset.heroFrame = String(usesShutterCut && progress >= 0.5 ? nextIndex + 1 : currentIndex + 1);
+  }
+
+  function prepareVideo(key) {
+    if (!video || !key) return Promise.reject(new Error("No hay video para esta variante"));
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (callback) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        video.removeEventListener("canplaythrough", handleReady);
+        video.removeEventListener("error", handleError);
+        callback();
+      };
+      const handleReady = () => finish(resolve);
+      const handleError = () => finish(() => reject(new Error("No se pudo preparar el video del hero")));
+      const timeout = setTimeout(() => {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) finish(resolve);
+        else handleError();
+      }, 12000);
+
+      video.addEventListener("canplaythrough", handleReady, { once: true });
+      video.addEventListener("error", handleError, { once: true });
+      video.preload = "auto";
+      video.src = assetUrl(key);
+      video.load();
+      if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) handleReady();
+    });
+  }
+
+  async function prepareFrameFallback(primary) {
+    try {
+      frames = await decodeVariant(primary);
+    } catch (error) {
+      if (primary === manifest.variants.desktopFallback) throw error;
+      frames = await decodeVariant(manifest.variants.desktopFallback);
+    }
+    sequenceMode = "frames";
+    stage.classList.remove("is-video-sequence");
+    buildFrameTimeline();
   }
 
   function buildFrameTimeline() {
@@ -304,7 +364,16 @@ function initRacingHero() {
     stage.classList.add("is-sequence-active", "is-sequence-playing");
     stage.classList.remove("is-sequence-complete");
     setToggleState(true);
-    animationFrame = requestAnimationFrame(animationTick);
+    if (sequenceMode === "video" && video) {
+      video.pause();
+      video.currentTime = 0;
+      video.play().catch(() => {
+        resetSequence({ force: true });
+        stage.dataset.heroState = "error";
+      });
+    } else {
+      animationFrame = requestAnimationFrame(animationTick);
+    }
   }
 
   function resetSequence({ force = false } = {}) {
@@ -314,6 +383,10 @@ function initRacingHero() {
     sequencePlaying = false;
     cancelAnimationFrame(animationFrame);
     animationFrame = 0;
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
     lastPosition = 0;
     stage.classList.remove("is-sequence-active", "is-sequence-playing", "is-sequence-complete");
     setToggleState(false);
@@ -350,18 +423,20 @@ function initRacingHero() {
         : renderedWidth > manifest.variants.desktopFallback.width
           ? manifest.variants.desktop
           : manifest.variants.desktopFallback;
+      const videoKey = narrowViewport.matches ? manifest.videos?.mobile : manifest.videos?.desktop;
       try {
-        frames = await decodeVariant(primary);
-      } catch (error) {
-        if (primary === manifest.variants.desktopFallback) throw error;
-        frames = await decodeVariant(manifest.variants.desktopFallback);
+        await prepareVideo(videoKey);
+        sequenceMode = "video";
+        stage.classList.add("is-video-sequence");
+      } catch {
+        await prepareFrameFallback(primary);
       }
 
       sequenceReady = true;
-      buildFrameTimeline();
       resizeCanvas();
-      renderPosition(0);
+      if (sequenceMode === "frames") renderPosition(0);
       stage.dataset.heroState = "ready";
+      stage.dataset.heroMode = sequenceMode;
       stage.classList.add("is-sequence-ready");
       if (toggle) toggle.disabled = false;
       if (pendingActivation) playSequence({ persist: pinned });
@@ -388,6 +463,9 @@ function initRacingHero() {
   toggle?.addEventListener("click", () => {
     if (sequencePlaying) resetSequence({ force: true });
     else playSequence({ persist: true });
+  });
+  video?.addEventListener("ended", () => {
+    if (sequenceMode === "video" && sequencePlaying) finishSequence();
   });
   reduceMotion.addEventListener?.("change", (event) => {
     if (event.matches) {

@@ -20,9 +20,9 @@ Definir la interfaz publica de Honda Fest Chile y Japon Fest Chile con un estilo
 ## Decisiones vigentes
 
 - Sitio estatico servido por Express.
-- Hero con poster bitmap local y secuencia `canvas` de 28 frames servida desde Cloudflare R2.
-- La secuencia usa carga diferida, decodificacion completa antes de reproducir, interpolacion entre frames, disoluciones extendidas en cortes de camara y fallback de formato/resolucion.
-- En movil el canvas conserva `cover` centrado horizontalmente, sin desborde; `prefers-reduced-motion` mantiene el poster sin descargar frames.
+- Hero con poster bitmap local y video cinematografico derivado de los 28 frames; el `canvas` servido desde Cloudflare R2 queda como fallback.
+- El video conserva ritmo de 10 keyframes/s, entrega 30 cuadros/s mediante flujo optico dentro de cada toma y usa shutter fades en los cortes 16→17, 20→21 y 23→24. No mezclar perspectivas mediante crossfade porque crea siluetas dobles y movimiento erratico.
+- En movil video y canvas conservan `cover` centrado horizontalmente, sin desborde; `prefers-reduced-motion` mantiene el poster sin descargar movimiento.
 - La tira de miniaturas de galeria centra la foto activa con su propio scroll horizontal; nunca usa `scrollIntoView` para evitar que la carga lleve el documento fuera del hero.
 - Paleta principal: rojo Honda, negro, blanco, cian y dorado como acentos.
 - Tarjetas con radio maximo de 8px y layouts responsivos por grillas CSS.

@@ -32,10 +32,11 @@ El usuario aprobo expresamente el mockup generado el 26 de agosto de 2026, con l
 ## Hero Racing
 
 - Poster local prioritario: `public/assets/racing/hfc-hero-poster-2560.avif`, con fallback WebP 1920 para que la primera pintura no dependa de red externa.
-- Movimiento: secuencia unica de 28 frames a 10 fps sobre `canvas`, con interpolacion visual entre frames y ultimo frame sostenido. Los cortes opticos despues de los frames 16, 20 y 23 usan disoluciones de 340, 260 y 360 ms para que el acercamiento al auto se perciba intencional y no erratico. La duracion aproximada es 3,4 segundos.
+- Movimiento principal: video de 3,3 segundos generado desde los 28 keyframes originales a ritmo narrativo de 10 keyframes por segundo. El flujo optico completa movimiento a 30 cuadros por segundo dentro de cada toma; despues de los frames 16, 20 y 23 se interrumpe la interpolacion y se usa un shutter fade de 160 ms para cambiar de perspectiva sin dobles exposiciones ni geometria deformada.
+- Fallback: el `canvas` de 28 frames permanece disponible si el video falla. En los tres cambios de plano tambien usa shutter fade sobre negro, nunca crossfade entre perspectivas incompatibles.
 - En escritorio, hover o foco reproduce la secuencia desde el inicio; salir devuelve el poster. El control permite detenerla o fijar una repeticion completa.
 - En movil, la secuencia se activa una vez al entrar al viewport y usa la variante AVIF 1280 con crop `cover` centrado horizontalmente. El auto debe permanecer grande y protagonista.
-- La reproduccion solo comienza cuando la variante completa fue descargada y decodificada. La resolucion desktop se selecciona por ancho renderizado para limitar memoria y evitar tirones.
+- La reproduccion solo comienza cuando el navegador informa que la variante de video puede reproducirse de forma continua. Escritorio usa 1920×1080 y movil 1280×720 para limitar transferencia y memoria; el fallback conserva seleccion responsiva de frames.
 - `prefers-reduced-motion` conserva solo el poster, oculta los controles y no descarga ningun frame. `Save-Data` evita el autoplay movil y espera una accion explicita.
 - El manifiesto web es `public/hero-animation-manifest.json`; los frames versionados se publican en Cloudflare R2 conforme a `ContextIA/R2.md`.
 

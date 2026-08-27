@@ -1,17 +1,23 @@
 {
-  "version": "racing-sequence-v1",
+  "version": "racing-sequence-v2",
   "frameCount": 28,
   "fps": 10,
+  "playbackFps": 30,
+  "cutAfterFrames": [16, 20, 23],
   "transitionMsAfterFrame": {
-    "16": 340,
-    "20": 260,
-    "23": 360
+    "16": 160,
+    "20": 160,
+    "23": 160
   },
   "holdLastFrameMs": 1000,
   "cdnBaseUrl": "https://pub-a4778145aed5476ca3ad2d9e9ca35aa3.r2.dev/hfc-web/HeroWeb",
   "posters": {
     "avif": "posters/hfc-hero-poster-2560.avif",
     "webp": "posters/hfc-hero-poster-1920.webp"
+  },
+  "videos": {
+    "desktop": "/assets/racing/hfc-hero-racing-1920.mp4",
+    "mobile": "/assets/racing/hfc-hero-racing-1280.mp4"
   },
   "variants": {
     "desktop": {

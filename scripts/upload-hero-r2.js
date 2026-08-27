@@ -3,6 +3,12 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
+const localEnvironment = {};
+require("dotenv").config({ path: path.resolve(process.cwd(), ".env.local"), processEnv: localEnvironment });
+Object.entries(localEnvironment).forEach(([name, value]) => {
+  if (!process.env[name] && value) process.env[name] = value;
+});
+
 const sourceRoot = path.resolve(
   process.argv[2] || process.env.HFC_HERO_SOURCE || path.join(os.homedir(), "Downloads", "HFC", "HeroWeb")
 );
@@ -84,6 +90,7 @@ function contentType(filePath) {
   const extension = path.extname(filePath).toLowerCase();
   if (extension === ".avif") return "image/avif";
   if (extension === ".webp") return "image/webp";
+  if (extension === ".mp4") return "video/mp4";
   if (extension === ".json") return "application/json; charset=utf-8";
   return "application/octet-stream";
 }
@@ -100,6 +107,7 @@ function sourceFiles() {
   const targets = [
     path.join(sourceRoot, "manifest.json"),
     path.join(sourceRoot, "posters"),
+    path.join(sourceRoot, "videos"),
     path.join(sourceRoot, "frames", "1280-avif"),
     path.join(sourceRoot, "frames", "1920-webp"),
     path.join(sourceRoot, "frames", "2560-avif")
@@ -113,7 +121,7 @@ function sourceFiles() {
 
 function remoteKey(filePath) {
   const relative = path.relative(sourceRoot, filePath).split(path.sep).join("/");
-  if (!/^(manifest\.json|posters\/hfc-hero-poster-(1920|2560)\.(avif|webp)|frames\/(1280-avif|1920-webp|2560-avif)\/hfc-hero-frame-\d{2}\.(avif|webp))$/.test(relative)) {
+  if (!/^(manifest\.json|posters\/hfc-hero-poster-(1920|2560)\.(avif|webp)|videos\/hfc-hero-racing-(1280|1920)\.mp4|frames\/(1280-avif|1920-webp|2560-avif)\/hfc-hero-frame-\d{2}\.(avif|webp))$/.test(relative)) {
     throw new Error(`Ruta del paquete no reconocida: ${relative}`);
   }
   return `${remoteRoot}/${relative}`;
