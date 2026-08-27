@@ -99,6 +99,8 @@ const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
 const TICKET_SERVICE_CHARGE_RATE = 0.08;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
+const ONLINE_SALES_RESUME_AT = new Date("2026-08-29T12:00:00-04:00");
+const ONLINE_SALES_RESUME_LABEL = "sábado 29 de agosto a las 12:00";
 const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
 const TICKET_ENTRY_TYPE_LABELS = {
   attendee: "Asistente",
@@ -109,6 +111,27 @@ const DATA_TERMS_VERSION = "datos-personales-cl-2026-12";
 
 function roundCurrency(value) {
   return Math.max(0, Math.round(Number(value || 0)));
+}
+
+function onlineSalesStatus(now = new Date()) {
+  const enabled = now.getTime() >= ONLINE_SALES_RESUME_AT.getTime();
+  return {
+    enabled,
+    availableAt: ONLINE_SALES_RESUME_AT.toISOString(),
+    availableAtLabel: ONLINE_SALES_RESUME_LABEL,
+    message: enabled
+      ? "La venta online está habilitada."
+      : `Estamos actualizando los datos de cobro. La venta online se habilitará el ${ONLINE_SALES_RESUME_LABEL}.`
+  };
+}
+
+function requireOnlineSalesOpen() {
+  const sales = onlineSalesStatus();
+  if (sales.enabled) return;
+  const error = new Error(sales.message);
+  error.status = 503;
+  error.code = "online_sales_temporarily_paused";
+  throw error;
 }
 
 function normalizedServiceChargeRate(...candidates) {
@@ -646,6 +669,7 @@ function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
 
 function activePhaseForTicket(state, eventOrId, ticket, now = new Date()) {
   const event = typeof eventOrId === "string" ? findEvent(state, eventOrId) : eventOrId;
+  if (!onlineSalesStatus(now).enabled) return null;
   if (!event || !ticketAvailableForEvent(ticket, event.id)) return null;
   if (normalizeTicketEntryType(ticket.entryType) === "guest") return null;
 
@@ -685,6 +709,7 @@ function catalogForClient(state) {
   const visibleTickets = config.ticketTypes.filter((ticket) => ticket.visible !== false);
   const primaryEventId = visibleEvents[0]?.id || DEFAULT_EVENT_ID;
   return {
+    sales: onlineSalesStatus(),
     events: visibleEvents,
     ticketTypes: visibleTickets.map((ticket) => {
       const availabilityByEvent = Object.fromEntries(
@@ -2925,7 +2950,8 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
   try {
     const state = await readState();
     const config = specialPassConfigFromState(state);
-    const purchasable = config.active && specialPassStorageReady();
+    const sales = onlineSalesStatus();
+    const purchasable = sales.enabled && config.active && specialPassStorageReady();
     const mercadoPagoDetails = mercadoPagoRuntimeStatus(req);
     res.json({
       ok: true,
@@ -2934,8 +2960,11 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
         active: purchasable,
         unavailableMessage: purchasable
           ? ""
-          : "Los Pases estarán disponibles próximamente. Por ahora puedes conocer sus niveles y beneficios."
+          : sales.enabled
+            ? "Los Pases estarán disponibles próximamente. Por ahora puedes conocer sus niveles y beneficios."
+            : sales.message
       },
+      sales,
       integrations: {
         paymentMode: paymentModeForClient(),
         mercadoPagoPublicKey: mercadoPagoInternalCheckoutEnabled() ? mercadoPagoPublicKey() : null,
@@ -2953,6 +2982,7 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
 
 app.post("/api/special-passes/orders", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
     await requireCheckoutStorage();
     if (!req.body.notEntryAccepted) {
       const error = new Error("Debes confirmar que el Pase no es válido como entrada");
@@ -3392,6 +3422,7 @@ async function createOrderFromItems({ req, user, items, state, kind = "ticket", 
 
 app.post("/api/orders", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
     const eventId = requireString(req.body, "eventId", "Evento");
     const ticketTypeId = requireString(req.body, "ticketTypeId", "Entrada");
     const quantity = Number(req.body.quantity || 1);
@@ -3434,6 +3465,7 @@ app.post("/api/orders", async (req, res, next) => {
 
 app.post("/api/orders/from-cart", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
     await requireCheckoutStorage();
 
     const { state: initialState } = await readStateWithCheckoutMaintenance();
@@ -3664,6 +3696,8 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       error.status = 409;
       throw error;
     }
+
+    requireOnlineSalesOpen();
 
     const formData = req.body.formData || req.body;
     const payment = await createCardPayment({
@@ -4394,6 +4428,7 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
 
 app.post("/api/orders/:orderId/simulate-payment", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
     const result = await completeOrderPayment(req.params.orderId, {
       provider: "demo",
       paymentId: id("payment_demo")
@@ -5364,7 +5399,7 @@ app.get("*", (req, res) => {
 });
 
 app.use((error, req, res, next) => {
-  console.error(error);
+  if (error.code !== "online_sales_temporarily_paused") console.error(error);
   res.status(error.status || 500).json({
     ok: false,
     message: error.message || "Error interno"

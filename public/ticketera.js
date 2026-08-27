@@ -76,17 +76,70 @@ function renderPriceBreakdown(pricing) {
   `;
 }
 
-function renderTicketCard(ticket, event) {
+let salesCountdownTimer = null;
+
+function countdownPart(value, label) {
+  return `<span><strong>${String(Math.max(0, value)).padStart(2, "0")}</strong><small>${label}</small></span>`;
+}
+
+function mountSalesHold(sales) {
+  const notice = HFC.$("#ticketSalesHold");
+  const countdown = HFC.$("[data-sales-countdown]", notice);
+  if (!notice || !countdown) return;
+
+  if (!sales || sales.enabled) {
+    notice.hidden = true;
+    if (salesCountdownTimer) window.clearInterval(salesCountdownTimer);
+    salesCountdownTimer = null;
+    return;
+  }
+
+  const target = new Date(sales.availableAt).getTime();
+  const updateCountdown = () => {
+    const remaining = target - Date.now();
+    if (remaining <= 0) {
+      window.clearInterval(salesCountdownTimer);
+      salesCountdownTimer = null;
+      countdown.innerHTML = "<strong>Activando venta...</strong>";
+      window.setTimeout(() => window.location.reload(), 750);
+      return;
+    }
+    const seconds = Math.floor(remaining / 1000);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    countdown.innerHTML = [
+      countdownPart(days, "días"),
+      countdownPart(hours, "horas"),
+      countdownPart(minutes, "min"),
+      countdownPart(remainingSeconds, "seg")
+    ].join("");
+  };
+
+  notice.hidden = false;
+  if (salesCountdownTimer) window.clearInterval(salesCountdownTimer);
+  updateCountdown();
+  salesCountdownTimer = window.setInterval(updateCountdown, 1000);
+}
+
+function renderTicketCard(ticket, event, sales) {
   const availability = HFC.ticketAvailability(ticket, event.id);
   const pricing = HFC.priceBreakdownFromAvailability(availability);
   const details = eventPurchaseDetails(event);
   const ticketVariant = ticket.id.includes("parque-cerrado") ? "paddock" : "gallery";
   const ticketName = escapeHtml(ticket.name);
+  const purchaseAvailable = Boolean(availability.available && sales?.enabled !== false);
+  const availabilityLabel = purchaseAvailable
+    ? availability.salePhaseName
+    : sales?.enabled === false
+      ? "Venta temporalmente pausada"
+      : "Venta no disponible";
 
   return `
     <article class="product-card ticket-product-card ticket-product-card--${ticketVariant}">
       <div>
-        <p class="ticket-phase">${escapeHtml(availability.available ? availability.salePhaseName : "Venta no disponible")}</p>
+        <p class="ticket-phase">${escapeHtml(availabilityLabel)}</p>
         <h3>${ticketName}</h3>
         <p>${escapeHtml(ticket.description)}</p>
       </div>
@@ -95,22 +148,22 @@ function renderTicketCard(ticket, event) {
       <div class="ticket-quantity">
         <span>Cantidad</span>
         <div class="quantity-stepper">
-          <button type="button" class="quantity-step" data-quantity-step="-1" aria-label="Disminuir cantidad de ${ticketName}" ${availability.available ? "" : "disabled"}>−</button>
-          <input type="number" min="1" max="${availability.maxQuantity}" value="1" inputmode="numeric" aria-label="Cantidad de ${ticketName}" ${availability.available ? "" : "disabled"}
+          <button type="button" class="quantity-step" data-quantity-step="-1" aria-label="Disminuir cantidad de ${ticketName}" ${purchaseAvailable ? "" : "disabled"}>−</button>
+          <input type="number" min="1" max="${availability.maxQuantity}" value="1" inputmode="numeric" aria-label="Cantidad de ${ticketName}" ${purchaseAvailable ? "" : "disabled"}
             data-qty="${event.id}-${ticket.id}" />
-          <button type="button" class="quantity-step" data-quantity-step="1" aria-label="Aumentar cantidad de ${ticketName}" ${availability.available ? "" : "disabled"}>+</button>
+          <button type="button" class="quantity-step" data-quantity-step="1" aria-label="Aumentar cantidad de ${ticketName}" ${purchaseAvailable ? "" : "disabled"}>+</button>
         </div>
       </div>
-      <button class="button primary full" type="button" data-add-ticket ${availability.available ? "" : "disabled"}
+      <button class="button primary full" type="button" data-add-ticket ${purchaseAvailable ? "" : "disabled"}
         data-event-id="${event.id}" data-ticket-type-id="${ticket.id}">
-        ${availability.available ? `Agregar entrada del ${details.day}` : "No disponible"}
+        ${purchaseAvailable ? `Agregar entrada del ${details.day}` : sales?.enabled === false ? "Venta en pausa" : "No disponible"}
       </button>
     </article>
   `;
 }
 
-function renderTicketCards(tickets, event) {
-  return tickets.map((ticket) => renderTicketCard(ticket, event)).join("");
+function renderTicketCards(tickets, event, sales) {
+  return tickets.map((ticket) => renderTicketCard(ticket, event, sales)).join("");
 }
 
 function clampQuantityInput(input, delta) {
@@ -124,6 +177,7 @@ function clampQuantityInput(input, delta) {
 async function renderProducts() {
   const catalog = await HFC.getCatalog();
   const grid = HFC.$("#productGrid");
+  mountSalesHold(catalog.sales);
 
   grid.innerHTML = catalog.events
     .map(
@@ -150,7 +204,7 @@ async function renderProducts() {
             </header>
             <p class="event-single-day-notice">${details.exclusivity} Para vivir el fin de semana completo, agrega una entrada para ambas jornadas.</p>
             <div class="ticket-product-grid">
-              ${renderTicketCards(tickets, event)}
+              ${renderTicketCards(tickets, event, catalog.sales)}
             </div>
           </section>
         `;

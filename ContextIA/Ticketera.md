@@ -44,6 +44,7 @@ Gestionar venta online de entradas para Japon Fest Chile y Honda Fest Chile con 
 - Estacionamiento Galeria: gratis. El estacionamiento de Parque Cerrado esta incluido con la entrada y nunca se cobra por separado.
 - `/ticketera` prioriza la decision de jornada y entrada: cada producto expone valor neto, IVA, cargo y total online, con control de cantidad `- / +`. El upgrade de Pistones queda como opcion secundaria y nunca bloquea ni distrae de la compra de la entrada.
 - No usar cintas, franjas ni avisos rojos para comunicar la validez por dia: el rojo se reserva para acciones principales o estados de error. La vigencia se explica con texto editorial y contraste neutro.
+- Desde el 27 de agosto de 2026 la venta online queda temporalmente pausada mientras se actualizan los datos de cobro. El backend no permite crear ordenes ni iniciar pagos antes del sábado 29 de agosto de 2026 a las 12:00 de Chile (`2026-08-29T12:00:00-04:00`); la ticketera muestra una cuenta regresiva y se reactiva sola al llegar a esa hora. La pausa también cubre Pases, pero no impide sincronizar pagos ya iniciados ni procesar webhooks para conservar la conciliación.
 
 ## Archivos clave
 

@@ -5851,6 +5851,102 @@ a:focus-visible {
   padding-block: clamp(44px, 7vw, 88px);
 }
 
+.ticketera-page .ticket-sales-hold {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: #171b20;
+}
+
+.ticketera-page .ticket-sales-hold::after {
+  position: absolute;
+  top: -50%;
+  right: 4%;
+  width: min(44vw, 520px);
+  aspect-ratio: 1;
+  content: "";
+  background: url("/assets/pistons/pistons-watermark.webp") center / contain no-repeat;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.ticketera-page .ticket-sales-hold-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(290px, 0.75fr);
+  gap: clamp(28px, 6vw, 100px);
+  width: min(1320px, 100%);
+  margin-inline: auto;
+  padding: clamp(34px, 5vw, 62px) max(24px, calc((100vw - 1320px) / 2));
+}
+
+.ticketera-page .ticket-sales-hold .section-kicker {
+  margin: 0 0 7px;
+  color: #e9b949;
+}
+
+.ticketera-page .ticket-sales-hold h2 {
+  max-width: 720px;
+  margin: 0;
+  font-size: clamp(2rem, 4.4vw, 4rem);
+  font-style: italic;
+  line-height: 0.92;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ticketera-page .ticket-sales-hold p:not(.section-kicker) {
+  max-width: 620px;
+  margin: 15px 0 0;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.55;
+}
+
+.ticketera-page .ticket-sales-countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-self: end;
+  border-top: 1px solid rgba(255, 255, 255, 0.32);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+}
+
+.ticketera-page .ticket-sales-countdown > span {
+  display: grid;
+  gap: 5px;
+  padding: 14px 12px;
+}
+
+.ticketera-page .ticket-sales-countdown > span + span {
+  border-left: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.ticketera-page .ticket-sales-countdown strong {
+  color: var(--racing-cyan, var(--cyan));
+  font-size: clamp(1.45rem, 3.4vw, 2.5rem);
+  font-style: italic;
+  line-height: 0.9;
+}
+
+.ticketera-page .ticket-sales-countdown small {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.63rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cart-sales-hold,
+.checkout-sales-hold-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  color: #315b3b;
+  border-left: 3px solid #315b3b;
+  background: #f0f6f1;
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
 .ticketera-page .ticketera-shop-section .inline-heading {
   max-width: 780px;
   margin-bottom: clamp(34px, 5vw, 58px);
@@ -6242,6 +6338,18 @@ a:focus-visible {
 }
 
 @media (max-width: 760px) {
+  .ticketera-page .ticket-sales-hold-inner {
+    grid-template-columns: 1fr;
+    padding: 32px 24px;
+  }
+
+  .ticketera-page .ticket-sales-hold::after {
+    top: auto;
+    right: -20%;
+    bottom: -40%;
+    width: 86vw;
+  }
+
   .ticketera-editorial-hero {
     min-height: 500px;
   }

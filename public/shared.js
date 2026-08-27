@@ -290,11 +290,29 @@
 
   function applyCheckoutMode(root, catalog) {
     const internalCheckout = catalog?.integrations?.paymentMode === "mercadopago_api";
+    const salesPaused = catalog?.sales?.enabled === false;
     $$("[data-checkout-form]", root).forEach((form) => {
       const wrapper = $("[data-rut-wrapper]", form);
-      if (!wrapper || !form.rut) return;
-      wrapper.hidden = internalCheckout;
-      form.rut.required = !internalCheckout;
+      if (wrapper && form.rut) {
+        wrapper.hidden = internalCheckout;
+        form.rut.required = !internalCheckout;
+      }
+      const submit = $('button[type="submit"]', form);
+      if (submit) {
+        submit.disabled = salesPaused;
+        submit.textContent = salesPaused ? "Venta temporalmente pausada" : "Pagar ahora";
+      }
+      let notice = $("[data-sales-hold-notice]", form);
+      if (salesPaused && !notice) {
+        notice = document.createElement("p");
+        notice.className = "checkout-sales-hold-notice";
+        notice.dataset.salesHoldNotice = "";
+        submit?.before(notice);
+      }
+      if (notice) {
+        notice.textContent = catalog.sales?.message || "La venta online está temporalmente pausada.";
+        notice.hidden = !salesPaused;
+      }
     });
   }
 
@@ -350,7 +368,7 @@
       }
 
       const availability = ticketAvailability(ticket, event.id);
-      if (!availability.available) {
+      if (!availability.available && catalog?.sales?.enabled !== false) {
         removedCount += item.quantity;
         changed = true;
         return;
@@ -424,7 +442,8 @@
 
   async function renderCart(container, options = {}) {
     if (!container) return;
-    const { details, removedCount } = await cleanCart();
+    const catalog = await getCatalog();
+    const { details, removedCount } = cleanCartWithCatalog(catalog);
     const subtotal = details.reduce((sum, item) => sum + item.subtotal, 0);
     const serviceCharge = details.reduce((sum, item) => sum + item.serviceCharge, 0);
     const total = details.reduce((sum, item) => sum + item.total, 0);
@@ -442,14 +461,18 @@
     const cleanupNotice = removedCount
       ? `<div class="status-box">Actualizamos tu carrito porque una entrada ya no esta disponible.</div>`
       : "";
+    const salesHoldNotice = catalog?.sales?.enabled === false
+      ? `<div class="cart-sales-hold">${escapeHtml(catalog.sales.message)}</div>`
+      : "";
 
     if (!details.length) {
-      container.innerHTML = `${cleanupNotice}<div class="empty-state">Tu carrito esta vacio.</div>`;
+      container.innerHTML = `${cleanupNotice}${salesHoldNotice}<div class="empty-state">Tu carrito esta vacio.</div>`;
       return;
     }
 
     container.innerHTML = `
       ${cleanupNotice}
+      ${salesHoldNotice}
       <div class="cart-lines">
         ${details
           .map(
@@ -543,6 +566,10 @@
 
   async function checkoutCart(form, statusElement) {
     const catalog = await getCatalog();
+    if (catalog.sales?.enabled === false) {
+      setStatus(statusElement, catalog.sales.message || "La venta online está temporalmente pausada.");
+      return;
+    }
     const cart = cleanCartWithCatalog(catalog);
     const items = cart.items;
 
