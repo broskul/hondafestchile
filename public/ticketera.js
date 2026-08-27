@@ -23,18 +23,18 @@ function isPublicTicket(ticket) {
 function eventPurchaseDetails(event) {
   const detailsByEventId = {
     "hfc-2026-sabado-drag-day": {
-      day: "Sábado 21",
+      day: "Sábado 28",
       sequence: "Día 01",
-      date: "21 NOV",
+      date: "28 NOV",
       meaning: "Aceleración en recta, potencia y duelos durante toda la jornada.",
-      exclusivity: "Entrada válida solo para el sábado 21."
+      exclusivity: "Entrada válida solo para el sábado 28."
     },
     "hfc-2026-domingo-track-day": {
-      day: "Domingo 22",
+      day: "Domingo 29",
       sequence: "Día 02",
-      date: "22 NOV",
+      date: "29 NOV",
       meaning: "Autos en pista, curvas, tandas y manejo vuelta a vuelta.",
-      exclusivity: "Entrada válida solo para el domingo 22."
+      exclusivity: "Entrada válida solo para el domingo 29."
     }
   };
   return (
