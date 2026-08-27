@@ -28,8 +28,8 @@ Crear ordenes de ticketera y conectar el checkout con Mercado Pago.
 
 ## Decisiones vigentes
 
-- Los precios estan centralizados en `server/config/catalog.js`.
-- Las entradas actuales son valores de demo/configuracion: General, Club, Piloto Track Day y Stand Emprendedor.
+- `server/config/catalog.js` entrega los valores por defecto; si existe `ticketing_config` persistido, ese registro manda sobre el catalogo publico. Toda actualizacion comercial debe migrar ambos de forma controlada.
+- Las entradas visibles, sus fases, cupos y cargos se obtienen del catalogo persistido; los identificadores y montos heredados no deben reutilizarse para las dos jornadas de Honda Fest 2026.
 - `PUBLIC_BASE_URL` debe apuntar al dominio HTTPS real para que Mercado Pago pueda usar `notification_url`.
 - `MERCADOPAGO_NOTIFICATION_URL` permite sobrescribir el webhook publico si el dominio del backend no coincide con `PUBLIC_BASE_URL`.
 - Las credenciales minimas para pago interno son `MERCADOPAGO_ACCESS_TOKEN` y `MERCADOPAGO_PUBLIC_KEY`; para produccion se recomienda `MERCADOPAGO_WEBHOOK_SECRET`.
