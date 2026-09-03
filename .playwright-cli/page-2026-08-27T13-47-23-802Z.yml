@@ -1,0 +1,97 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Honda Fest Chile Carrito" [ref=e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]:
+        - strong [ref=e6]: Honda Fest Chile
+        - generic [ref=e7]: Carrito
+    - navigation "Carrito" [ref=e8]:
+      - link "Ticketera" [ref=e9] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Mi Pit Lane" [ref=e10] [cursor=pointer]:
+        - /url: /mi-pit-lane
+      - link "Validar" [ref=e11] [cursor=pointer]:
+        - /url: /validar
+    - button "Carrito 0" [ref=e12] [cursor=pointer]:
+      - text: Carrito
+      - generic [ref=e13]: "0"
+  - main [ref=e14]:
+    - generic [ref=e16]:
+      - paragraph [ref=e17]: Carrito
+      - heading "Revisa tu seleccion y finaliza la compra." [level=1] [ref=e18]
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: Estamos actualizando los datos de cobro. La venta online se habilitará el sábado 29 de agosto a las 12:00.
+          - generic [ref=e23]: Tu carrito esta vacio.
+        - generic [ref=e24]:
+          - link "Seguir comprando" [ref=e25] [cursor=pointer]:
+            - /url: /ticketera
+          - button "Vaciar carrito" [ref=e26] [cursor=pointer]
+      - complementary [ref=e27]:
+        - paragraph [ref=e28]: Comprador
+        - heading "Pago seguro" [level=2] [ref=e29]
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Correo electronico
+            - textbox "Correo electronico" [ref=e32]:
+              - /placeholder: tu@correo.cl
+          - generic [ref=e33]:
+            - text: RUT
+            - textbox "RUT" [ref=e34]:
+              - /placeholder: 12.345.678-5
+          - generic [ref=e35]:
+            - text: Telefono
+            - textbox "Telefono" [ref=e36]:
+              - /placeholder: +56 9 1234 5678
+          - generic [ref=e37]:
+            - checkbox "Acepto el uso de mis datos personales" [ref=e38]
+            - generic [ref=e39]:
+              - text: Acepto el
+              - link "uso de mis datos personales" [ref=e40] [cursor=pointer]:
+                - /url: /terminos-datos-personales
+          - paragraph [ref=e41]: Estamos actualizando los datos de cobro. La venta online se habilitará el sábado 29 de agosto a las 12:00.
+          - button "Venta temporalmente pausada" [disabled] [ref=e42]
+  - generic "Accesos rapidos por WhatsApp" [ref=e43]:
+    - link "Preguntas del evento por WhatsApp con Pablo" [ref=e44] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20tengo%20una%20pregunta%20sobre%20el%20evento%20Honda%20Fest%20Chile.
+      - generic [ref=e45]: +
+      - generic [ref=e46]:
+        - strong [ref=e47]: Preguntas evento
+        - generic [ref=e48]: Horario, ubicacion, participacion
+    - link "Ayuda con compra o entradas por WhatsApp" [ref=e49] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra%20o%20entrada
+      - generic [ref=e50]: "?"
+      - strong: Ayuda compra
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic:
+        - generic: Estamos actualizando los datos de cobro. La venta online se habilitará el sábado 29 de agosto a las 12:00.
+        - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+        - generic:
+          - checkbox
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - paragraph: Estamos actualizando los datos de cobro. La venta online se habilitará el sábado 29 de agosto a las 12:00.
+        - button [disabled]: Venta temporalmente pausada

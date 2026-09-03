@@ -1,0 +1,232 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Honda Fest Chile Ticketera" [ref=e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]:
+        - strong [ref=e6]: Honda Fest Chile
+        - generic [ref=e7]: Ticketera
+    - navigation "Ticketera" [ref=e8]:
+      - link "Inicio" [ref=e9] [cursor=pointer]:
+        - /url: /
+      - link "Carrito" [ref=e10] [cursor=pointer]:
+        - /url: /carrito
+      - link "Pases" [ref=e11] [cursor=pointer]:
+        - /url: /pases-especiales
+      - link "Mi Pit Lane" [ref=e12] [cursor=pointer]:
+        - /url: /mi-pit-lane
+      - link "Validar" [ref=e13] [cursor=pointer]:
+        - /url: /validar
+    - button "Carrito 0" [ref=e14] [cursor=pointer]:
+      - text: Carrito
+      - generic [ref=e15]: "0"
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - img "Autos Honda en pista durante Honda Fest Chile" [ref=e18]
+      - generic [ref=e20]:
+        - paragraph [ref=e21]:
+          - generic [ref=e22]: Fecha doble
+          - text: 28-29 NOV · 2026
+        - heading "Elige tu jornada." [level=1] [ref=e23]:
+          - text: Elige tu
+          - generic [ref=e24]: jornada.
+        - paragraph [ref=e25]: "La entrada se vende por día: vive la potencia del Drag Day el sábado o el Track Day en pista el domingo."
+        - generic "Fechas del evento" [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]: Sábado 28
+            - strong [ref=e29]: Drag Day
+          - generic [ref=e30]:
+            - generic [ref=e31]: Domingo 29
+            - strong [ref=e32]: Track Day
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - paragraph [ref=e36]: Venta online en pausa
+        - heading "Volvemos a acelerar el sábado al mediodía." [level=2] [ref=e37]
+        - paragraph [ref=e38]: Estamos actualizando temporalmente los datos de cobro. Podrás comprar tus entradas apenas termine la cuenta regresiva.
+      - generic "Tiempo restante para habilitar la venta" [ref=e39]:
+        - generic [ref=e40]:
+          - strong [ref=e41]: "02"
+          - generic [ref=e42]: días
+        - generic [ref=e43]:
+          - strong [ref=e44]: "02"
+          - generic [ref=e45]: horas
+        - generic [ref=e46]:
+          - strong [ref=e47]: "14"
+          - generic [ref=e48]: min
+        - generic [ref=e49]:
+          - strong [ref=e50]: "48"
+          - generic [ref=e51]: seg
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - paragraph [ref=e55]: Entradas
+        - heading "Elige tu jornada antes de comprar." [level=2] [ref=e56]
+        - paragraph [ref=e57]: Selecciona una entrada por cada día al que quieras asistir. Verás el detalle neto, IVA, cargo y total antes de agregarla al carrito.
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - paragraph [ref=e62]: Día 01
+              - heading "Sábado Drag Day" [level=2] [ref=e63]
+              - paragraph [ref=e64]: Aceleración en recta, potencia y duelos durante toda la jornada.
+            - generic [ref=e65]:
+              - generic [ref=e66]: Día 01
+              - strong [ref=e67]: 28 NOV
+              - generic [ref=e68]: Sábado 28
+          - paragraph [ref=e69]: Entrada válida solo para el sábado 28. Para vivir el fin de semana completo, agrega una entrada para ambas jornadas.
+          - generic [ref=e70]:
+            - article [ref=e71]:
+              - generic [ref=e72]:
+                - paragraph [ref=e73]: Venta temporalmente pausada
+                - heading "Entrada Galería" [level=3] [ref=e74]
+                - paragraph [ref=e75]: Válida solo para Sábado Drag Day. Acceso al sector exterior del Autodromo.
+              - generic "Detalle de precio" [ref=e76]:
+                - generic [ref=e77]:
+                  - term [ref=e78]: Valor neto
+                  - definition [ref=e79]: $7.000
+                - generic [ref=e80]:
+                  - term [ref=e81]: IVA (19%)
+                  - definition [ref=e82]: $1.330
+                - generic [ref=e83]:
+                  - term [ref=e84]: Cargo de servicio (8%)
+                  - definition [ref=e85]: $666
+                - generic [ref=e86]:
+                  - term [ref=e87]: Total online
+                  - definition [ref=e88]: $8.996
+              - paragraph [ref=e89]: Estacionamiento en Galería incluido sin costo.
+              - generic [ref=e90]:
+                - generic [ref=e91]: Cantidad
+                - generic [ref=e92]:
+                  - button "Disminuir cantidad de Entrada Galería" [disabled] [ref=e93]: −
+                  - spinbutton "Cantidad de Entrada Galería" [disabled] [ref=e94]: "1"
+                  - button "Aumentar cantidad de Entrada Galería" [disabled] [ref=e95]: +
+              - button "Venta en pausa" [disabled] [ref=e96]
+            - article [ref=e97]:
+              - generic [ref=e98]:
+                - paragraph [ref=e99]: Venta temporalmente pausada
+                - heading "Entrada Parque Cerrado" [level=3] [ref=e100]
+                - paragraph [ref=e101]: Válida solo para Sábado Drag Day. Acceso al Parque Cerrado con estacionamiento incluido.
+              - generic "Detalle de precio" [ref=e102]:
+                - generic [ref=e103]:
+                  - term [ref=e104]: Valor neto
+                  - definition [ref=e105]: $10.000
+                - generic [ref=e106]:
+                  - term [ref=e107]: IVA (19%)
+                  - definition [ref=e108]: $1.900
+                - generic [ref=e109]:
+                  - term [ref=e110]: Cargo de servicio (8%)
+                  - definition [ref=e111]: $952
+                - generic [ref=e112]:
+                  - term [ref=e113]: Total online
+                  - definition [ref=e114]: $12.852
+              - paragraph [ref=e115]: Estacionamiento en Parque Cerrado incluido con tu entrada.
+              - generic [ref=e116]:
+                - generic [ref=e117]: Cantidad
+                - generic [ref=e118]:
+                  - button "Disminuir cantidad de Entrada Parque Cerrado" [disabled] [ref=e119]: −
+                  - spinbutton "Cantidad de Entrada Parque Cerrado" [disabled] [ref=e120]: "1"
+                  - button "Aumentar cantidad de Entrada Parque Cerrado" [disabled] [ref=e121]: +
+              - button "Venta en pausa" [disabled] [ref=e122]
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - paragraph [ref=e126]: Día 02
+              - heading "Domingo Track Day" [level=2] [ref=e127]
+              - paragraph [ref=e128]: Autos en pista, curvas, tandas y manejo vuelta a vuelta.
+            - generic [ref=e129]:
+              - generic [ref=e130]: Día 02
+              - strong [ref=e131]: 29 NOV
+              - generic [ref=e132]: Domingo 29
+          - paragraph [ref=e133]: Entrada válida solo para el domingo 29. Para vivir el fin de semana completo, agrega una entrada para ambas jornadas.
+          - generic [ref=e134]:
+            - article [ref=e135]:
+              - generic [ref=e136]:
+                - paragraph [ref=e137]: Venta temporalmente pausada
+                - heading "Entrada Galería" [level=3] [ref=e138]
+                - paragraph [ref=e139]: Válida solo para Domingo Track Day. Acceso al sector exterior del Autodromo.
+              - generic "Detalle de precio" [ref=e140]:
+                - generic [ref=e141]:
+                  - term [ref=e142]: Valor neto
+                  - definition [ref=e143]: $7.000
+                - generic [ref=e144]:
+                  - term [ref=e145]: IVA (19%)
+                  - definition [ref=e146]: $1.330
+                - generic [ref=e147]:
+                  - term [ref=e148]: Cargo de servicio (8%)
+                  - definition [ref=e149]: $666
+                - generic [ref=e150]:
+                  - term [ref=e151]: Total online
+                  - definition [ref=e152]: $8.996
+              - paragraph [ref=e153]: Estacionamiento en Galería incluido sin costo.
+              - generic [ref=e154]:
+                - generic [ref=e155]: Cantidad
+                - generic [ref=e156]:
+                  - button "Disminuir cantidad de Entrada Galería" [disabled] [ref=e157]: −
+                  - spinbutton "Cantidad de Entrada Galería" [disabled] [ref=e158]: "1"
+                  - button "Aumentar cantidad de Entrada Galería" [disabled] [ref=e159]: +
+              - button "Venta en pausa" [disabled] [ref=e160]
+            - article [ref=e161]:
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Venta temporalmente pausada
+                - heading "Entrada Parque Cerrado" [level=3] [ref=e164]
+                - paragraph [ref=e165]: Válida solo para Domingo Track Day. Acceso al Parque Cerrado con estacionamiento incluido.
+              - generic "Detalle de precio" [ref=e166]:
+                - generic [ref=e167]:
+                  - term [ref=e168]: Valor neto
+                  - definition [ref=e169]: $10.000
+                - generic [ref=e170]:
+                  - term [ref=e171]: IVA (19%)
+                  - definition [ref=e172]: $1.900
+                - generic [ref=e173]:
+                  - term [ref=e174]: Cargo de servicio (8%)
+                  - definition [ref=e175]: $952
+                - generic [ref=e176]:
+                  - term [ref=e177]: Total online
+                  - definition [ref=e178]: $12.852
+              - paragraph [ref=e179]: Estacionamiento en Parque Cerrado incluido con tu entrada.
+              - generic [ref=e180]:
+                - generic [ref=e181]: Cantidad
+                - generic [ref=e182]:
+                  - button "Disminuir cantidad de Entrada Parque Cerrado" [disabled] [ref=e183]: −
+                  - spinbutton "Cantidad de Entrada Parque Cerrado" [disabled] [ref=e184]: "1"
+                  - button "Aumentar cantidad de Entrada Parque Cerrado" [disabled] [ref=e185]: +
+              - button "Venta en pausa" [disabled] [ref=e186]
+  - contentinfo [ref=e187]:
+    - paragraph [ref=e188]: Honda Fest Chile · Ticketera
+    - link "Ver carrito" [ref=e189] [cursor=pointer]:
+      - /url: /carrito
+  - generic "Accesos rapidos por WhatsApp" [ref=e190]:
+    - link "Ayuda con compra o entradas por WhatsApp" [ref=e191] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra%20o%20entrada
+      - generic [ref=e192]: "?"
+      - strong: Ayuda compra
+  - complementary:
+    - dialog:
+      - generic:
+        - generic:
+          - paragraph: Carrito
+          - heading [level=2]: Tu seleccion
+        - button: x
+      - generic:
+        - generic: Estamos actualizando los datos de cobro. La venta online se habilitará el sábado 29 de agosto a las 12:00.
+        - generic: Tu carrito esta vacio.
+      - generic:
+        - generic:
+          - text: Correo electronico
+          - textbox:
+            - /placeholder: tu@correo.cl
+        - generic:
+          - text: RUT
+          - textbox:
+            - /placeholder: 12.345.678-5
+        - generic:
+          - text: Telefono
+          - textbox:
+            - /placeholder: +56 9 1234 5678
+        - generic:
+          - checkbox
+          - generic:
+            - text: Acepto el
+            - link:
+              - /url: /terminos-datos-personales
+              - text: uso de mis datos personales
+        - paragraph: Estamos actualizando los datos de cobro. La venta online se habilitará el sábado 29 de agosto a las 12:00.
+        - button [disabled]: Venta temporalmente pausada

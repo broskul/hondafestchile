@@ -99,8 +99,6 @@ const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
 const TICKET_SERVICE_CHARGE_RATE = 0.08;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
-const ONLINE_SALES_RESUME_AT = new Date("2026-09-04T12:00:00-04:00");
-const ONLINE_SALES_RESUME_LABEL = "viernes 4 de septiembre a las 12:00";
 const JAPAN_FEST_2026_EVENT_ID = "japon-fest-chile-2026";
 const JAPAN_FEST_CANCELLATION_REASON = "event_cancelled_refunded";
 const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
@@ -115,15 +113,12 @@ function roundCurrency(value) {
   return Math.max(0, Math.round(Number(value || 0)));
 }
 
-function onlineSalesStatus(now = new Date()) {
-  const enabled = now.getTime() >= ONLINE_SALES_RESUME_AT.getTime();
+function onlineSalesStatus() {
   return {
-    enabled,
-    availableAt: ONLINE_SALES_RESUME_AT.toISOString(),
-    availableAtLabel: ONLINE_SALES_RESUME_LABEL,
-    message: enabled
-      ? "La venta online está habilitada."
-      : `Pronto: liberación de entradas el ${ONLINE_SALES_RESUME_LABEL}.`
+    enabled: true,
+    availableAt: null,
+    availableAtLabel: null,
+    message: "La venta online está habilitada."
   };
 }
 

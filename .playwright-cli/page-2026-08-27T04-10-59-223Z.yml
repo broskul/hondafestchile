@@ -1,0 +1,191 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - link "Honda Fest Chile" [ref=f1e3] [cursor=pointer]:
+      - /url: "#top"
+      - generic [ref=f1e5]:
+        - strong [ref=f1e6]: Honda Fest Chile
+        - generic [ref=f1e7]: Japon Fest Chile
+    - navigation "Principal" [ref=f1e8]:
+      - link "Eventos" [ref=f1e9] [cursor=pointer]:
+        - /url: "#eventos"
+      - link "Experiencia" [ref=f1e10] [cursor=pointer]:
+        - /url: "#experiencia"
+      - link "Galerias" [ref=f1e11] [cursor=pointer]:
+        - /url: "#galerias"
+      - link "Ticketera" [ref=f1e12] [cursor=pointer]:
+        - /url: /ticketera
+      - link "Pases" [ref=f1e13] [cursor=pointer]:
+        - /url: /pases-especiales
+      - link "Mi Pit Lane" [ref=f1e14] [cursor=pointer]:
+        - /url: /mi-pit-lane
+      - link "Comunidad" [ref=f1e15] [cursor=pointer]:
+        - /url: "#comunidad"
+    - link "Comprar" [ref=f1e16] [cursor=pointer]:
+      - /url: /ticketera
+  - main [ref=f1e17]:
+    - region [ref=f1e18]:
+      - generic [ref=f1e19]:
+        - img "Honda preparado frente a la grilla de largada al atardecer" [ref=f1e21]
+        - button "Reproducir secuencia del hero" [disabled] [ref=f1e25]:
+          - generic [ref=f1e26]: ▶
+        - navigation "Accesos destacados" [ref=f1e27]:
+          - link "Tickets" [ref=f1e28] [cursor=pointer]:
+            - /url: /ticketera
+          - link "Pases" [ref=f1e29] [cursor=pointer]:
+            - /url: /pases-especiales
+          - link "Galerias" [ref=f1e30] [cursor=pointer]:
+            - /url: "#galerias"
+          - link "Comunidad" [ref=f1e31] [cursor=pointer]:
+            - /url: "#comunidad"
+        - generic [ref=f1e32]:
+          - paragraph [ref=f1e33]:
+            - generic [ref=f1e34]: Fecha doble
+            - text: 21 y 22 de noviembre de 2026
+          - heading "Honda Fest Chile" [level=1] [ref=f1e35]:
+            - text: Honda Fest
+            - generic [ref=f1e36]: Chile
+          - paragraph [ref=f1e37]: La cultura Honda vuelve a pista. Dos jornadas de velocidad, exhibicion, clubes y comunidad en el Autodromo Huachalalume.
+          - generic "Datos del evento" [ref=f1e38]:
+            - generic [ref=f1e39]:
+              - generic [ref=f1e40]: Fecha
+              - strong [ref=f1e41]: 21–22 NOV
+            - generic [ref=f1e42]:
+              - generic [ref=f1e43]: Circuito
+              - strong [ref=f1e44]: Huachalalume
+            - generic [ref=f1e45]:
+              - generic [ref=f1e46]: Ciudad
+              - strong [ref=f1e47]: La Serena
+          - generic [ref=f1e48]:
+            - link "Comprar entradas" [ref=f1e49] [cursor=pointer]:
+              - /url: /ticketera
+            - link "Mejorar experiencia" [ref=f1e50] [cursor=pointer]:
+              - /url: /pases-especiales
+        - generic [ref=f1e51]: Pasa sobre la pista para activar movimiento
+    - region "Proxima fecha confirmada" [ref=f1e53]:
+      - generic [ref=f1e54]:
+        - generic [ref=f1e55]: "01"
+        - generic [ref=f1e56]: Fecha doble
+      - generic [ref=f1e57]:
+        - strong [ref=f1e58]: 21–22
+        - generic [ref=f1e59]: Noviembre2026
+      - generic [ref=f1e60]:
+        - paragraph [ref=f1e61]: Honda Fest Chile
+        - heading "Autodromo Huachalalume" [level=2] [ref=f1e62]
+        - paragraph [ref=f1e63]: La Serena · Sábado Drag Day · Domingo Track Day.
+      - link "Asegurar entrada" [ref=f1e64] [cursor=pointer]:
+        - /url: /ticketera
+    - region [ref=f1e65]:
+      - img "Recreación promocional del Honda rojo del sorteo en una grilla nocturna" [ref=f1e66]
+      - generic [ref=f1e67]:
+        - paragraph [ref=f1e68]: Upgrade de experiencia · Sorteo HFC 2026
+        - heading "¡Gánate este Honda con tu Upgrade de experiencia!" [level=2] [ref=f1e69]
+        - paragraph [ref=f1e70]: Elige un Pase de 1, 3, 5, 7 o 9 Pistones. Mientras más Pistones, más posibilidades tienes de ganar. Además, cada Pase incluye un refresco extra para disfrutar durante la jornada.
+        - generic "Diferencia entre entrada y Pase" [ref=f1e71]:
+          - generic [ref=f1e72]:
+            - generic [ref=f1e73]: Para ingresar
+            - strong [ref=f1e74]: Entrada HFC
+          - generic [ref=f1e75]:
+            - generic [ref=f1e76]: Para hacer el upgrade
+            - strong [ref=f1e77]: Pase de 1 a 9 Pistones
+        - generic [ref=f1e78]:
+          - strong [ref=f1e79]: EL PASE NO REEMPLAZA TU ENTRADA
+          - generic [ref=f1e80]: Necesitas una entrada válida para ingresar al recinto.
+        - generic [ref=f1e81]:
+          - link "Elegir mi Pase" [ref=f1e82] [cursor=pointer]:
+            - /url: /pases-especiales
+          - link "Ver bases del sorteo" [ref=f1e83] [cursor=pointer]:
+            - /url: /bases-sorteo
+    - region [ref=f1e84]:
+      - heading "Galeria" [level=2] [ref=f1e87]
+      - generic [ref=f1e88]:
+        - tablist "Filtrar galerias por tipo" [ref=f1e89]
+        - generic [ref=f1e90]:
+          - generic [ref=f1e91]:
+            - generic [ref=f1e92]: Buscar
+            - searchbox "Buscar" [ref=f1e93]
+          - generic [ref=f1e94]:
+            - strong [ref=f1e95]: Cargando
+            - generic [ref=f1e96]: Preparando galeria.
+        - generic "Miniaturas de la galeria" [ref=f1e98]
+    - region [ref=f1e99]:
+      - generic [ref=f1e100]:
+        - paragraph [ref=f1e101]: Calendario
+        - heading "Proximos eventos" [level=2] [ref=f1e102]
+    - region [ref=f1e103]:
+      - generic [ref=f1e104]:
+        - paragraph [ref=f1e105]: Experiencia
+        - heading "Pista, comunidad y cultura japonesa" [level=2] [ref=f1e106]
+      - generic [ref=f1e107]:
+        - article [ref=f1e108]:
+          - generic [ref=f1e109]: "01"
+          - heading "Carreras y track day" [level=3] [ref=f1e110]
+          - paragraph [ref=f1e111]: Mangas organizadas, briefing de pilotos y un ambiente pensado para disfrutar la velocidad con orden.
+        - article [ref=f1e112]:
+          - generic [ref=f1e113]: "02"
+          - heading "Clubes y proyectos" [level=3] [ref=f1e114]
+          - paragraph [ref=f1e115]: Espacios para exhibir autos, conectar preparadores y mostrar historias de construccion reales.
+        - article [ref=f1e116]:
+          - generic [ref=f1e117]: "03"
+          - heading "Festival familiar" [level=3] [ref=f1e118]
+          - paragraph [ref=f1e119]: Food trucks, stands, musica, cultura japonesa y zonas para vivir el evento mas alla de la pista.
+    - region [ref=f1e120]:
+      - generic [ref=f1e121]:
+        - paragraph [ref=f1e122]: Merchandising
+        - heading "Ropa, stickers y piezas para llevar el evento contigo." [level=2] [ref=f1e123]
+      - generic [ref=f1e124]:
+        - article [ref=f1e125]:
+          - generic [ref=f1e126]: "01"
+          - heading "Poleras HFC" [level=3] [ref=f1e127]
+          - paragraph [ref=f1e128]: Prendas oficiales para pilotos, clubes y asistentes.
+        - article [ref=f1e129]:
+          - generic [ref=f1e130]: "02"
+          - heading "Stickers y lanyards" [level=3] [ref=f1e131]
+          - paragraph [ref=f1e132]: Identidad visual del evento para autos, credenciales y stands.
+        - article [ref=f1e133]:
+          - generic [ref=f1e134]: "03"
+          - heading "Edicion 2026" [level=3] [ref=f1e135]
+          - paragraph [ref=f1e136]: Productos limitados vinculados a la temporada Honda Fest Chile.
+    - region [ref=f1e137]:
+      - generic [ref=f1e138]:
+        - paragraph [ref=f1e139]: Ticketera
+        - heading "Paga primero y asegura tu cupo." [level=2] [ref=f1e140]
+        - paragraph [ref=f1e141]: Ingresa tu correo, paga dentro del sitio con Mercado Pago y recibe un enlace seguro con boton y QR para completar los datos del asistente.
+        - generic "Pasos de compra" [ref=f1e142]:
+          - generic [ref=f1e143]: Correo
+          - generic [ref=f1e144]: Pago
+          - generic [ref=f1e145]: Datos
+          - generic [ref=f1e146]: Ticket
+      - generic [ref=f1e147]:
+        - paragraph [ref=f1e148]: Venta online
+        - heading "Ticketera independiente" [level=3] [ref=f1e149]
+        - paragraph [ref=f1e150]: Elige entradas por evento, agrega productos al carrito lateral y finaliza en la pagina completa del carrito cuando quieras revisar todo con calma.
+        - generic [ref=f1e151]:
+          - link "Abrir ticketera" [ref=f1e152] [cursor=pointer]:
+            - /url: /ticketera
+          - link "Ver carrito" [ref=f1e153] [cursor=pointer]:
+            - /url: /carrito
+    - region [ref=f1e154]:
+      - generic [ref=f1e155]:
+        - paragraph [ref=f1e156]: Comunidad
+        - heading "Trae tu proyecto, tu club o tus ganas de mirar de cerca." [level=2] [ref=f1e157]
+        - paragraph [ref=f1e158]: "El evento crece cuando cada asistente participa: pilotos que salen a pista, clubes que levantan su zona, emprendimientos que muestran piezas y familias que hacen del motorsport una experiencia compartida."
+        - link "Preguntar o participar" [ref=f1e159] [cursor=pointer]:
+          - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20tengo%20una%20pregunta%20sobre%20Honda%20Fest%20Chile%20o%20quiero%20participar%20como%20piloto%2C%20foodtruck%20o%20stand.
+      - generic [ref=f1e160]:
+        - strong [ref=f1e161]: 100%
+        - generic [ref=f1e162]: pasion por los motores japoneses
+  - contentinfo [ref=f1e163]:
+    - paragraph [ref=f1e164]: Honda Fest Chile · Japon Fest Chile
+    - link "Volver arriba" [ref=f1e165] [cursor=pointer]:
+      - /url: "#top"
+  - generic "Accesos rapidos por WhatsApp" [ref=f1e166]:
+    - link "Preguntas del evento por WhatsApp con Pablo" [ref=f1e167] [cursor=pointer]:
+      - /url: https://wa.me/56975766596?text=Hola%20Pablo%2C%20tengo%20una%20pregunta%20sobre%20el%20evento%20Honda%20Fest%20Chile.
+      - generic [ref=f1e168]: +
+      - generic [ref=f1e169]:
+        - strong [ref=f1e170]: Preguntas evento
+        - generic [ref=f1e171]: Horario, ubicacion, participacion
+    - link "Ayuda con compra o entradas por WhatsApp" [ref=f1e172] [cursor=pointer]:
+      - /url: https://wa.me/56972934950?text=Hola%20Honda%20Fest%20Chile%2C%20necesito%20ayuda%20con%20mi%20compra%20o%20entrada
+      - generic [ref=f1e173]: "?"
+      - strong: Ayuda compra
