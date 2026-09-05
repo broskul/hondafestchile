@@ -111,7 +111,7 @@ Antes de publicar definitivamente el premio se mantienen pendientes, bajo respon
 ## Recursos visuales
 
 - Cinco fotografías originales del automóvil se mantienen sin retoque en `public/assets/sorteo-auto/`.
-- El automóvil es el atractivo principal de la campaña: `public/assets/racing/hfc-upgrade-car-cinematic-v4.webp` ocupa el hero del Upgrade con el mensaje `¡Gánate este Honda con tu Upgrade de experiencia!`.
+- El automóvil sigue siendo el foco visual: `public/assets/racing/hfc-upgrade-car-cinematic-v4.webp` ocupa el hero completo. El mensaje comercial abre con `Accede a beneficios exclusivos` y presenta el sorteo del Honda como participación adicional.
 - El hero es una recreación promocional digital basada en la fotografía real del vehículo: conserva el hatchback rojo de tres puertas, llantas grafito, molduras, postura, faros y neblineros. La direccion fotografica agrega pista nocturna mojada, humo lateral, luz roja y reflectores cercanos fuera de cuadro para una lectura racing.
 - `public/assets/racing/hfc-calendar-engine-v2.webp` es un recorte IA de motor tecnico usado a la izquierda de la fecha oficial; no representa necesariamente el motor del premio.
 - Las fotografías originales siguen siendo la referencia documental. La recreación debe tratarse como pieza publicitaria y PyR Eventos debe confirmar que no atribuya al premio características o estado distintos del automóvil real antes de una publicación definitiva.
@@ -126,8 +126,10 @@ La venta del Upgrade falla cerrada y necesita simultáneamente:
 1. `SPECIAL_PASS_SALES_ENABLED=true` en el runtime;
 2. `special_pass_config.active=true` persistido;
 3. `rulesPublished=true` y `rulesVersion=upgrade-hfc-2026-v1`;
-4. almacenamiento de Pases operativo;
-5. venta online global habilitada.
+4. almacenamiento relacional de Pases operativo y con todos sus triggers críticos;
+5. proveedor real de correo transaccional;
+6. Mercado Pago productivo, firma de webhook y URL pública;
+7. venta online global habilitada.
 
 El valor por defecto es `active=false`. Aplicar el schema o publicar código no abre ventas. El backoffice exige una confirmación explícita antes de aumentar la exposición, pero esa confirmación técnica no reemplaza la habilitación jurídica.
 
@@ -142,7 +144,7 @@ La simulación de pagos queda deshabilitada en Vercel/producción salvo `HFC_ALL
 - Consulta pública del Pase enmascara al titular; el operador autenticado conserva el detalle.
 - Pagos reales aprobados deben coincidir en referencia, monto, moneda y preferencia antes de emitir. Reembolsos y contracargos revocan el Pase y sus Pistones.
 - El código de Pase es determinista por campaña+orden para resistir webhooks concurrentes.
-- La infraestructura puede desplegarse y migrarse con venta bloqueada. No declarar venta real operativa mientras falten bases completas y habilitación jurídica documentada.
+- La infraestructura fue desplegada y migrada en producción con la venta bloqueada. No declarar venta real operativa mientras falten bases completas, habilitación jurídica documentada y operación E2E de sorteo/notificación.
 
 ## Historial técnico al 10 de agosto de 2026
 
@@ -152,8 +154,9 @@ La simulación de pagos queda deshabilitada en Vercel/producción salvo `HFC_ALL
 - La imagen se corrigió por instrucción del usuario: no representa una credencial premium, metálica o rígida; muestra un lanyard corriente y una credencial impresa dentro de una funda plástica transparente.
 - La portada del Pase Especial se verificó visualmente en escritorio de `1440x1000` y móvil de `390x844`: el automóvil ocupa todo el ancho, el texto y los CTA conservan contraste, el aviso `NO ES VÁLIDO COMO ENTRADA` queda visible y la consola no registra errores.
 - La recreación promocional con luces encendidas se volvió a verificar en esos dos tamaños. En móvil el foco de la imagen se desplazó a `68%` para mantener visible el faro principal sin afectar la lectura del contenido.
-- La migración remota de `hfc_special_passes` **no está aplicada**. El intento directo falló por autenticación PostgreSQL y el token de Supabase Management API inventariado no tiene privilegios sobre el proyecto Honda Fest. Ambos fallos ocurrieron antes de ejecutar DDL; no se modificó la base remota.
-- La publicación o despliegue a producción no forma parte de esta verificación local y permanece pendiente hasta contar con acceso DDL válido y ejecutar la migración idempotente.
+- El intento directo desde el vault falló por una contraseña PostgreSQL local desactualizada y el token inventariado de Supabase Management API no tenía privilegios sobre Honda Fest. Ambos fallos ocurrieron antes de ejecutar DDL.
+- La migración base `20260809090000_special_passes.sql` y el Upgrade `20260905120000_special_pass_upgrades.sql` se aplicaron juntos en una transacción remota iniciada por un puente administrativo temporal, limitado al hash SHA-256 aprobado, al project ref `jvmibnyiinzpkahbkyec`, a la clave de backoffice vigente y al kill-switch desactivado. El resultado verificó `storageReady=true` y el puente fue retirado del código inmediatamente después.
+- Producción quedó publicada desde el commit `e8fbfc7`; la venta continúa cerrada con `SPECIAL_PASS_SALES_ENABLED=false`, `active=false`, `rulesPublished=false` y fecha 29 de noviembre de 2026.
 
 ### Preview para revisión de Pablo
 

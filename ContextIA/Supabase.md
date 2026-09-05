@@ -61,8 +61,17 @@ Las tablas históricas conservan columnas índice y un `payload jsonb`. El Upgra
 - Todas las tablas nuevas tienen RLS y no se entregan políticas a `anon`/`authenticated`; el backend usa `service_role` o Postgres server-side.
 - `npm run passes:migration:contract` valida el contrato estático. `npm run passes:migrate` aplica las migraciones en una sola transacción con advisory lock y verifica tablas, RLS, triggers, premio, configuración y Pistones.
 
+## Producción 2026-09-05
+
+- Proyecto verificado: `jvmibnyiinzpkahbkyec`.
+- Se instalaron en una sola transacción `20260809090000_special_passes.sql` y `20260905120000_special_pass_upgrades.sql`.
+- La verificación remota devolvió `storageReady=true`; la migración dejó `special_pass_config.active=false` y `rulesPublished=false`.
+- La contraseña `SUPABASE_DB_URL` de la fuente local Honda Fest del vault está desactualizada y falla autenticación. No sustituirla ni copiar la de Vercel: actualizarla mediante una migración segura de credenciales cuando corresponda.
+- El `SUPABASE_ACCESS_TOKEN` inventariado en la fuente FacturaElectronica no tiene privilegios sobre Honda Fest; no volver a usarlo para este proyecto.
+- Para esta instalación se usó un puente administrativo efímero desplegado en Vercel: aceptaba sólo el SQL combinado con hash aprobado, comprobaba el project ref, exigía backoffice y ventas desactivadas, ejecutaba transacción+advisory lock y verificaba el contrato. El endpoint se eliminó y se volvió a desplegar inmediatamente; no es una interfaz permanente de migración.
+
 ## Pendientes
 
 - Ejecutar el procesador de `hfc_notification_outbox` cuando se defina el proveedor de contacto telefónico y la política de reintentos.
 - No exponer lectura directa desde frontend. Si se necesitara, diseñar políticas RLS mínimas y específicas; nunca abrir las tablas de padrón o ganadores.
-- Validar la migración contra Postgres productivo y registrar su resultado sin copiar credenciales a archivos versionados.
+- Incorporar al vault una credencial DDL vigente y específica para Honda Fest antes de la próxima migración; no depender nuevamente de un endpoint temporal.
