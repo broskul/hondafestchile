@@ -517,8 +517,8 @@
       <section class="cart-pistons-upgrade" aria-label="Mejora tu experiencia">
         <div>
           <p>Upgrade de experiencia</p>
-          <h3>Elige tu Pase.</h3>
-          <span>Más Pistones, más posibilidades de ganar el Honda. Incluye un refresco extra. El Pase no reemplaza tu entrada.</span>
+          <h3>Accede a beneficios exclusivos.</h3>
+          <span>Elige un Pase de 1 a 9 Pistones y participa por el sorteo de un Honda. Se compra por separado y no reemplaza tu entrada.</span>
         </div>
         <a class="button secondary" href="/pases-especiales">Elegir mi Pase</a>
       </section>

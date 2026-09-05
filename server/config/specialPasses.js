@@ -1,15 +1,34 @@
 const SPECIAL_PASS_SETTING_ID = "special_pass_config";
+const SPECIAL_PASS_RULES_VERSION = "upgrade-hfc-2026-v1";
+// SHA-256 of public/bases-sorteo.html for the deployed review build. This is
+// intentionally explicit so a serverless function never depends on reading a
+// separately packaged static asset at checkout time.
+const SPECIAL_PASS_RULES_SHA256 = "24938d8c45ea8cc8a92bab12bb23c42d55362b1721a5af7010c928d48782ef7e";
+// SHA-256 of public/terminos-datos-personales.html. Checkout persists this
+// exact document fingerprint with the privacy acceptance.
+const SPECIAL_PASS_PRIVACY_SHA256 = "8a4fece16cff97dc34b5980185ef1fb452ed3be71e952c62f54f043197e59c81";
 
 const DEFAULT_SPECIAL_PASS_CONFIG = {
   id: SPECIAL_PASS_SETTING_ID,
-  active: true,
+  // Fail closed: production sales require an explicit persisted approval and
+  // the independent SPECIAL_PASS_SALES_ENABLED runtime gate.
+  active: false,
+  rulesPublished: false,
+  rulesVersion: SPECIAL_PASS_RULES_VERSION,
+  rulesHash: "",
   campaignId: "hfc-2026-special-pass",
   eventId: "honda-fest-chile-2026",
-  name: "Pase HFC 2026",
-  shortName: "Pase",
+  name: "Upgrade de experiencia HFC 2026",
+  shortName: "Upgrade",
   eventName: "Honda Fest Chile 2026",
-  eventDate: "2026-11-28",
-  eventDateLabel: "28 y 29 de noviembre de 2026",
+  eventDate: "2026-11-29",
+  eventDateLabel: "29 de noviembre de 2026",
+  drawDate: "2026-11-29",
+  drawDateLabel: "29 de noviembre de 2026",
+  drawMode: "presencial durante Honda Fest Chile",
+  automobilePresenceRequired: false,
+  onsitePresenceRequired: true,
+  winnerNotificationChannels: ["email", "phone"],
   physicalFormat: "Lanyard con credencial impresa",
   notEntryLabel: "NO ES VÁLIDO COMO ENTRADA",
   purchaseNotice:
@@ -19,11 +38,11 @@ const DEFAULT_SPECIAL_PASS_CONFIG = {
     preEvent: "Punto de retiro previo al evento: por confirmar."
   },
   commonBenefits: [
-    "Lanyard y credencial impresa de Pase",
-    "Acceso a experiencias especiales el día del evento",
-    "Un refresco extra durante la jornada",
-    "Pistones registrados para el sorteo del Honda y otros premios, sujeto a bases",
-    "Mientras más Pistones, más posibilidades tienes de ganar"
+    "Lanyard y credencial impresa del Upgrade",
+    "Acceso a experiencias y beneficios exclusivos el día del evento",
+    "Beneficios adicionales según el nivel publicado",
+    "Pistones asociados al RUT del titular para los sorteos definidos en las bases",
+    "Nuevos beneficios por nivel serán publicados próximamente"
   ],
   levels: [
     { id: "piston-1", pistons: 1, name: "Pase de 1 Pistón", price: 5000, accent: "steel" },
@@ -61,7 +80,10 @@ function normalizeSpecialPassConfig(config = {}) {
     ...fallback,
     ...config,
     id: SPECIAL_PASS_SETTING_ID,
-    active: config.active !== false,
+    active: config.active === true,
+    rulesPublished: config.rulesPublished === true,
+    rulesVersion: cleanText(config.rulesVersion, fallback.rulesVersion),
+    rulesHash: cleanText(config.rulesHash, fallback.rulesHash).toLowerCase(),
     campaignId: cleanText(config.campaignId, fallback.campaignId),
     eventId: cleanText(config.eventId, fallback.eventId),
     name: cleanText(config.name, fallback.name),
@@ -69,6 +91,17 @@ function normalizeSpecialPassConfig(config = {}) {
     eventName: cleanText(config.eventName, fallback.eventName),
     eventDate: cleanText(config.eventDate, fallback.eventDate),
     eventDateLabel: cleanText(config.eventDateLabel, fallback.eventDateLabel),
+    drawDate: cleanText(config.drawDate, fallback.drawDate),
+    drawDateLabel: cleanText(config.drawDateLabel, fallback.drawDateLabel),
+    drawMode: cleanText(config.drawMode, fallback.drawMode),
+    automobilePresenceRequired: config.automobilePresenceRequired === true,
+    onsitePresenceRequired: config.onsitePresenceRequired !== false,
+    winnerNotificationChannels: (Array.isArray(config.winnerNotificationChannels)
+      ? config.winnerNotificationChannels
+      : fallback.winnerNotificationChannels
+    )
+      .map((channel) => cleanText(channel).toLowerCase())
+      .filter((channel) => ["email", "phone"].includes(channel)),
     physicalFormat: cleanText(config.physicalFormat, fallback.physicalFormat),
     notEntryLabel: cleanText(config.notEntryLabel, fallback.notEntryLabel),
     purchaseNotice: cleanText(config.purchaseNotice, fallback.purchaseNotice),
@@ -99,6 +132,9 @@ function findSpecialPassLevel(config, levelId) {
 
 module.exports = {
   DEFAULT_SPECIAL_PASS_CONFIG,
+  SPECIAL_PASS_PRIVACY_SHA256,
+  SPECIAL_PASS_RULES_SHA256,
+  SPECIAL_PASS_RULES_VERSION,
   SPECIAL_PASS_SETTING_ID,
   findSpecialPassLevel,
   normalizeSpecialPassConfig,

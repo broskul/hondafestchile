@@ -1,3 +1,13 @@
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
 function renderPurchases(data) {
   const list = HFC.$("#purchaseList");
   if (!data.orders.length) {
@@ -54,19 +64,18 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     const form = event.currentTarget;
     const status = HFC.$("#purchasesStatus");
-    const query = new URLSearchParams({
-      email: form.email.value,
-      rut: form.rut.value,
-      phone: form.phone.value
-    });
-
-    HFC.setStatus(status, "Buscando compras...");
+    HFC.setStatus(status, "Preparando tu acceso seguro...");
 
     try {
-      const data = await HFC.api(`/api/users/purchases?${query.toString()}`);
+      const data = await HFC.api("/api/account/access", {
+        method: "POST",
+        body: JSON.stringify({
+          rut: form.rut.value,
+          contact: form.email.value || form.phone.value
+        })
+      });
       localStorage.setItem("hfc_buyer", JSON.stringify({ email: form.email.value, rut: form.rut.value, phone: form.phone.value }));
-      HFC.setStatus(status, `<strong>${data.user.name}</strong><br />Compras encontradas: ${data.orders.length}`);
-      renderPurchases(data);
+      HFC.setStatus(status, escapeHtml(data.message || "Revisa el correo registrado para abrir Mi Pit Lane."));
     } catch (error) {
       HFC.setStatus(status, error.message, true);
     }

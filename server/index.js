@@ -16,6 +16,9 @@ const {
   findTicketType: findDefaultTicketType
 } = require("./config/catalog");
 const {
+  SPECIAL_PASS_PRIVACY_SHA256,
+  SPECIAL_PASS_RULES_SHA256,
+  SPECIAL_PASS_RULES_VERSION,
   SPECIAL_PASS_SETTING_ID,
   findSpecialPassLevel,
   normalizeSpecialPassConfig,
@@ -478,12 +481,18 @@ function hfcDateCorrection(ticketing) {
 function hfcSpecialPassDateCorrection(config) {
   const corrected = {
     ...config,
-    eventDate: "2026-11-28",
-    eventDateLabel: "28 y 29 de noviembre de 2026"
+    eventDate: "2026-11-29",
+    eventDateLabel: "29 de noviembre de 2026",
+    drawDate: "2026-11-29",
+    drawDateLabel: "29 de noviembre de 2026"
   };
   return {
     specialPass: corrected,
-    changed: corrected.eventDate !== config.eventDate || corrected.eventDateLabel !== config.eventDateLabel
+    changed:
+      corrected.eventDate !== config.eventDate ||
+      corrected.eventDateLabel !== config.eventDateLabel ||
+      corrected.drawDate !== config.drawDate ||
+      corrected.drawDateLabel !== config.drawDateLabel
   };
 }
 
@@ -636,10 +645,16 @@ function expireStaleCheckoutOrdersInState(state, now = new Date()) {
 
 async function readStateWithCheckoutMaintenance() {
   const state = await readState();
-  const expiredOrders = expireStaleCheckoutOrdersInState(state);
-  if (!expiredOrders) return { state, expiredOrders };
-  await writeState(state);
-  return { state: await readState(), expiredOrders };
+  if (!(state.orders || []).some((order) => orderHoldExpired(order))) {
+    return { state, expiredOrders: 0 };
+  }
+  let maintainedState = state;
+  let expiredOrders = 0;
+  await updateState((currentState) => {
+    expiredOrders = expireStaleCheckoutOrdersInState(currentState);
+    maintainedState = currentState;
+  });
+  return { state: maintainedState, expiredOrders };
 }
 
 function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
@@ -949,6 +964,10 @@ function publicOrder(order) {
     passLevelId: order.passLevelId || null,
     pistonCount: Number(order.pistonCount || 0),
     notEntryAcceptedAt: order.notEntryAcceptedAt || null,
+    specialPassRulesAcceptedAt: order.specialPassRulesAcceptedAt || null,
+    specialPassRulesVersion: order.specialPassRulesVersion || null,
+    specialPassPrivacyAcceptedAt: order.specialPassPrivacyAcceptedAt || null,
+    specialPassPrivacyVersion: order.specialPassPrivacyVersion || null,
     eventId: order.eventId,
     ticketTypeId: order.ticketTypeId,
     items: order.items || [],
@@ -976,6 +995,15 @@ function publicOrder(order) {
   };
 }
 
+function maskedPersonName(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0)}${"*".repeat(Math.min(Math.max(part.length - 1, 2), 5))}`)
+    .join(" ");
+}
+
 function publicTicket(ticket, req) {
   if (!ticket) return null;
   const verifyUrl = `${baseUrl(req)}/validar?code=${encodeURIComponent(ticket.code)}`;
@@ -1001,6 +1029,23 @@ function publicTicket(ticket, req) {
     createdAt: ticket.createdAt,
     verifyUrl,
     qrUrl: `/api/tickets/${encodeURIComponent(ticket.code)}/qr.svg`
+  };
+}
+
+function publicTicketValidation(ticket, req, includePrivate = false) {
+  const result = publicTicket(ticket, req);
+  if (!result || includePrivate) return result;
+  return {
+    id: result.id,
+    code: result.code,
+    eventName: result.eventName,
+    ticketTypeName: result.ticketTypeName,
+    entryType: result.entryType,
+    entryTypeLabel: result.entryTypeLabel,
+    holderName: maskedPersonName(result.holderName),
+    status: result.status,
+    validatedAt: result.validatedAt,
+    verifyUrl: result.verifyUrl
   };
 }
 
@@ -1046,7 +1091,17 @@ function publicSpecialPassesForOrder(state, orderId, req) {
 
 function publicSpecialPassValidation(pass, req, includePrivate = false) {
   const result = publicSpecialPass(pass, req);
-  if (!result || includePrivate) return result;
+  if (!result) return result;
+  if (includePrivate) {
+    return {
+      ...result,
+      entryValidationStatus: pass.entryValidationStatus || "unverified",
+      entryValidatedAt: pass.entryValidatedAt || null,
+      attendanceStatus: pass.attendanceStatus || "not_present",
+      automobileEligibilityStatus: pass.automobileEligibilityStatus || "eligible",
+      onsiteEligibilityStatus: pass.onsiteEligibilityStatus || "not_eligible"
+    };
+  }
   return {
     id: result.id,
     code: result.code,
@@ -1055,7 +1110,7 @@ function publicSpecialPassValidation(pass, req, includePrivate = false) {
     passName: result.passName,
     levelName: result.levelName,
     pistonCount: result.pistonCount,
-    holderName: result.holderName,
+    holderName: maskedPersonName(result.holderName),
     physicalFormat: result.physicalFormat,
     notEntryLabel: result.notEntryLabel,
     status: result.status,
@@ -1276,6 +1331,21 @@ function accountUserFromRequest(req, state) {
   return session ? state.users.find((candidate) => candidate.id === session.userId) || null : null;
 }
 
+function authorizeOrderAccess(req, state, order) {
+  if (adminAuthorized(req)) return { type: "admin" };
+  const session = currentSessionFromRequest(req, state, "account");
+  if (session && session.userId === order?.userId) return { type: "account", session };
+  const enrollmentToken = String(
+    req.body?.enrollmentToken || req.query?.enrollmentToken || req.headers["x-enrollment-token"] || ""
+  ).trim();
+  if (enrollmentToken && enrollmentTokenIsActive(order) && safeEqualString(enrollmentToken, order.enrollmentToken)) {
+    return { type: "enrollment" };
+  }
+  const error = new Error("No autorizado para consultar esta orden");
+  error.status = 401;
+  throw error;
+}
+
 function findUserByEmailRut(state, email, rutInput) {
   return state.users.find(
     (candidate) => candidate.email === email && cleanRut(candidate.rut) === cleanRut(rutInput)
@@ -1468,21 +1538,43 @@ function checkoutIdentityFromBody(body = {}, fallbackUser = null, options = {}) 
   };
 }
 
-function rememberPreviousEmail(user, email) {
-  if (!user.email || user.email === email) return;
-  user.emailAliases = Array.from(new Set([...(user.emailAliases || []), user.email].filter(Boolean)));
-}
-
 function upsertCheckoutUser(state, identity, body = {}, sessionUser = null) {
   const now = new Date().toISOString();
   const rutOwner = findUserByRut(state, identity.rut);
   const emailOwner = findUserByEmail(state, identity.email);
   const contactOwner = findUserByRutContact(state, identity.rut, identity.phone);
-  const existing = sessionUser || rutOwner || emailOwner || contactOwner;
+  const existingIdentity = rutOwner || emailOwner || contactOwner;
+
+  // A RUT, email address or phone number is an identifier, not proof of
+  // account ownership. Anonymous checkout must never adopt an existing user or
+  // mint a session that exposes their prior orders.
+  if (!sessionUser && existingIdentity) {
+    const error = new Error("Ya existe una cuenta con esos datos. Ingresa a Mi Pit Lane antes de continuar la compra.");
+    error.status = 409;
+    error.code = "account_session_required";
+    throw error;
+  }
+
+  const existing = sessionUser;
 
   if (existing) {
+    if (rutOwner && rutOwner.id !== existing.id) {
+      const error = new Error("Ese RUT ya está asociado a otra cuenta");
+      error.status = 409;
+      throw error;
+    }
     if (emailOwner && emailOwner.id !== existing.id) {
       const error = new Error("Ese correo ya esta asociado a otra cuenta. Ingresa con tu RUT y telefono o revisa el correo.");
+      error.status = 409;
+      throw error;
+    }
+    if (existing.email && normalizeEmail(existing.email) !== identity.email) {
+      const error = new Error("El correo del checkout debe coincidir con la cuenta autenticada");
+      error.status = 409;
+      throw error;
+    }
+    if (existing.rut && cleanRut(existing.rut) !== identity.normalizedRut) {
+      const error = new Error("El RUT del checkout debe coincidir con la cuenta autenticada");
       error.status = 409;
       throw error;
     }
@@ -1497,10 +1589,13 @@ function upsertCheckoutUser(state, identity, body = {}, sessionUser = null) {
       error.status = 409;
       throw error;
     }
-    rememberPreviousEmail(existing, identity.email);
     existing.email = identity.email;
     if (identity.rut) existing.rut = identity.rut;
     existing.phone = identity.phone;
+    if (String(body.name || "").trim()) {
+      existing.name = String(body.name).trim();
+      existing.namePending = false;
+    }
     existing.emailVerified = true;
     existing.emailVerificationMode = existing.emailVerificationMode || "checkout_inline";
     existing.termsAcceptedAt = existing.termsAcceptedAt || now;
@@ -1846,9 +1941,16 @@ function createTickets({ order, user, items }) {
 function createSpecialPass({ order, user, item, config }) {
   const now = new Date().toISOString();
   const pistonCount = Number(item.pistonCount || order.pistonCount || 0);
-  const code = `HFC-PASE-${new Date().getFullYear()}-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+  const stableDigest = crypto
+    .createHash("sha256")
+    .update(`${config.campaignId}:${order.id}`)
+    .digest("hex");
+  const code = `HFC-PASE-${new Date().getFullYear()}-${stableDigest.slice(0, 10).toUpperCase()}`;
+  const drawEntryCodes = Array.from({ length: pistonCount }, (_, index) =>
+    `${code}-P${String(index + 1).padStart(2, "0")}`
+  );
   return {
-    id: id("pass"),
+    id: `pass_${stableDigest.slice(0, 20)}`,
     orderId: order.id,
     lineItemId: item.id,
     userId: user.id,
@@ -1865,6 +1967,7 @@ function createSpecialPass({ order, user, item, config }) {
     holderName: user.name,
     holderRut: user.rut,
     holderPhone: user.phone,
+    holderEmail: user.email,
     physicalFormat: config.physicalFormat,
     notEntryLabel: config.notEntryLabel,
     status: "valid",
@@ -1872,9 +1975,29 @@ function createSpecialPass({ order, user, item, config }) {
     pickedUpAt: null,
     accessStatus: "not_checked_in",
     checkedInAt: null,
-    drawEntryCodes: Array.from({ length: pistonCount }, (_, index) =>
-      `${code}-P${String(index + 1).padStart(2, "0")}`
-    ),
+    entryValidationStatus: "unverified",
+    attendanceStatus: "not_present",
+    automobileEligibilityStatus: "eligible",
+    onsiteEligibilityStatus: "not_eligible",
+    rulesAcceptedAt: order.specialPassRulesAcceptedAt || null,
+    rulesVersion: order.specialPassRulesVersion || config.rulesVersion,
+    rulesHash: order.specialPassRulesHash || null,
+    privacyAcceptedAt: order.specialPassPrivacyAcceptedAt || null,
+    privacyTermsVersion: order.specialPassPrivacyVersion || DATA_TERMS_VERSION,
+    privacyTermsHash: order.specialPassPrivacyHash || SPECIAL_PASS_PRIVACY_SHA256,
+    notEntryAcceptedAt: order.notEntryAcceptedAt || null,
+    presenceConditionsAcceptedAt: order.specialPassRulesAcceptedAt || null,
+    drawEntryCodes,
+    pistons: drawEntryCodes.map((pistonCode, index) => ({
+      code: pistonCode,
+      ordinal: index + 1,
+      holderRut: user.rut,
+      holderRutNormalized: cleanRut(user.rut),
+      status: "active",
+      automobileEligible: true,
+      onsiteEligible: false,
+      issuedAt: now
+    })),
     createdAt: now,
     updatedAt: now
   };
@@ -1882,6 +2005,64 @@ function createSpecialPass({ order, user, item, config }) {
 
 function envFlag(name) {
   return /^(1|true|yes|si|sí)$/i.test(String(process.env[name] || "").trim());
+}
+
+function specialPassSalesGateEnabled() {
+  return envFlag("SPECIAL_PASS_SALES_ENABLED");
+}
+
+function specialPassRulesDocumentHash() {
+  return SPECIAL_PASS_RULES_SHA256;
+}
+
+function nonProductionDemoFlag(name) {
+  const productionRuntime = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
+  return !productionRuntime && envFlag(name);
+}
+
+function assertMailDelivery(result) {
+  if (result?.delivered === true || nonProductionDemoFlag("HFC_ALLOW_DEMO_EMAIL")) return result;
+  const error = new Error("No hay un proveedor de correo transaccional habilitado");
+  error.status = 503;
+  error.code = "transactional_email_unavailable";
+  throw error;
+}
+
+function specialPassActivation(config) {
+  const storageReady = specialPassStorageReady();
+  const runtimeEnabled = specialPassSalesGateEnabled();
+  const configurationEnabled = config?.active === true;
+  const rulesPublished =
+    config?.rulesPublished === true &&
+    config?.rulesVersion === SPECIAL_PASS_RULES_VERSION &&
+    config?.rulesHash === SPECIAL_PASS_RULES_SHA256;
+  const mailReady = mailProviderStatus().provider !== "demo" || nonProductionDemoFlag("HFC_ALLOW_DEMO_EMAIL");
+  const paymentStatus = mercadoPagoRuntimeStatus();
+  const paymentReady =
+    (paymentStatus.configured &&
+      paymentStatus.sandbox !== true &&
+      paymentStatus.webhookSignatureConfigured === true &&
+      paymentStatus.notificationUrlLooksPublic === true) ||
+    nonProductionDemoFlag("HFC_ALLOW_DEMO_PAYMENT");
+  return {
+    active: Boolean(runtimeEnabled && configurationEnabled && rulesPublished && storageReady && mailReady && paymentReady),
+    runtimeEnabled,
+    configurationEnabled,
+    rulesPublished,
+    storageReady,
+    mailReady,
+    paymentReady
+  };
+}
+
+function requireSpecialPassOrderActivation(state, order) {
+  if (!(order?.kind === "special_pass" || Number(order?.pistonCount || 0) > 0)) return;
+  const activation = specialPassActivation(specialPassConfigFromState(state));
+  if (activation.active) return;
+  const error = new Error("La venta de Pases fue pausada antes de iniciar el pago");
+  error.status = 409;
+  error.code = "special_pass_sales_paused";
+  throw error;
 }
 
 function normalizedPaymentData(paymentData = {}) {
@@ -1896,6 +2077,7 @@ function normalizedPaymentData(paymentData = {}) {
     externalReference: paymentData.externalReference || raw.external_reference || null,
     merchantOrderId: paymentData.merchantOrderId || raw.order?.id || raw.merchant_order_id || null,
     transactionAmount: Number(paymentData.transactionAmount || raw.transaction_amount || 0),
+    currency: String(paymentData.currency || raw.currency_id || "").trim().toUpperCase() || null,
     paidAt: paymentData.paidAt || raw.date_approved || null,
     raw: paymentData.raw || null
   };
@@ -1932,7 +2114,7 @@ function upsertPaymentRecord(state, order, paymentData) {
     externalReference: payment.externalReference || order.id,
     merchantOrderId: payment.merchantOrderId,
     amount: payment.transactionAmount || order.total,
-    currency: "CLP",
+    currency: payment.currency || "CLP",
     paidAt: payment.paidAt,
     createdAt: existing?.createdAt || now,
     updatedAt: now
@@ -1962,9 +2144,103 @@ function orderPaymentSummary(paymentRecord, fallback = {}) {
     statusDetail: paymentRecord.statusDetail,
     paymentType: paymentRecord.paymentType,
     preferenceId: paymentRecord.preferenceId,
+    externalReference: paymentRecord.externalReference || fallback.externalReference || null,
+    amount: Number(paymentRecord.amount || fallback.amount || 0),
+    currency: paymentRecord.currency || fallback.currency || "CLP",
     paidAt: paymentRecord.paidAt || fallback.paidAt || null,
     updatedAt: paymentRecord.updatedAt
   };
+}
+
+function assertPaymentMatchesOrder(order, paymentData = {}, { allowPersistedPayment = false } = {}) {
+  const payment = normalizedPaymentData(paymentData);
+  if (String(payment.provider || "").toLowerCase() === "demo") return;
+  const matchesPersistedPayment =
+    allowPersistedPayment &&
+    order.status === "paid" &&
+    payment.paymentId &&
+    order.payment?.paymentId &&
+    String(payment.paymentId) === String(order.payment.paymentId) &&
+    String(payment.provider || "") === String(order.payment.provider || "");
+  if (matchesPersistedPayment) return;
+
+  if (!payment.externalReference || String(payment.externalReference) !== String(order.id)) {
+    const error = new Error("La referencia del pago no corresponde a la orden");
+    error.status = 409;
+    throw error;
+  }
+
+  if (!Number.isFinite(payment.transactionAmount) || Math.round(payment.transactionAmount) !== Math.round(order.total)) {
+    const error = new Error("El monto confirmado por el medio de pago no coincide con la orden");
+    error.status = 409;
+    throw error;
+  }
+
+  if (payment.currency && payment.currency !== "CLP") {
+    const error = new Error("La moneda confirmada por el medio de pago no corresponde a CLP");
+    error.status = 409;
+    throw error;
+  }
+
+  if (order.preferenceId && payment.preferenceId && String(order.preferenceId) !== String(payment.preferenceId)) {
+    const error = new Error("La preferencia de pago no corresponde a la orden");
+    error.status = 409;
+    throw error;
+  }
+}
+
+function approvedPaymentRecordsForOrder(state, order) {
+  return (state.payments || [])
+    .filter((payment) => payment.orderId === order.id && String(payment.status || "").toLowerCase() === "approved")
+    .sort((a, b) => String(a.paidAt || a.createdAt || "").localeCompare(String(b.paidAt || b.createdAt || "")));
+}
+
+function canonicalApprovedPayment(state, order) {
+  const approved = approvedPaymentRecordsForOrder(state, order);
+  if (!approved.length) return null;
+  return (
+    approved.find(
+      (payment) =>
+        order.payment?.paymentId &&
+        String(payment.paymentId || "") === String(order.payment.paymentId) &&
+        String(payment.provider || "") === String(order.payment.provider || "")
+    ) || approved[0]
+  );
+}
+
+function revokeSpecialPassesForOrder(state, order, paymentStatus) {
+  const now = new Date().toISOString();
+  let revoked = 0;
+  for (const pass of state.specialPasses || []) {
+    if (pass.orderId !== order.id || pass.status !== "valid") continue;
+    pass.status = "revoked";
+    pass.revokedAt = pass.revokedAt || now;
+    pass.revokedReason = `payment_${paymentStatus}`;
+    pass.automobileEligibilityStatus = "revoked";
+    pass.onsiteEligibilityStatus = "revoked";
+    pass.pistons = (pass.pistons || []).map((piston) => ({
+      ...piston,
+      status: "voided",
+      voidedAt: piston.voidedAt || now,
+      voidedReason: `payment_${paymentStatus}`,
+      automobileEligible: false,
+      onsiteEligible: false
+    }));
+    pass.updatedAt = now;
+    revoked += 1;
+  }
+  if (revoked) {
+    order.fulfillmentStatus = "revoked";
+    state.audit.push({
+      id: id("audit"),
+      type: "special_pass_pistons_revoked",
+      orderId: order.id,
+      paymentStatus,
+      revokedPasses: revoked,
+      createdAt: now
+    });
+  }
+  return revoked;
 }
 
 function orderStatusForPaymentStatus(status) {
@@ -2029,6 +2305,7 @@ function paymentDataFromMercadoPago(payment) {
     externalReference: payment.external_reference,
     merchantOrderId: payment.order?.id || payment.merchant_order_id,
     transactionAmount: payment.transaction_amount,
+    currency: payment.currency_id,
     paidAt: payment.date_approved,
     raw: payment
   };
@@ -2097,11 +2374,23 @@ async function updateOrderPaymentStatus(orderId, paymentData = {}) {
       return;
     }
 
+    assertPaymentMatchesOrder(order, paymentData, { allowPersistedPayment: true });
     const paymentRecord = upsertPaymentRecord(state, order, paymentData);
-    if (order.status !== "paid") {
+    const normalizedPaymentStatus = String(paymentRecord.status || "").toLowerCase();
+    const isReversal = ["refunded", "charged_back"].includes(normalizedPaymentStatus);
+    const remainingApprovedPayment = canonicalApprovedPayment(state, order);
+    const reversesPaidOrder = order.status === "paid" && isReversal && !remainingApprovedPayment;
+    if (isReversal && remainingApprovedPayment) {
+      order.status = "paid";
+      order.payment = orderPaymentSummary(remainingApprovedPayment, order.payment);
+      order.updatedAt = new Date().toISOString();
+    } else if (order.status !== "paid" || reversesPaidOrder) {
       order.status = orderStatusForPaymentStatus(paymentRecord.status);
       order.payment = orderPaymentSummary(paymentRecord, order.payment);
       order.updatedAt = new Date().toISOString();
+    }
+    if (reversesPaidOrder && (order.kind === "special_pass" || Number(order.pistonCount || 0) > 0)) {
+      revokeSpecialPassesForOrder(state, order, normalizedPaymentStatus);
     }
 
     state.audit.push({
@@ -2120,54 +2409,114 @@ async function updateOrderPaymentStatus(orderId, paymentData = {}) {
 }
 
 async function completeOrderPayment(orderId, paymentData = {}) {
-  let state = await readState();
-  const order = state.orders.find((candidate) => candidate.id === orderId);
-  if (!order) {
-    const error = new Error("Orden no encontrada");
-    error.status = 404;
-    throw error;
-  }
-
-  const user = state.users.find((candidate) => candidate.id === order.userId);
-  const items = getOrderItems(order, state);
-  const firstItem = items[0];
-  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
-  const isSpecialPassOrder = order.kind === "special_pass" || firstItem?.productKind === "special_pass";
-  const passConfig = specialPassConfigFromState(state);
-  const ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
-  if (!user || !items.length) {
-    const error = new Error("Orden incompleta");
-    error.status = 409;
-    throw error;
-  }
-  if (orderIsCancelledOrRefunded(order, state)) {
-    throw cancelledJapanFestOrderError();
-  }
-
-  let tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
-  let specialPasses = (state.specialPasses || []).filter((pass) => pass.orderId === order.id);
-  let invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+  let state;
+  let order;
+  let user;
+  let items;
+  let firstItem;
+  let event;
+  let isSpecialPassOrder;
+  let passConfig;
+  let ticketType;
+  let tickets;
+  let specialPasses;
+  let invoice;
+  let profileReady = false;
+  let shouldIssueInvoice = false;
   let invoiceError = null;
-  const paymentRecord = upsertPaymentRecord(state, order, {
-    ...paymentData,
-    status: paymentData.status || "approved"
+
+  // Payment status, fulfillment and Pistón issuance are one serialized
+  // read-modify-write transaction in PostgreSQL. Duplicate webhooks therefore
+  // cannot write a stale whole-state snapshot over another paid order.
+  await updateState((currentState) => {
+    state = currentState;
+    order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+
+    user = state.users.find((candidate) => candidate.id === order.userId);
+    items = getOrderItems(order, state);
+    firstItem = items[0];
+    event = firstItem ? findEvent(state, firstItem.eventId) : null;
+    isSpecialPassOrder = order.kind === "special_pass" || firstItem?.productKind === "special_pass";
+    passConfig = specialPassConfigFromState(state);
+    ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
+    if (!user || !items.length) {
+      const error = new Error("Orden incompleta");
+      error.status = 409;
+      throw error;
+    }
+    if (orderIsCancelledOrRefunded(order, state)) throw cancelledJapanFestOrderError();
+
+    assertPaymentMatchesOrder(order, {
+      ...paymentData,
+      status: paymentData.status || "approved"
+    }, { allowPersistedPayment: true });
+
+    tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
+    specialPasses = (state.specialPasses || []).filter((pass) => pass.orderId === order.id);
+    invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+    const paymentRecord = upsertPaymentRecord(state, order, {
+      ...paymentData,
+      status: paymentData.status || "approved"
+    });
+    const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
+    profileReady = userProfileCompleteForItems(user, items, state);
+
+    if (!profileReady) {
+      ensureEnrollmentToken(order);
+      order.status = "paid";
+      order.payment = orderPaymentSummary(paymentRecord, {
+        paidAt: new Date().toISOString()
+      });
+      order.profileRequired = true;
+      order.requiresPilotInfo = requiresPilotInfo;
+      order.fulfillmentStatus = "profile_pending";
+      order.invoiceStatus = "profile_pending";
+      order.enrollmentEmailStatus = order.enrollmentEmailSentAt ? "sent" : "pending";
+      order.updatedAt = new Date().toISOString();
+      return;
+    }
+
+    if (order.status !== "paid") {
+      order.status = "paid";
+      order.payment = orderPaymentSummary(paymentRecord, {
+        paidAt: new Date().toISOString()
+      });
+      order.invoiceStatus = "pending";
+    } else {
+      const canonicalPayment = canonicalApprovedPayment(state, order) || paymentRecord;
+      order.payment = orderPaymentSummary(canonicalPayment, order.payment);
+    }
+    order.profileRequired = false;
+    order.requiresPilotInfo = requiresPilotInfo;
+    order.fulfillmentStatus = "fulfilled";
+
+    if (isSpecialPassOrder) {
+      if (!specialPasses.length) {
+        specialPasses = [createSpecialPass({ order, user, item: firstItem, config: passConfig })];
+        state.specialPasses.push(...specialPasses);
+      }
+    } else if (!tickets.length) {
+      tickets = createTickets({ order, user, items });
+      state.tickets.push(...tickets);
+    }
+    if (!invoice && automaticInvoiceIssuanceEnabled()) {
+      const issueStartedAt = Date.parse(order.invoiceIssueStartedAt || "");
+      const issueClaimIsStale = !Number.isFinite(issueStartedAt) || Date.now() - issueStartedAt > 10 * 60 * 1000;
+      if (order.invoiceStatus !== "issuing" || issueClaimIsStale) {
+        order.invoiceStatus = "issuing";
+        order.invoiceIssueStartedAt = new Date().toISOString();
+        shouldIssueInvoice = true;
+      }
+    }
+    order.updatedAt = new Date().toISOString();
   });
-  const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
-  const profileReady = userProfileCompleteForItems(user, items, state);
 
   if (!profileReady) {
-    ensureEnrollmentToken(order);
-    order.status = "paid";
-    order.payment = orderPaymentSummary(paymentRecord, {
-      paidAt: new Date().toISOString()
-    });
-    order.profileRequired = true;
-    order.requiresPilotInfo = requiresPilotInfo;
-    order.fulfillmentStatus = "profile_pending";
-    order.invoiceStatus = "profile_pending";
-    order.enrollmentEmailStatus = order.enrollmentEmailSentAt ? "sent" : "pending";
-    order.updatedAt = new Date().toISOString();
-    await writeState(state);
     const emailResult = order.enrollmentEmailSentAt
       ? { ok: true, skipped: true, ...enrollmentLinks(order, configuredBaseUrl()) }
       : await sendEnrollmentInvitationEmail({ orderId: order.id });
@@ -2187,98 +2536,63 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     };
   }
 
-  if (order.status !== "paid") {
-    order.status = "paid";
-    order.payment = orderPaymentSummary(paymentRecord, {
-      paidAt: new Date().toISOString()
-    });
-    order.profileRequired = false;
-    order.requiresPilotInfo = requiresPilotInfo;
-    order.fulfillmentStatus = "fulfilled";
-
-    if (isSpecialPassOrder) {
-      if (!specialPasses.length) {
-        specialPasses = [createSpecialPass({ order, user, item: firstItem, config: passConfig })];
-        state.specialPasses.push(...specialPasses);
-      }
-    } else if (!tickets.length) {
-      tickets = createTickets({ order, user, items });
-      state.tickets.push(...tickets);
-    }
-
-    order.invoiceStatus = "pending";
-    order.updatedAt = new Date().toISOString();
-    await writeState(state);
-  } else {
-    if (isSpecialPassOrder) {
-      if (!specialPasses.length) {
-        specialPasses = [createSpecialPass({ order, user, item: firstItem, config: passConfig })];
-        state.specialPasses.push(...specialPasses);
-      }
-    } else if (!tickets.length) {
-      tickets = createTickets({ order, user, items });
-      state.tickets.push(...tickets);
-    }
-    order.payment = orderPaymentSummary(paymentRecord, order.payment);
-    order.profileRequired = false;
-    order.requiresPilotInfo = requiresPilotInfo;
-    order.fulfillmentStatus = "fulfilled";
-    order.updatedAt = new Date().toISOString();
-    await writeState(state);
-  }
-
-  if (!invoice && automaticInvoiceIssuanceEnabled()) {
+  if (shouldIssueInvoice) {
     try {
       invoice = await issueBoleta({ order, user, event, ticketType, tickets, items });
-      state = await readState();
-      const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
-      state.invoices.push(invoice);
-      if (freshOrder) {
-        freshOrder.invoiceStatus = "issued";
-        freshOrder.updatedAt = new Date().toISOString();
-      }
-      await writeState(state);
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+        const existingInvoice = nextState.invoices.find((candidate) => candidate.orderId === order.id);
+        if (!existingInvoice) nextState.invoices.push(invoice);
+        else invoice = existingInvoice;
+        if (freshOrder) {
+          freshOrder.invoiceStatus = "issued";
+          freshOrder.invoiceIssueStartedAt = null;
+          freshOrder.updatedAt = new Date().toISOString();
+        }
+      });
     } catch (error) {
       invoiceError = error.message;
-      state = await readState();
-      const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+        if (freshOrder) {
+          freshOrder.invoiceStatus = "failed";
+          freshOrder.invoiceIssueStartedAt = null;
+          freshOrder.invoiceError = invoiceError;
+          freshOrder.updatedAt = new Date().toISOString();
+        }
+        nextState.audit.push({
+          id: id("audit"),
+          type: "invoice_issue_failed",
+          orderId: order.id,
+          error: invoiceError,
+          createdAt: new Date().toISOString()
+        });
+      });
+    }
+  } else if (!invoice && !automaticInvoiceIssuanceEnabled()) {
+    const queueReason = "Emision automatica de DTE desactivada";
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      const changed =
+        freshOrder &&
+        (freshOrder.invoiceStatus !== "pending" || freshOrder.invoicePendingReason !== "automatic_issue_disabled");
       if (freshOrder) {
-        freshOrder.invoiceStatus = "failed";
-        freshOrder.invoiceError = invoiceError;
+        freshOrder.invoiceStatus = "pending";
+        freshOrder.invoiceIssueStartedAt = null;
+        freshOrder.invoiceError = null;
+        freshOrder.invoicePendingReason = "automatic_issue_disabled";
         freshOrder.updatedAt = new Date().toISOString();
       }
-      state.audit.push({
-        id: id("audit"),
-        type: "invoice_issue_failed",
-        orderId: order.id,
-        error: invoiceError,
-        createdAt: new Date().toISOString()
-      });
-      await writeState(state);
-    }
-  } else if (!invoice) {
-    state = await readState();
-    const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
-    const queueReason = "Emision automatica de DTE desactivada";
-    const changed =
-      freshOrder &&
-      (freshOrder.invoiceStatus !== "pending" || freshOrder.invoicePendingReason !== "automatic_issue_disabled");
-    if (freshOrder) {
-      freshOrder.invoiceStatus = "pending";
-      freshOrder.invoiceError = null;
-      freshOrder.invoicePendingReason = "automatic_issue_disabled";
-      freshOrder.updatedAt = new Date().toISOString();
-    }
-    if (changed) {
-      state.audit.push({
-        id: id("audit"),
-        type: "invoice_queued",
-        orderId: order.id,
-        reason: queueReason,
-        createdAt: new Date().toISOString()
-      });
-    }
-    await writeState(state);
+      if (changed) {
+        nextState.audit.push({
+          id: id("audit"),
+          type: "invoice_queued",
+          orderId: order.id,
+          reason: queueReason,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
   }
 
   state = await readState();
@@ -2750,39 +3064,35 @@ function enrollmentTemplateForEmail(template) {
 }
 
 async function sendEnrollmentInvitationEmail({ orderId, req = null, force = false }) {
-  let state = await readState();
-  let order = state.orders.find((candidate) => candidate.id === orderId);
-  if (!order) {
-    const error = new Error("Orden no encontrada");
-    error.status = 404;
-    throw error;
+  let skippedOrder = null;
+  await updateState((state) => {
+    const order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    if (orderIsCancelledOrRefunded(order, state)) throw cancelledJapanFestOrderError();
+    if (!state.users.some((candidate) => candidate.id === order.userId)) {
+      const error = new Error("Usuario no encontrado para enviar enrolamiento");
+      error.status = 409;
+      throw error;
+    }
+    ensureEnrollmentToken(order);
+    if (!force && order.enrollmentEmailSentAt) skippedOrder = { ...order };
+  });
+  if (skippedOrder) {
+    return { ok: true, skipped: true, ...enrollmentLinks(skippedOrder, configuredBaseUrl(req)) };
   }
 
+  const state = await readState();
+  const order = state.orders.find((candidate) => candidate.id === orderId);
   const user = state.users.find((candidate) => candidate.id === order.userId);
   const items = getOrderItems(order, state);
   const firstItem = items[0];
   const event = firstItem ? findEvent(state, firstItem.eventId) : null;
   const isSpecialPassOrder = order.kind === "special_pass" || firstItem?.productKind === "special_pass";
   const passConfig = specialPassConfigFromState(state);
-
-  if (orderIsCancelledOrRefunded(order, state)) {
-    throw cancelledJapanFestOrderError();
-  }
-
-  if (!user) {
-    const error = new Error("Usuario no encontrado para enviar enrolamiento");
-    error.status = 409;
-    throw error;
-  }
-
-  ensureEnrollmentToken(order);
-  if (!force && order.enrollmentEmailSentAt) {
-    return { ok: true, skipped: true, ...enrollmentLinks(order, configuredBaseUrl(req)) };
-  }
-
-  await writeState(state);
-  state = await readState();
-  order = state.orders.find((candidate) => candidate.id === orderId) || order;
 
   const base = configuredBaseUrl(req);
   const links = enrollmentLinks(order, base);
@@ -2831,12 +3141,12 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
   }
 
   try {
-    const result = await sendMail({
+    const result = assertMailDelivery(await sendMail({
       to: user.email,
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html
-    });
+    }));
 
     await updateState((nextState) => {
       const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
@@ -2913,7 +3223,9 @@ async function sendSpecialPassIssuedEmail({ user, order, pass, invoice, config, 
     invoice_label: invoice?.folio || invoice?.providerId || "en proceso"
   });
   const recipient = normalizeEmail(to) || user.email;
-  const result = await sendMail({ to: recipient, subject: rendered.subject, text: rendered.text, html: rendered.html });
+  const result = assertMailDelivery(
+    await sendMail({ to: recipient, subject: rendered.subject, text: rendered.text, html: rendered.html })
+  );
   await updateState((nextState) => {
     logEmailResult(nextState, {
       type: "special_pass_issued",
@@ -3130,7 +3442,8 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
     const state = await readState();
     const config = specialPassConfigFromState(state);
     const sales = onlineSalesStatus();
-    const purchasable = sales.enabled && config.active && specialPassStorageReady();
+    const activation = specialPassActivation(config);
+    const purchasable = sales.enabled && activation.active;
     const mercadoPagoDetails = mercadoPagoRuntimeStatus(req);
     res.json({
       ok: true,
@@ -3151,7 +3464,8 @@ app.get("/api/special-passes/catalog", async (req, res, next) => {
         testMode: Boolean(mercadoPagoDetails.sandbox),
         testModeMessage: mercadoPagoDetails.sandbox
           ? "Sitio en modo prueba: el Pase y el pago son de demostración."
-          : ""
+          : "",
+        activationReady: purchasable
       }
     });
   } catch (error) {
@@ -3163,21 +3477,37 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
   try {
     requireOnlineSalesOpen();
     await requireCheckoutStorage();
+    if (req.body.termsAccepted !== true) {
+      const error = new Error("Debes aceptar expresamente el uso de datos para el Upgrade y sus sorteos");
+      error.status = 400;
+      throw error;
+    }
     if (!req.body.notEntryAccepted) {
       const error = new Error("Debes confirmar que el Pase no es válido como entrada");
+      error.status = 400;
+      throw error;
+    }
+    if (!req.body.rulesAccepted) {
+      const error = new Error("Debes aceptar las bases del Upgrade y sus sorteos");
       error.status = 400;
       throw error;
     }
 
     const { state: initialState } = await readStateWithCheckoutMaintenance();
     const config = specialPassConfigFromState(initialState);
-    if (!specialPassStorageReady()) {
+    const activation = specialPassActivation(config);
+    if (!activation.storageReady) {
       const error = new Error("Los Pases estarán disponibles próximamente");
       error.status = 503;
       throw error;
     }
-    if (!config.active) {
+    if (!activation.active) {
       const error = new Error("La venta de Pases no está disponible");
+      error.status = 409;
+      throw error;
+    }
+    if (String(req.body.rulesVersion || "") !== config.rulesVersion) {
+      const error = new Error("Las bases fueron actualizadas. Revísalas y vuelve a aceptarlas antes de pagar");
       error.status = 409;
       throw error;
     }
@@ -3189,7 +3519,8 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
     }
 
     const sessionUser = accountUserFromRequest(req, initialState);
-    const identity = checkoutIdentityFromBody(req.body, sessionUser, { rutOptional: true });
+    requireString(req.body, "name", "Nombre del titular");
+    const identity = checkoutIdentityFromBody(req.body, sessionUser, { rutOptional: false });
     const user = await updateState((state) => {
       const freshSessionUser = sessionUser
         ? state.users.find((candidate) => candidate.id === sessionUser.id) || null
@@ -3217,6 +3548,12 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
       }
     ];
     const acceptedAt = new Date().toISOString();
+    const rulesAcceptance = {
+      acceptedAt,
+      version: config.rulesVersion,
+      hash: specialPassRulesDocumentHash(),
+      url: "/bases-sorteo"
+    };
     const { order, preference } = await createOrderFromItems({
       req,
       user: freshUser,
@@ -3224,7 +3561,8 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
       state,
       kind: "special_pass",
       returnPath: "/pases-especiales",
-      acceptedAt
+      acceptedAt,
+      specialPassAcceptance: rulesAcceptance
     });
     const accountSession = createAccountSessionRecord(freshUser);
     await updateState((nextState) => {
@@ -3236,6 +3574,15 @@ app.post("/api/special-passes/orders", async (req, res, next) => {
         userId: freshUser.id,
         levelId: level.id,
         pistonCount: level.pistons,
+        createdAt: acceptedAt
+      });
+      nextState.audit.push({
+        id: id("audit"),
+        type: "special_pass_rules_accepted",
+        orderId: order.id,
+        userId: freshUser.id,
+        rulesVersion: rulesAcceptance.version,
+        rulesHash: rulesAcceptance.hash,
         createdAt: acceptedAt
       });
     });
@@ -3504,23 +3851,24 @@ app.get("/api/auth/verify", async (req, res, next) => {
 app.post("/api/auth/resend-verification", async (req, res, next) => {
   try {
     const email = normalizeEmail(requireString(req.body, "email", "Correo"));
-    const state = await readState();
-    const user = state.users.find((candidate) => candidate.email === email);
-
-    if (!user) {
-      const error = new Error("No encontramos ese registro");
-      error.status = 404;
-      throw error;
-    }
+    let user;
+    await updateState((state) => {
+      user = state.users.find((candidate) => candidate.email === email);
+      if (!user) {
+        const error = new Error("No encontramos ese registro");
+        error.status = 404;
+        throw error;
+      }
+      if (user.emailVerified) return;
+      user.verificationToken = id("verify");
+      user.verificationSentAt = new Date().toISOString();
+      user.updatedAt = user.verificationSentAt;
+    });
 
     if (user.emailVerified) {
       res.json({ ok: true, user: publicUser(user), alreadyVerified: true });
       return;
     }
-
-    user.verificationToken = id("verify");
-    user.verificationSentAt = new Date().toISOString();
-    await writeState(state);
 
     const verificationUrl = `${baseUrl(req)}/api/auth/verify?token=${user.verificationToken}`;
     const mailResult = await sendVerificationEmail({ user, verificationUrl });
@@ -3535,7 +3883,16 @@ app.post("/api/auth/resend-verification", async (req, res, next) => {
   }
 });
 
-async function createOrderFromItems({ req, user, items, state, kind = "ticket", returnPath = "/carrito", acceptedAt = null }) {
+async function createOrderFromItems({
+  req,
+  user,
+  items,
+  state,
+  kind = "ticket",
+  returnPath = "/carrito",
+  acceptedAt = null,
+  specialPassAcceptance = null
+}) {
   const now = new Date().toISOString();
   const total = items.reduce((sum, item) => sum + item.total, 0);
   const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -3552,6 +3909,13 @@ async function createOrderFromItems({ req, user, items, state, kind = "ticket", 
     pistonCount: Number(firstItem.pistonCount || 0),
     returnPath,
     notEntryAcceptedAt: kind === "special_pass" ? acceptedAt || now : null,
+    specialPassRulesAcceptedAt: kind === "special_pass" ? specialPassAcceptance?.acceptedAt || null : null,
+    specialPassRulesVersion: kind === "special_pass" ? specialPassAcceptance?.version || null : null,
+    specialPassRulesHash: kind === "special_pass" ? specialPassAcceptance?.hash || null : null,
+    specialPassRulesUrl: kind === "special_pass" ? specialPassAcceptance?.url || null : null,
+    specialPassPrivacyAcceptedAt: kind === "special_pass" ? acceptedAt || null : null,
+    specialPassPrivacyVersion: kind === "special_pass" ? DATA_TERMS_VERSION : null,
+    specialPassPrivacyHash: kind === "special_pass" ? SPECIAL_PASS_PRIVACY_SHA256 : null,
     userId: user.id,
     eventId: firstItem.eventId,
     ticketTypeId: firstItem.ticketTypeId,
@@ -3696,6 +4060,7 @@ app.get("/api/orders/:orderId", async (req, res, next) => {
       res.status(404).json({ ok: false, message: "Orden no encontrada" });
       return;
     }
+    authorizeOrderAccess(req, state, order);
 
     res.json({ ok: true, order: publicOrder(order), user: publicUser(user), tickets, specialPasses, invoice });
   } catch (error) {
@@ -3724,6 +4089,7 @@ app.post("/api/orders/:orderId/checkout-return", async (req, res, next) => {
       res.status(404).json({ ok: false, message: "Orden no encontrada" });
       return;
     }
+    authorizeOrderAccess(req, state, order);
 
     if (order.status !== "paid" && checkoutReturnIsFailed(normalizedStatus)) {
       await updateOrderPaymentStatus(order.id, {
@@ -3789,6 +4155,15 @@ app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
       throw error;
     }
 
+    const accessState = await readState();
+    const accessOrder = accessState.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!accessOrder) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    authorizeOrderAccess(req, accessState, accessOrder);
+
     const payment = await getPayment(paymentId);
     if (String(payment.external_reference || "") !== String(req.params.orderId)) {
       const error = new Error("El pago no corresponde a esta orden");
@@ -3851,6 +4226,7 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       error.status = 404;
       throw error;
     }
+    authorizeOrderAccess(req, state, order);
 
     if (order.status === "paid") {
       const tickets = state.tickets
@@ -3869,6 +4245,8 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       });
       return;
     }
+
+    requireSpecialPassOrderActivation(state, order);
 
     if (order.status !== "created" && !String(order.status || "").startsWith("payment_")) {
       const error = new Error("La orden no esta disponible para pago");
@@ -4177,7 +4555,7 @@ function createAccountSessionRecord(user) {
     type: "account",
     userId: user.id,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 90).toISOString()
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30).toISOString()
   };
 }
 
@@ -4192,31 +4570,77 @@ app.post("/api/account/access", async (req, res, next) => {
       throw error;
     }
 
-    const state = await readState();
+    let state = await readState();
     const user = findUserByRutContact(state, rutInput, contact);
     if (!user) {
-      const error = new Error("No encontramos una cuenta con ese RUT y correo/telefono");
-      error.status = 404;
-      throw error;
+      res.status(202).json({
+        ok: true,
+        message: "Si los datos coinciden, recibirás un enlace de acceso en el correo registrado."
+      });
+      return;
     }
 
+    const lastSentAt = Date.parse(user.accountAccessEmailSentAt || "");
+    if (Number.isFinite(lastSentAt) && Date.now() - lastSentAt < 60 * 1000) {
+      res.status(202).json({
+        ok: true,
+        message: "Si los datos coinciden, recibirás un enlace de acceso en el correo registrado."
+      });
+      return;
+    }
     const session = createAccountSessionRecord(user);
     await updateState((nextState) => {
       nextState.sessions.push(session);
+      const freshUser = nextState.users.find((candidate) => candidate.id === user.id);
+      if (freshUser) freshUser.accountAccessEmailSentAt = session.createdAt;
       nextState.audit.push({
         id: id("audit"),
-        type: "account_session_started",
+        type: "account_access_link_requested",
         userId: user.id,
         createdAt: session.createdAt
       });
     });
 
-    res.json({
+    const accessUrl = `${baseUrl(req)}/mi-pit-lane#access_token=${encodeURIComponent(session.token)}`;
+    try {
+      const delivery = assertMailDelivery(
+        await sendMail({
+          to: user.email,
+          subject: "Tu enlace seguro para Mi Pit Lane",
+          text: `Hola ${user.name || ""}. Abre este enlace para ver tus compras Honda Fest: ${accessUrl}\nEl enlace es personal y no debes compartirlo.`,
+          html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#17191f"><h1 style="font-size:22px">Acceso a Mi Pit Lane</h1><p>Hola ${htmlEscape(user.name || "")}.</p><p>Usa el siguiente botón para ver tus compras, entradas y Pases:</p><p><a href="${htmlEscape(accessUrl)}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Abrir Mi Pit Lane</a></p><p style="font-size:13px;color:#6b7280">Este enlace es personal. No lo compartas.</p></div>`
+        })
+      );
+      await updateState((nextState) => {
+        logEmailResult(nextState, {
+          type: "account_access_link",
+          to: user.email,
+          userId: user.id,
+          status: "sent",
+          mode: delivery.mode,
+          subject: "Tu enlace seguro para Mi Pit Lane"
+        });
+      });
+    } catch (error) {
+      await updateState((nextState) => {
+        nextState.sessions = nextState.sessions.filter((candidate) => candidate.id !== session.id);
+        const freshUser = nextState.users.find((candidate) => candidate.id === user.id);
+        if (freshUser?.accountAccessEmailSentAt === session.createdAt) freshUser.accountAccessEmailSentAt = null;
+        logEmailResult(nextState, {
+          type: "account_access_link",
+          to: user.email,
+          userId: user.id,
+          status: "failed",
+          error: error.message,
+          subject: "Tu enlace seguro para Mi Pit Lane"
+        });
+      });
+      throw error;
+    }
+
+    res.status(202).json({
       ok: true,
-      user: publicUser(user),
-      token: session.token,
-      expiresAt: session.expiresAt,
-      orders: accountOrdersForUser(state, user, req)
+      message: "Si los datos coinciden, recibirás un enlace de acceso en el correo registrado."
     });
   } catch (error) {
     next(error);
@@ -4245,21 +4669,11 @@ app.get("/api/account/pit-lane", async (req, res, next) => {
 
 app.get("/api/users/purchases", async (req, res, next) => {
   try {
-    const email = normalizeEmail(requireString(req.query, "email", "Correo"));
-    const rutInput = requireString(req.query, "rut", "RUT");
-    const phone = String(req.query.phone || "").trim();
-
-    if (!validateRut(rutInput)) {
-      const error = new Error("El RUT no es valido");
-      error.status = 400;
-      throw error;
-    }
-
     const state = await readState();
-    const user = findUserByEmailRut(state, email, rutInput) || (phone ? findUserByRutContact(state, rutInput, phone) : null);
+    const user = accountUserFromRequest(req, state);
     if (!user) {
-      const error = new Error("No encontramos compras para ese correo y RUT");
-      error.status = 404;
+      const error = new Error("Sesion requerida");
+      error.status = 401;
       throw error;
     }
 
@@ -4319,21 +4733,25 @@ app.get("/api/enrollment/portal/orders", async (req, res, next) => {
   try {
     let state = await readState();
     requireEnrollmentPortalSession(req, state);
-    let changed = false;
+    const needsTokens = state.orders.some(
+      (order) =>
+        order.status === "paid" &&
+        order.profileRequired &&
+        !orderIsCancelledOrRefunded(order, state) &&
+        !order.enrollmentToken
+    );
 
-    const orders = state.orders
-      .filter((order) => order.status === "paid" && order.profileRequired && !orderIsCancelledOrRefunded(order, state))
-      .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
-
-    for (const order of orders) {
-      if (!order.enrollmentToken) {
-        ensureEnrollmentToken(order);
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      await writeState(state);
+    if (needsTokens) {
+      await updateState((currentState) => {
+        currentState.orders
+          .filter(
+            (order) =>
+              order.status === "paid" &&
+              order.profileRequired &&
+              !orderIsCancelledOrRefunded(order, currentState)
+          )
+          .forEach((order) => ensureEnrollmentToken(order));
+      });
       state = await readState();
     }
 
@@ -4445,12 +4863,19 @@ app.get("/api/tickets/:code/qr.svg", async (req, res, next) => {
 app.post("/api/tickets/validate", async (req, res, next) => {
   try {
     const code = String(req.body.code || req.query.code || "").trim();
-    const action = String(req.body.action || "lookup");
+    const action = String(req.body.action || "lookup").trim().toLowerCase();
     if (!code) {
       const error = new Error("Codigo de ticket requerido");
       error.status = 400;
       throw error;
     }
+    if (!["lookup", "checkin"].includes(action)) {
+      const error = new Error("Acción de validación no reconocida");
+      error.status = 400;
+      throw error;
+    }
+    if (action === "checkin") requireAdmin(req);
+    const canOperate = adminAuthorized(req);
 
     let result;
     await updateState((state) => {
@@ -4486,9 +4911,10 @@ app.post("/api/tickets/validate", async (req, res, next) => {
 
     res.json({
       ok: true,
-      ticket: publicTicket(result.ticket, req),
-      order: publicOrder(result.order),
-      user: publicUser(result.user)
+      ticket: publicTicketValidation(result.ticket, req, canOperate),
+      order: canOperate ? publicOrder(result.order) : undefined,
+      user: canOperate ? publicUser(result.user) : undefined,
+      canOperate
     });
   } catch (error) {
     next(error);
@@ -4524,7 +4950,7 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
       error.status = 400;
       throw error;
     }
-    if (!["lookup", "pickup", "checkin", "pickup_and_checkin"].includes(action)) {
+    if (!["lookup", "pickup", "verify_entry", "checkin", "pickup_and_checkin"].includes(action)) {
       const error = new Error("Acción de validación no reconocida");
       error.status = 400;
       throw error;
@@ -4539,11 +4965,12 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
         throw error;
       }
       const order = state.orders.find((candidate) => candidate.id === pass.orderId);
+      const canOperate = adminAuthorized(req);
       res.json({
         ok: true,
-        pass: publicSpecialPassValidation(pass, req, false),
-        order: publicOrder(order),
-        canOperate: adminAuthorized(req)
+        pass: publicSpecialPassValidation(pass, req, canOperate),
+        order: canOperate ? publicOrder(order) : undefined,
+        canOperate
       });
       return;
     }
@@ -4565,10 +4992,20 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
 
       const now = new Date().toISOString();
       const changes = [];
+      if (action === "verify_entry" && pass.entryValidationStatus !== "valid") {
+        pass.entryValidationStatus = "valid";
+        pass.entryValidatedAt = now;
+        changes.push("special_pass_entry_verified");
+      }
       if ((action === "pickup" || action === "pickup_and_checkin") && pass.pickupStatus !== "picked_up") {
         pass.pickupStatus = "picked_up";
         pass.pickedUpAt = now;
         changes.push("special_pass_picked_up");
+      }
+      if ((action === "checkin" || action === "pickup_and_checkin") && pass.entryValidationStatus !== "valid") {
+        const error = new Error("Primero debes verificar una entrada HFC válida para registrar el acceso especial");
+        error.status = 409;
+        throw error;
       }
       if (action === "checkin" && pass.pickupStatus !== "picked_up") {
         const error = new Error("El Pase debe retirarse antes de registrar el acceso");
@@ -4578,6 +5015,13 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
       if ((action === "checkin" || action === "pickup_and_checkin") && pass.accessStatus !== "checked_in") {
         pass.accessStatus = "checked_in";
         pass.checkedInAt = now;
+        pass.attendanceStatus = "present";
+        pass.onsiteEligibilityStatus = "eligible";
+        pass.pistons = (pass.pistons || []).map((piston) => ({
+          ...piston,
+          onsiteEligible: piston.status === "active",
+          checkedInAt: piston.checkedInAt || now
+        }));
         changes.push("special_pass_checked_in");
       }
       pass.updatedAt = now;
@@ -4608,6 +5052,20 @@ app.post("/api/special-passes/validate", async (req, res, next) => {
 app.post("/api/orders/:orderId/simulate-payment", async (req, res, next) => {
   try {
     requireOnlineSalesOpen();
+    if ((process.env.VERCEL || process.env.NODE_ENV === "production") && !envFlag("HFC_ALLOW_DEMO_PAYMENT")) {
+      const error = new Error("Pago demo no disponible");
+      error.status = 404;
+      throw error;
+    }
+    const state = await readState();
+    const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    authorizeOrderAccess(req, state, order);
+    requireSpecialPassOrderActivation(state, order);
     const result = await completeOrderPayment(req.params.orderId, {
       provider: "demo",
       paymentId: id("payment_demo")
@@ -4798,6 +5256,7 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
     };
     const paidOrders = state.orders.filter((order) => order.status === "paid");
     const revenue = paidOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const currentSpecialPassConfig = specialPassConfigFromState(state);
 
     const orders = state.orders
       .slice()
@@ -4828,6 +5287,10 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         pickedUpSpecialPasses: (state.specialPasses || []).filter((pass) => pass.pickupStatus === "picked_up").length,
         checkedInSpecialPasses: (state.specialPasses || []).filter((pass) => pass.accessStatus === "checked_in").length,
         pistonsIssued: (state.specialPasses || []).reduce((sum, pass) => sum + Number(pass.pistonCount || 0), 0),
+        pistonsActive: (state.specialPasses || []).reduce(
+          (sum, pass) => sum + (pass.pistons || []).filter((piston) => piston.status === "active").length,
+          0
+        ),
         users: state.users.length,
         enrolados: state.users.filter((user) => user.emailVerified).length,
         contacts: (state.contacts || []).length,
@@ -4837,7 +5300,8 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
       },
       bi: salesBi(state),
       ticketing: ticketingConfig(state),
-      specialPassConfig: specialPassConfigFromState(state),
+      specialPassConfig: currentSpecialPassConfig,
+      specialPassActivation: specialPassActivation(currentSpecialPassConfig),
       orders,
       tickets: state.tickets.map((ticket) => publicTicket(ticket, req)),
       specialPasses: (state.specialPasses || []).map((pass) => publicSpecialPass(pass, req)),
@@ -4897,6 +5361,19 @@ app.put("/api/backoffice/special-passes/config", async (req, res, next) => {
     let saved;
     await updateState((state) => {
       const payload = normalizeSpecialPassConfig(req.body.specialPass || req.body);
+      const current = specialPassConfigFromState(state);
+      const increasesExposure =
+        (payload.active && !current.active) ||
+        (payload.rulesPublished && !current.rulesPublished) ||
+        (payload.active && payload.rulesPublished && payload.rulesVersion !== current.rulesVersion);
+      if (increasesExposure && req.body.activationConfirmed !== true) {
+        const error = new Error("La activación requiere confirmación administrativa expresa de bases revisadas");
+        error.status = 400;
+        throw error;
+      }
+      if (payload.rulesPublished && req.body.activationConfirmed === true) {
+        payload.rulesHash = SPECIAL_PASS_RULES_SHA256;
+      }
       saved = upsertSetting(state, {
         id: SPECIAL_PASS_SETTING_ID,
         type: "special_pass",
@@ -4923,6 +5400,9 @@ app.get("/api/backoffice/special-passes/export.csv", async (req, res, next) => {
     const header = [
       "codigo_pase",
       "codigo_piston",
+      "estado_piston",
+      "elegible_automovil",
+      "elegible_premios_presenciales",
       "cantidad_pistones",
       "nivel",
       "titular",
@@ -4930,15 +5410,28 @@ app.get("/api/backoffice/special-passes/export.csv", async (req, res, next) => {
       "correo",
       "telefono",
       "orden",
+      "version_bases",
+      "validacion_entrada",
       "retiro",
       "acceso"
     ];
     const rows = (state.specialPasses || []).flatMap((pass) => {
       const user = state.users.find((candidate) => candidate.id === pass.userId) || {};
-      const drawEntries = pass.drawEntryCodes?.length ? pass.drawEntryCodes : [""];
-      return drawEntries.map((drawCode) => [
+      const pistons = pass.pistons?.length
+        ? pass.pistons
+        : (pass.drawEntryCodes?.length ? pass.drawEntryCodes : [""]).map((code, index) => ({
+            code,
+            ordinal: index + 1,
+            status: pass.status === "valid" ? "active" : "voided",
+            automobileEligible: pass.status === "valid",
+            onsiteEligible: pass.status === "valid" && pass.accessStatus === "checked_in"
+          }));
+      return pistons.map((piston) => [
         pass.code,
-        drawCode,
+        piston.code,
+        piston.status,
+        piston.automobileEligible ? "si" : "no",
+        piston.onsiteEligible ? "si" : "no",
         pass.pistonCount,
         pass.levelName,
         pass.holderName,
@@ -4946,6 +5439,8 @@ app.get("/api/backoffice/special-passes/export.csv", async (req, res, next) => {
         user.email,
         pass.holderPhone || user.phone,
         pass.orderId,
+        pass.rulesVersion || "",
+        pass.entryValidationStatus || "unverified",
         pass.pickupStatus || "pending",
         pass.accessStatus || "not_checked_in"
       ]);
@@ -5357,9 +5852,18 @@ app.post("/api/backoffice/users/:userId/resend-verification", async (req, res, n
 app.post("/api/backoffice/email/send", async (req, res, next) => {
   try {
     requireAdmin(req);
-    let results = [];
-    await updateState(async (state) => {
-      results = await sendCampaignBatch({ req, state, body: req.body });
+    // Network I/O must not run while the PostgreSQL state transaction holds
+    // the global write lock. Collect logs in a snapshot, send outside the
+    // transaction, then append only the resulting audit records atomically.
+    const campaignState = await readState();
+    const previousLogCount = (campaignState.emailLogs || []).length;
+    const results = await sendCampaignBatch({ req, state: campaignState, body: req.body });
+    const campaignLogs = (campaignState.emailLogs || []).slice(previousLogCount);
+    await updateState((state) => {
+      const knownIds = new Set((state.emailLogs || []).map((entry) => entry.id));
+      campaignLogs.forEach((entry) => {
+        if (!knownIds.has(entry.id)) state.emailLogs.push(entry);
+      });
     });
     res.json({
       ok: true,
@@ -5567,6 +6071,7 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
       externalReference: payment.external_reference,
       merchantOrderId: payment.order?.id || payment.merchant_order_id,
       transactionAmount: payment.transaction_amount,
+      currency: payment.currency_id,
       paidAt: payment.date_approved,
       raw: payment
     };
@@ -5614,7 +6119,7 @@ app.get("*", (req, res) => {
 });
 
 app.use((error, req, res, next) => {
-  if (error.code !== "online_sales_temporarily_paused") console.error(error);
+  if ((error.status || 500) >= 500 && error.code !== "online_sales_temporarily_paused") console.error(error);
   res.status(error.status || 500).json({
     ok: false,
     message: error.message || "Error interno"

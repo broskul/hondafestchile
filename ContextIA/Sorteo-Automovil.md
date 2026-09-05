@@ -18,56 +18,72 @@ No se presenta como “compra X y lleva Y”, no existen Pistones de regalo y no
 
 ## Producto físico y comunicación
 
-El Pase se materializa como un **lanyard con credencial impresa**, entregado en un porta credencial. Da acceso a experiencias especiales el día del evento, incluye un refresco extra y participa en el sorteo mediante los Pistones asociados. El automóvil es el atractivo comercial principal de la campaña.
+El Pase se materializa como un **lanyard con credencial impresa**, entregado en un porta credencial. Da acceso a experiencias y beneficios especiales el día del evento y participa en los sorteos mediante los Pistones asociados. El refresco es un beneficio secundario y no debe dominar la propuesta.
+
+La comunicación pública es **benefit-first**: `Accede a beneficios exclusivos y participa por el sorteo de un Honda`. No presentar el producto como la venta de probabilidades ni como `gana un auto y además recibe un refresco`.
 
 La taxonomía pública vigente es estricta:
 
 - concepto: `Upgrade de experiencia`;
 - producto: `Pase`;
 - variantes: `Pase de 1 Pistón`, `Pase de 3 Pistones`, `Pase de 5 Pistones`, `Pase de 7 Pistones` y `Pase de 9 Pistones`;
-- regla editorial: `Mientras más Pistones, más posibilidades tienes de ganar`.
+- regla editorial: cada Pistón queda asociado al RUT del titular y participa individualmente conforme a las bases.
 
 No usar públicamente `Pase de Jornada`, `Pase Especial` ni `Pase + Pistones`.
 
-La condición **“NO ES VÁLIDO COMO ENTRADA”** debe mostrarse de forma destacada en la portada, niveles, selección, aceptación previa al pago, enrolamiento, correo, Mi Pit Lane y consulta del QR.
+La condición **“NO ES VÁLIDO COMO ENTRADA”** es material y debe mostrarse antes del pago y en las superficies transaccionales. Comprar el Upgrade no exige tener una entrada vinculada.
 
 La web permite comprar sin acreditar una entrada previa y el sistema no intenta buscarla, vincularla ni bloquear la compra por su ausencia. El comprador acepta expresamente que necesita una entrada válida independiente para ingresar a Honda Fest Chile. La aceptación queda registrada con fecha, orden, usuario, nivel y cantidad de Pistones.
 
-## Retiro y acceso
+## Retiro, entrada y presencia
 
 - Retiro confirmado: el 29 de noviembre de 2026 durante Honda Fest Chile, presentando QR e identificación del titular.
 - Punto de retiro previo al evento: por confirmar.
 - Un mismo QR identifica la credencial impresa.
 - `pickupStatus` registra el retiro: `pending` o `picked_up`.
 - `accessStatus` registra el acceso especial: `not_checked_in` o `checked_in`.
+- `entryValidationStatus` registra internamente si el equipo verificó una entrada HFC válida. El check-in del Upgrade falla cerrado mientras siga `unverified`.
+- `attendanceStatus` y la elegibilidad presencial se actualizan solo con check-in administrativo.
 - Registrar retiro o acceso es una operación administrativa protegida; una consulta pública nunca modifica el estado.
 - El acceso requiere retiro previo, salvo la operación explícita y auditable `pickup_and_checkin`.
 
 ## Pistones y premios
 
-El QR representa el pase, no cada Pistón. Tras el pago aprobado y el enrolamiento se crea un único pase por orden y se generan códigos opacos individuales de participación, uno por Pistón, dentro de `drawEntryCodes`.
+El QR representa el pase, no cada Pistón. Tras el pago aprobado se crea un único pase idempotente por orden y cada Pistón recibe código, ordinal, RUT normalizado, estado y fecha de emisión. El payload mantiene `drawEntryCodes` por compatibilidad y `pistons` con los datos operativos; Supabase los proyecta además como una fila por Pistón en `hfc_pistons`.
+
+Regla de presencia vigente para el diseño técnico y el borrador público:
+
+- el sorteo del automóvil se ejecuta presencialmente durante Honda Fest Chile el **29 de noviembre de 2026**, pero el titular no necesita estar presente ni tener entrada para conservar esa participación;
+- si resulta ganador del automóvil, se le contacta por correo y teléfono y el resultado debe publicarse conforme a las bases;
+- los demás premios y beneficios presenciales exigen entrada válida, presencia y check-in;
+- estas diferencias son condiciones materiales y no pueden ocultarse ni contradecir las bases aceptadas.
 
 La exportación administrativa genera una fila por Pistón con código de pase, código individual, nivel, titular, orden y estados de retiro/acceso. El padrón no debe deduplicarse por persona: cada Pistón comprado y emitido representa una unidad registrada. La definición final de elegibilidad, método de selección, presencia requerida, suplentes y entrega de premios debe quedar en las bases de PyR Eventos antes de la publicación definitiva.
 
 ## Flujo implementado
 
 1. La página `/pases-especiales` obtiene niveles y textos desde configuración persistente y presenta el automóvil como protagonista del Upgrade.
-2. El comprador elige un nivel, informa correo y teléfono y acepta privacidad y el aviso de no entrada.
+2. El comprador elige un nivel e informa nombre, RUT, correo y teléfono antes del pago. Acepta privacidad, bases versionadas y el aviso de no entrada.
 3. El backend reconstruye nombre, Pistones y precio desde el `levelId`; nunca confía en el precio del navegador.
 4. La orden queda con `kind: special_pass`, una unidad física y ruta de retorno propia.
 5. Mercado Pago conserva la idempotencia existente y devuelve a `/pases-especiales`.
-6. Con pago aprobado, si faltan nombre/RUT/teléfono se envía el correo HTML `special_pass_enrollment`.
-7. Al completar datos se emite el pase, la boleta y el correo HTML `special_pass_issued` con QR, retiro y advertencia.
+6. Con el perfil completo antes del pago, el Pase y sus Pistones se emiten de inmediato una sola vez. El enrolamiento post-pago se conserva como compatibilidad para órdenes históricas incompletas.
+7. El correo HTML `special_pass_issued` confirma beneficios, QR, retiro, Pistones asociados al RUT, reglas de presencia y aviso de no entrada.
 8. Mi Pit Lane muestra Pistones, QR y estados. `/validar-pase` permite consulta, retiro y acceso según autorización.
 9. El backoffice permite actualizar niveles, precios, beneficios y retiro, operar pases y exportar Pistones.
 
-## Persistencia
+## Persistencia y sorteo auditable
 
 - Colección de aplicación: `specialPasses`.
-- Tabla Supabase: `public.hfc_special_passes`.
-- Migración: `supabase/migrations/20260809090000_special_passes.sql`.
+- Tabla raíz Supabase: `public.hfc_special_passes`.
+- Migraciones: `supabase/migrations/20260809090000_special_passes.sql` y `supabase/migrations/20260905120000_special_pass_upgrades.sql`.
 - Restricciones únicas: un pase por orden y un código único por pase.
-- Índices por código, orden y usuario.
+- `hfc_pistons`: una fila por Pistón y RUT normalizado, con unicidad por Pase/ordinal y por código.
+- `hfc_order_acceptances`: versión y hash de bases, privacidad, presencia y no entrada.
+- `hfc_special_prizes`: regla de presencia y entrada por premio; el automóvil queda `presence_required=false` y `event_entry_required=false` en estado `draft`.
+- `hfc_draw_manifests` y `hfc_draw_entries`: padrón versionado, sellado, hasheado e inmutable.
+- `hfc_draw_results`: resultado y suplencias sin eliminación física.
+- `hfc_notification_outbox`: tareas idempotentes separadas para correo y contacto telefónico; una fila pendiente no prueba un envío ni contacto real.
 - RLS activado; la aplicación escribe mediante sus credenciales de servidor.
 - Estados y acciones quedan registrados en `hfc_audit`.
 
@@ -75,6 +91,7 @@ La exportación administrativa genera una fila por Pistón con código de pase, 
 
 - `special_pass_enrollment`: pago confirmado, nivel/Pistones, enlace y QR de enrolamiento, retiro y aviso destacado.
 - `special_pass_issued`: código y QR del pase, Pistones, retiro, acceso y aviso destacado.
+- `special_pass_winner`: plantilla de notificación de premio con Pistón, instrucciones, plazo, resultados y bases. La llamada telefónica requiere ejecución o integración separada y evidencia de resultado.
 - Las plantillas quedan disponibles en el editor de correos del backoffice.
 
 ## Responsabilidades
@@ -102,7 +119,32 @@ Antes de publicar definitivamente el premio se mantienen pendientes, bajo respon
 - La pieza de la credencial es una representación conceptual sencilla; el diseño final de impresión debe reemplazarla cuando PyR entregue el arte definitivo.
 - `/bases-sorteo` publica sólo un estado informativo: mecánica conocida, precios, organizador, limite de no entrada y pendientes del vehículo. No se presenta como bases oficiales mientras PyR Eventos no complete y revise el documento definitivo.
 
-## Estado técnico verificado al 10 de agosto de 2026
+## Controles de activación
+
+La venta del Upgrade falla cerrada y necesita simultáneamente:
+
+1. `SPECIAL_PASS_SALES_ENABLED=true` en el runtime;
+2. `special_pass_config.active=true` persistido;
+3. `rulesPublished=true` y `rulesVersion=upgrade-hfc-2026-v1`;
+4. almacenamiento de Pases operativo;
+5. venta online global habilitada.
+
+El valor por defecto es `active=false`. Aplicar el schema o publicar código no abre ventas. El backoffice exige una confirmación explícita antes de aumentar la exposición, pero esa confirmación técnica no reemplaza la habilitación jurídica.
+
+La simulación de pagos queda deshabilitada en Vercel/producción salvo `HFC_ALLOW_DEMO_PAYMENT=true`, variable que nunca debe habilitarse en producción.
+
+## Estado técnico verificado al 5 de septiembre de 2026
+
+- Narrativa web y correos reescritos con beneficios como propuesta principal y el Honda como participación adicional.
+- Checkout preparado para asociar desde el inicio el Upgrade y cada Pistón a nombre y RUT del titular.
+- Aceptación de bases versionada y hasheada por el servidor.
+- Lectura de órdenes protegida por sesión, token de enrolamiento o backoffice; el ID de orden no funciona como autorización.
+- Consulta pública del Pase enmascara al titular; el operador autenticado conserva el detalle.
+- Pagos reales aprobados deben coincidir en referencia, monto, moneda y preferencia antes de emitir. Reembolsos y contracargos revocan el Pase y sus Pistones.
+- El código de Pase es determinista por campaña+orden para resistir webhooks concurrentes.
+- La infraestructura puede desplegarse y migrarse con venta bloqueada. No declarar venta real operativa mientras falten bases completas y habilitación jurídica documentada.
+
+## Historial técnico al 10 de agosto de 2026
 
 - `npm run check` validó sintaxis del servidor, frontend y scripts nuevos.
 - `npm run passes:check` validó de extremo a extremo, en almacenamiento aislado: catálogo, compra, aceptación de no entrada, pago demo, enrolamiento, emisión de un pase sin tickets, códigos por Pistón, correo, consulta pública, retiro, acceso, idempotencia, métricas y CSV.

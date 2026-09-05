@@ -171,7 +171,11 @@ const defaultEmailTemplates = [
       "Hola {{name}}.",
       "Tu pago del {{pass_name}} fue confirmado.",
       "Nivel: {{piston_count}} {{piston_label}}.",
-      "Tu Upgrade incluye un refresco extra y tus Pistones registrados para el sorteo, sujeto a bases.",
+      "Accede a beneficios exclusivos con tu Upgrade de experiencia.",
+      "Además, cada Pistón queda asociado a tu RUT para participar en el sorteo presencial del Honda y en los demás sorteos definidos en las bases.",
+      "El sorteo del Honda se realizará presencialmente el 29 de noviembre de 2026. No necesitas estar presente para conservar esa participación; si resultas ganador, te contactaremos por correo electrónico y teléfono.",
+      "Los demás premios y beneficios presenciales requieren una entrada válida y check-in en el evento.",
+      "Nuevos beneficios por nivel serán publicados próximamente.",
       "IMPORTANTE: NO ES VÁLIDO COMO ENTRADA.",
       "Para ingresar al evento debes contar además con una entrada válida.",
       "Completa los datos del titular para emitir la credencial impresa:",
@@ -180,17 +184,18 @@ const defaultEmailTemplates = [
       "{{pickup_pre_event}}"
     ].join("\n"),
     html: emailShell({
-      preheader: "Tu Pase fue pagado. Completa el enrolamiento del titular.",
-      eyebrow: "Pase HFC 2026",
-      title: "Completa el enrolamiento de tu pase",
-      intro: "Hola {{name}}, recibimos el pago de tu {{pass_name}} con {{piston_count}} {{piston_label}}. Completa los datos del titular para emitir la credencial impresa.",
+      preheader: "Tu Upgrade fue pagado. Completa el enrolamiento para acceder a sus beneficios exclusivos.",
+      eyebrow: "Upgrade de experiencia HFC 2026",
+      title: "Activa los beneficios de tu Upgrade",
+      intro: "Hola {{name}}, recibimos el pago de tu {{pass_name}} con {{piston_count}} {{piston_label}}. Completa los datos del titular para emitir la credencial impresa y asociar cada Pistón a su RUT.",
       content: [
         orderSummaryBlock('<p style="color:#4c5563;font-size:14px;margin:8px 0 0;"><strong>Nivel:</strong> {{piston_count}} {{piston_label}}</p>'),
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f7faf8;border:1px solid #cfe5d5;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#2f6b3f;font-size:15px;font-weight:900;margin:0 0 5px;">BENEFICIOS EXCLUSIVOS</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0 0 8px;">Tu credencial impresa activa las experiencias y beneficios presenciales publicados para tu nivel. Nuevos beneficios serán anunciados próximamente.</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0;">Además, cada Pistón queda asociado a tu RUT para participar en el sorteo presencial del Honda y en los demás sorteos definidos en las bases.</p></td></tr></table>',
         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#17191f;border-left:5px solid #d71920;margin:0 0 18px;"><tr><td style="padding:16px 18px;">',
         '<p style="color:#ffffff;font-size:18px;font-weight:900;letter-spacing:.04em;margin:0 0 6px;">NO ES VÁLIDO COMO ENTRADA</p>',
         '<p style="color:#d8dbe0;font-size:14px;line-height:1.5;margin:0;">Para ingresar debes contar además con una entrada válida para Honda Fest Chile. La compra del pase no verifica ni reemplaza esa entrada.</p>',
         "</td></tr></table>",
-        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff7f0;border:1px solid #f1c99e;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#7a3e00;font-size:15px;font-weight:900;margin:0 0 5px;">UPGRADE DE EXPERIENCIA</p><p style="color:#5b4633;font-size:14px;line-height:1.5;margin:0;">Tu Pase incluye un refresco extra. Mientras más Pistones elegiste, más posibilidades registradas tienes en el sorteo, sujeto a bases.</p></td></tr></table>',
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff7f0;border:1px solid #f1c99e;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#7a3e00;font-size:15px;font-weight:900;margin:0 0 5px;">CONDICIONES DE PARTICIPACIÓN</p><p style="color:#5b4633;font-size:14px;line-height:1.55;margin:0 0 8px;">El sorteo del Honda se realizará presencialmente el 29 de noviembre de 2026. No necesitas estar presente para conservar esa participación; si resultas ganador, te contactaremos por correo electrónico y teléfono.</p><p style="color:#5b4633;font-size:14px;line-height:1.55;margin:0;">Los demás premios y beneficios presenciales requieren una entrada válida y check-in en el evento.</p></td></tr></table>',
         `<p style="margin:0 0 16px;text-align:center;">${emailButton("{{enroll_url}}", "Enrolar mi Pase")}</p>`,
         '<p style="margin:0 0 14px;text-align:center;"><img src="{{enroll_qr_url}}" alt="QR de enrolamiento" width="170" style="height:auto;max-width:170px;"></p>',
         '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:16px 0 0;"><strong>Retiro:</strong> {{pickup_event_day}}<br>{{pickup_pre_event}}</p>',
@@ -205,10 +210,14 @@ const defaultEmailTemplates = [
     subject: "Tu {{pass_name}} está listo - {{piston_count}} {{piston_label}}",
     text: [
       "Hola {{name}}.",
-      "Tu Pase HFC 2026 está listo.",
+      "Tu Upgrade de experiencia HFC 2026 está listo.",
       "Código: {{pass_code}}",
       "Nivel: {{piston_count}} {{piston_label}}.",
-      "Tu Upgrade incluye un refresco extra y tus Pistones registrados para el sorteo, sujeto a bases.",
+      "Accede a beneficios exclusivos con tu credencial impresa.",
+      "Además, cada Pistón está asociado a tu RUT para participar en el sorteo presencial del Honda y en los demás sorteos definidos en las bases.",
+      "El sorteo del Honda se realizará presencialmente el 29 de noviembre de 2026. No necesitas estar presente para conservar esa participación; si resultas ganador, te contactaremos por correo electrónico y teléfono.",
+      "Los demás premios y beneficios presenciales requieren una entrada válida y check-in en el evento.",
+      "Nuevos beneficios por nivel serán publicados próximamente.",
       "IMPORTANTE: NO ES VÁLIDO COMO ENTRADA.",
       "Presenta este QR para retirar tu lanyard y credencial impresa.",
       "{{pass_verify_url}}",
@@ -216,10 +225,10 @@ const defaultEmailTemplates = [
       "{{pickup_pre_event}}"
     ].join("\n"),
     html: emailShell({
-      preheader: "Tu Pase está listo para ser retirado con su QR.",
+      preheader: "Tu Upgrade está listo para activar beneficios exclusivos con su QR.",
       eyebrow: "Credencial emitida",
-      title: "Tu Pase está listo",
-      intro: "Hola {{name}}, emitimos tu {{pass_name}} con {{piston_count}} {{piston_label}}. Conserva este QR para retirar el lanyard y la credencial impresa.",
+      title: "Tu Upgrade está listo",
+      intro: "Hola {{name}}, emitimos tu {{pass_name}} con {{piston_count}} {{piston_label}}. Conserva este QR para retirar el lanyard y la credencial impresa que activa tus beneficios exclusivos.",
       content: [
         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#111111;border:1px solid #292929;margin:0 0 18px;"><tr><td align="center" style="padding:24px;">',
         '<p style="color:#d71920;font-size:12px;font-weight:900;letter-spacing:.08em;margin:0 0 8px;text-transform:uppercase;">{{piston_count}} {{piston_label}}</p>',
@@ -230,10 +239,41 @@ const defaultEmailTemplates = [
         '<p style="color:#a20f18;font-size:17px;font-weight:900;margin:0 0 6px;">NO ES VÁLIDO COMO ENTRADA</p>',
         '<p style="color:#4c3034;font-size:14px;line-height:1.5;margin:0;">El Pase no reemplaza la entrada a Honda Fest Chile. El comprador debe contar con una entrada válida para ingresar.</p>',
         "</td></tr></table>",
-        '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:0 0 14px;"><strong>Tu Upgrade:</strong> incluye un refresco extra y {{piston_count}} {{piston_label}} registrados para el sorteo, sujeto a bases.</p>',
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f7faf8;border:1px solid #cfe5d5;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#2f6b3f;font-size:15px;font-weight:900;margin:0 0 5px;">TUS BENEFICIOS EXCLUSIVOS</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0 0 8px;">Tu credencial impresa activa las experiencias y beneficios presenciales publicados para tu nivel. Nuevos beneficios serán anunciados próximamente.</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0;">Además, tus {{piston_count}} {{piston_label}} están asociados a tu RUT para participar en el sorteo presencial del Honda y en los demás sorteos definidos en las bases.</p></td></tr></table>',
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#fff7f0;border:1px solid #f1c99e;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#7a3e00;font-size:15px;font-weight:900;margin:0 0 5px;">CONDICIONES DE PARTICIPACIÓN</p><p style="color:#5b4633;font-size:14px;line-height:1.55;margin:0 0 8px;">El sorteo del Honda se realizará presencialmente el 29 de noviembre de 2026. No necesitas estar presente para conservar esa participación; si resultas ganador, te contactaremos por correo electrónico y teléfono.</p><p style="color:#5b4633;font-size:14px;line-height:1.55;margin:0;">Los demás premios y beneficios presenciales requieren una entrada válida y check-in en el evento.</p></td></tr></table>',
         '<p style="color:#4c5563;font-size:14px;line-height:1.55;margin:0;"><strong>Retiro:</strong> {{pickup_event_day}}<br>{{pickup_pre_event}}</p>',
         helpLine()
       ].join("")
+    })
+  },
+  {
+    id: "special_pass_winner",
+    type: "special_pass_winner",
+    name: "Notificación de ganador de premio",
+    subject: "Resultado de premio HFC 2026 - {{prize_name}}",
+    text: [
+      "Hola {{name}}.",
+      "Tu Pistón {{piston_code}} fue seleccionado para el premio: {{prize_name}}.",
+      "Instrucciones: {{winner_instructions}}",
+      "Plazo de respuesta: {{response_deadline}}",
+      "Canal de contacto: {{contact_channel}}",
+      "Este correo es una notificación adicional. El resultado se publica conforme a las bases vigentes:",
+      "{{results_url}}",
+      "Bases: {{rules_url}}"
+    ].join("\n"),
+    html: emailShell({
+      preheader: "Revisa el resultado y las instrucciones para gestionar tu premio HFC 2026.",
+      eyebrow: "Resultado de premio",
+      title: "Tu Pistón fue seleccionado",
+      intro: "Hola {{name}}, el Pistón {{piston_code}} fue seleccionado para el premio <strong>{{prize_name}}</strong>.",
+      content: [
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#111111;border-left:5px solid #d71920;margin:0 0 18px;"><tr><td style="padding:18px;"><p style="color:#d71920;font-size:12px;font-weight:900;letter-spacing:.08em;margin:0 0 6px;text-transform:uppercase;">Pistón seleccionado</p><p style="color:#ffffff;font-size:20px;font-weight:800;margin:0 0 10px;">{{piston_code}}</p><p style="color:#d8dbe0;font-size:15px;line-height:1.5;margin:0;"><strong style="color:#ffffff;">Premio:</strong> {{prize_name}}</p></td></tr></table>',
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f7faf8;border:1px solid #cfe5d5;margin:0 0 18px;"><tr><td style="padding:16px 18px;"><p style="color:#2f6b3f;font-size:15px;font-weight:900;margin:0 0 8px;">QUÉ DEBES HACER</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0 0 10px;">{{winner_instructions}}</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0 0 5px;"><strong>Plazo de respuesta:</strong> {{response_deadline}}</p><p style="color:#365342;font-size:14px;line-height:1.55;margin:0;"><strong>Canal de contacto:</strong> {{contact_channel}}</p></td></tr></table>',
+        '<p style="color:#4c5563;font-size:13px;line-height:1.55;margin:0 0 14px;">Este correo es una notificación adicional. El resultado se publica conforme a las bases vigentes en <a href="{{results_url}}" style="color:#143b36;font-weight:700;word-break:break-all;">{{results_url}}</a>.</p>',
+        '<p style="color:#4c5563;font-size:13px;line-height:1.55;margin:0;">Consulta las bases: <a href="{{rules_url}}" style="color:#143b36;font-weight:700;word-break:break-all;">{{rules_url}}</a>.</p>',
+        helpLine()
+      ].join(""),
+      footerNote: "Este correo es una notificación transaccional adicional. La publicación del resultado y la gestión del premio se rigen por las bases vigentes de PyR Eventos."
     })
   },
   {

@@ -63,6 +63,12 @@
         </label>
       `
       : "";
+    const specialPassNotice = isSpecialPass
+      ? `
+        <div class="not-entry-inline">NO ES VÁLIDO COMO ENTRADA</div>
+        <p class="form-note">El Pase y cada uno de sus Pistones quedarán asociados al RUT del titular. El sorteo del Honda se realizará presencialmente el 29 de noviembre de 2026 y no exige que el titular esté presente; si gana, será contactado por correo y teléfono. Para usar beneficios y optar a otros premios presenciales necesita entrada válida y check-in.</p>
+      `
+      : "";
     return `
       <p class="section-kicker">${mode === "portal" ? "Edicion interna" : "Compra pagada"}</p>
       <h2>${escapeHtml(orderTitle(item))}</h2>
@@ -81,7 +87,7 @@
           <input name="phone" autocomplete="tel" required value="${escapeHtml(user.phone || "")}" placeholder="+56 9 1234 5678" />
         </label>
         ${pilotFields}
-        ${isSpecialPass ? '<div class="not-entry-inline">NO ES VÁLIDO COMO ENTRADA</div>' : ""}
+        ${specialPassNotice}
         <button class="button primary full" type="submit">${isSpecialPass ? "Emitir Pase" : "Emitir entradas"}</button>
       </form>
     `;
@@ -95,7 +101,7 @@
     content().innerHTML = `
       <p class="section-kicker">Listo</p>
       <h2>${isSpecialPass ? "Pase emitido" : "Entradas emitidas"}</h2>
-      <p class="form-note">Tambien enviamos la confirmacion al correo registrado.</p>
+      <p class="form-note">También enviamos la confirmación al correo registrado.${isSpecialPass ? " Cada Pistón quedó asociado al RUT del titular." : ""}</p>
       <div class="ticket-grid">
         ${issuedItems
           .map(
@@ -104,12 +110,13 @@
                 <img src="${escapeHtml(item.qrUrl)}" alt="QR ${escapeHtml(item.code)}" />
                 <code>${escapeHtml(item.code)}</code>
                 <span>${escapeHtml(item.levelName || item.ticketTypeName || "")}</span>
-                ${isSpecialPass ? `<strong>${escapeHtml(item.pistonCount)} ${Number(item.pistonCount) === 1 ? "Pistón" : "Pistones"}</strong><small>NO ES VÁLIDO COMO ENTRADA</small>` : ""}
+                ${isSpecialPass ? `<strong>${escapeHtml(item.pistonCount)} ${Number(item.pistonCount) === 1 ? "Pistón" : "Pistones"}</strong><small>Asociados al RUT del titular</small><small>NO ES VÁLIDO COMO ENTRADA</small>` : ""}
               </article>
             `
           )
           .join("")}
       </div>
+      ${isSpecialPass ? '<p class="form-note">El Honda se sorteará presencialmente el 29 de noviembre de 2026. No necesitas estar presente para conservar esa participación; los demás premios y beneficios presenciales sí requieren entrada válida y check-in.</p>' : ""}
       <div class="status-actions">
         <a class="button secondary" href="/mi-pit-lane">Ver ${isSpecialPass ? "mi pase" : "mis entradas"}</a>
         <a class="button ghost-light" href="${isSpecialPass ? "/pases-especiales" : "/ticketera"}">Volver</a>

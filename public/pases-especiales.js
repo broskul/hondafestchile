@@ -28,7 +28,7 @@
             <div class="pass-level-number"><strong>${level.pistons}</strong><span>${pistonLabel(level.pistons)}</span></div>
             ${pistonIconRow(level.pistons)}
             <h3>${escapeHtml(level.name)}</h3>
-            <p>Incluye ${escapeHtml(catalog.physicalFormat.toLowerCase())}, experiencias, un refresco extra y ${level.pistons} ${pistonLabel(level.pistons).toLowerCase()} para el sorteo.</p>
+            <p>Activa beneficios exclusivos con ${escapeHtml(catalog.physicalFormat.toLowerCase())} y experiencias presenciales. Sus ${level.pistons} ${pistonLabel(level.pistons).toLowerCase()} quedan asociados al RUT del titular para participar en los sorteos.</p>
             <strong class="pass-level-price">${HFC.formatCurrency(level.price)}</strong>
             <button class="button ${level.featured ? "primary" : "secondary"} full" type="button" data-select-level="${escapeHtml(level.id)}" ${purchaseAvailable ? "" : "disabled"}>${purchaseAvailable ? "Elegir este Pase" : "Próximamente"}</button>
             <small>NO ES VÁLIDO COMO ENTRADA</small>
@@ -63,13 +63,33 @@
       <p class="section-kicker">Tu selección</p>
       <div class="selected-pass-lockup"><span>${selectedLevel.pistons}</span><div><small>${pistonLabel(selectedLevel.pistons)}</small><h2>${escapeHtml(selectedLevel.name)}</h2></div></div>
       <strong>${HFC.formatCurrency(selectedLevel.price)}</strong>
-      <p>Incluye ${escapeHtml(catalog.physicalFormat.toLowerCase())}, experiencias, un refresco extra y ${selectedLevel.pistons} ${pistonLabel(selectedLevel.pistons).toLowerCase()} para el sorteo.</p>
+      <p>Incluye ${escapeHtml(catalog.physicalFormat.toLowerCase())}, experiencias presenciales y ${selectedLevel.pistons} ${pistonLabel(selectedLevel.pistons).toLowerCase()} asociados al RUT del titular. Próximamente se publicarán nuevos beneficios por nivel.</p>
       <div class="not-entry-inline">${escapeHtml(catalog.notEntryLabel)}</div>`;
     HFC.$("#comprar").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function validEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+  }
+
+  function validName(value) {
+    return String(value || "").trim().replace(/\s+/g, " ").length >= 3;
+  }
+
+  function validRut(value) {
+    const clean = String(value || "").replace(/[^0-9kK]/g, "").toUpperCase();
+    if (clean.length < 2) return false;
+    const body = clean.slice(0, -1);
+    const dv = clean.slice(-1);
+    let sum = 0;
+    let multiplier = 2;
+    for (let index = body.length - 1; index >= 0; index -= 1) {
+      sum += Number(body[index]) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+    const expected = 11 - (sum % 11);
+    const expectedDv = expected === 11 ? "0" : expected === 10 ? "K" : String(expected);
+    return dv === expectedDv;
   }
 
   function validPhone(value) {
@@ -98,7 +118,11 @@
   async function mountCheckout() {
     const form = HFC.$("#specialPassCheckoutForm");
     const status = HFC.$("#checkoutStatus");
+    form.rulesVersion.value = catalog.rulesVersion || form.rulesVersion.value;
+    HFC.$("#rulesVersionLabel").textContent = form.rulesVersion.value;
     const stored = HFC.getAccountUser?.();
+    if (stored?.name) form.name.value = stored.name;
+    if (stored?.rut) form.rut.value = stored.rut;
     if (stored?.email) form.email.value = stored.email;
     if (stored?.phone) form.phone.value = stored.phone;
     if (!catalog.active) {
@@ -113,10 +137,14 @@
       if (!selectedLevel) return HFC.setStatus(status, "Selecciona un Pase.", true);
       const payload = Object.fromEntries(new FormData(form).entries());
       payload.termsAccepted = form.termsAccepted.checked;
+      payload.rulesAccepted = form.rulesAccepted.checked;
       payload.notEntryAccepted = form.notEntryAccepted.checked;
+      payload.rulesVersion = catalog.rulesVersion || form.rulesVersion.value;
+      if (!validName(payload.name)) return HFC.setStatus(status, "Ingresa el nombre completo del titular.", true);
+      if (!validRut(payload.rut)) return HFC.setStatus(status, "Ingresa un RUT válido para asociar el Pase y cada Pistón.", true);
       if (!validEmail(payload.email)) return HFC.setStatus(status, "Ingresa un correo válido.", true);
       if (!validPhone(payload.phone)) return HFC.setStatus(status, "Ingresa un teléfono válido.", true);
-      if (!payload.termsAccepted || !payload.notEntryAccepted) return HFC.setStatus(status, "Debes aceptar ambas confirmaciones para continuar.", true);
+      if (!payload.termsAccepted || !payload.rulesAccepted || !payload.notEntryAccepted) return HFC.setStatus(status, "Debes aceptar las tres confirmaciones para continuar.", true);
       const submit = form.querySelector('button[type="submit"]');
       submit.disabled = true;
       HFC.setStatus(status, "Creando tu Pase...");

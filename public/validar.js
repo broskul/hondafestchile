@@ -22,12 +22,17 @@ async function validateTicket(code, action = "lookup") {
   try {
     const data = await HFC.api("/api/tickets/validate", {
       method: "POST",
+      headers: (() => {
+        const token = String(HFC.$("#ticketAdminToken")?.value || "").trim();
+        return token ? { "x-admin-token": token } : {};
+      })(),
       body: JSON.stringify({ code, action })
     });
 
     const checked = data.ticket.status === "checked_in";
+    const canOperate = Boolean(data.canOperate);
     const pilotRows =
-      data.ticket.entryType === "pilot"
+      canOperate && data.ticket.entryType === "pilot"
         ? `
         <dt>Patente</dt><dd>${escapeHtml(data.ticket.holderLicensePlate || "")}</dd>
         <dt>Auto</dt><dd>${escapeHtml(data.ticket.holderVehicle || "")}</dd>
@@ -42,16 +47,18 @@ async function validateTicket(code, action = "lookup") {
       </div>
       <dl class="detail-list">
         <dt>Asistente</dt><dd>${escapeHtml(data.ticket.holderName)}</dd>
-        <dt>RUT</dt><dd>${escapeHtml(data.ticket.holderRut)}</dd>
+        ${canOperate ? `<dt>RUT</dt><dd>${escapeHtml(data.ticket.holderRut)}</dd>` : ""}
         <dt>Evento</dt><dd>${escapeHtml(data.ticket.eventName || "")}</dd>
         <dt>Entrada</dt><dd>${escapeHtml(data.ticket.ticketTypeName || "")}</dd>
         ${pilotRows}
         <dt>Estado</dt><dd>${escapeHtml(data.ticket.status)}</dd>
       </dl>
       ${
-        data.ticket.status === "valid"
+        canOperate && data.ticket.status === "valid"
           ? `<button class="button primary full" type="button" id="checkinButton">Marcar ingreso</button>`
-          : ""
+          : canOperate
+            ? ""
+            : '<p class="form-note">Consulta informativa. Ingresa la clave del equipo HFC para registrar el acceso.</p>'
       }`
     );
 

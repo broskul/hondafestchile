@@ -1,6 +1,6 @@
 # Bases de Pases y premios — PyR Eventos
 
-> Borrador operativo adaptado a la estrategia de Pases. No publicar como bases oficiales hasta completar los campos pendientes y contar con revisión jurídica de PyR Eventos.
+> Borrador operativo adaptado a la estrategia de Pases. No publicar como bases oficiales ni habilitar cobros hasta completar los campos pendientes, acreditar la habilitación jurídica aplicable a PyR Eventos y obtener revisión jurídica chilena escrita.
 
 En Santiago de Chile, a [FECHA], comparece **[RAZÓN SOCIAL COMPLETA DE PyR EVENTOS]**, RUT N.° [RUT], representada legalmente por don/doña [NOMBRE DEL REPRESENTANTE LEGAL], cédula de identidad N.° [RUT DEL REPRESENTANTE], ambos domiciliados para estos efectos en [DOMICILIO], comuna de [COMUNA], en adelante el **“Organizador”**, quien establece las bases y condiciones del Pase HFC 2026 y de los premios asociados, cuya actividad presencial se realizará durante Honda Fest Chile el **29 de noviembre de 2026**.
 
@@ -44,7 +44,7 @@ Antes de pagar, el comprador debe aceptar expresamente esta condición. El siste
 
 ## CUARTO. COMPRA, ENROLAMIENTO Y TITULARIDAD
 
-La compra se inicia informando correo electrónico y teléfono. Después de la confirmación del pago, el comprador deberá completar nombre, RUT y teléfono del titular mediante el enlace seguro enviado por correo.
+La compra se inicia informando nombre, RUT, correo electrónico y teléfono del titular. El backend valida el RUT antes de crear la orden y todos los Pistones se emiten asociados a ese RUT tras la confirmación válida del pago.
 
 La emisión definitiva del Pase, su código QR, la boleta y los Pistones asociados se realiza una sola vez tras pago aprobado y enrolamiento completo. El pase es nominativo. El Organizador deberá definir en la versión final si permite cambio de titular y hasta qué fecha.
 
@@ -74,12 +74,16 @@ Las fotografías publicadas son referenciales del estado visible y no sustituyen
 
 La actividad de selección se realizará presencialmente durante Honda Fest Chile el 29 de noviembre de 2026, en [HORA Y UBICACIÓN POR CONFIRMAR].
 
+La presencia física y una entrada al evento **no serán requisito para conservar la participación por el automóvil**. Si el titular resultara ganador, el Organizador lo notificará mediante el correo electrónico y teléfono registrados, además de publicar el resultado por el medio que definan las bases definitivas.
+
+La entrada válida, presencia y check-in sí serán requisitos para disfrutar beneficios y optar a los demás premios presenciales. La base de datos mantiene estas elegibilidades por separado.
+
 Antes de iniciar la venta o, como máximo, dentro del plazo permitido por la normativa aplicable, el Organizador deberá publicar:
 
 - método de selección y mecanismo de aleatoriedad;
 - universo de Pistones elegibles y hora de cierre;
 - tratamiento de pagos pendientes, anulaciones y contracargos;
-- si se exige presencia, retiro o acceso registrado para mantener elegibilidad;
+- forma de verificar entrada y check-in para beneficios y premios presenciales;
 - suplentes y plazo para reclamar cada premio;
 - ministro de fe o mecanismo de transparencia aplicable;
 - forma de publicación, contacto y evidencia del resultado.
@@ -102,7 +106,9 @@ No se incorpora la regla histórica de reemplazar el automóvil por la recaudaci
 
 Los datos se tratarán para gestionar la compra, pago, enrolamiento, boleta, retiro, acceso, padrón, premios y soporte, conforme a la política de privacidad publicada. El Organizador deberá definir plazos de conservación, responsables, encargados y canales para ejercer derechos.
 
-Las comunicaciones transaccionales se enviarán al correo registrado. El comprador es responsable de informar datos correctos y mantener acceso al correo o teléfono asociados.
+Las comunicaciones transaccionales se enviarán al correo registrado. El ganador del automóvil será contactado por correo y teléfono. El Organizador deberá definir intentos, horarios, plazo de respuesta, respaldo de cada gestión y canal público de resultados; crear una tarea de notificación en el sistema no acredita por sí solo que el contacto fue realizado.
+
+El comprador es responsable de informar datos correctos y mantener acceso al correo o teléfono asociados.
 
 ## UNDÉCIMO. MODIFICACIÓN Y ACEPTACIÓN
 

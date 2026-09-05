@@ -18,31 +18,44 @@
       picked_up: "Retirado",
       pending: "Pendiente de retiro",
       checked_in: "Acceso registrado",
-      not_checked_in: "Sin acceso registrado"
+      not_checked_in: "Sin acceso registrado",
+      unverified: "Entrada no verificada"
     }[value] || value || "Sin estado";
+  }
+
+  function maskHolderName(value) {
+    const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "Titular pendiente";
+    return parts
+      .map((part) => `${part.slice(0, 1)}${"•".repeat(Math.max(2, Math.min(part.length - 1, 5)))}`)
+      .join(" ");
   }
 
   function render(data) {
     const pass = data.pass;
     const node = HFC.$("#passValidationResult");
-    const canOperate = Boolean(data.canOperate || String(HFC.$("#passAdminToken")?.value || "").trim());
+    const canOperate = Boolean(data.canOperate);
+    const holderName = canOperate ? pass.holderName || "Pendiente" : maskHolderName(pass.holderName);
     node.className = "pass-validation-card";
     node.innerHTML = `
       <div class="pass-validation-status"><span class="status-pill ${pass.status === "valid" ? "success" : "error"}">${escapeHtml(statusLabel(pass.status))}</span><strong>${escapeHtml(pass.pistonCount)} ${pass.pistonCount === 1 ? "Pistón" : "Pistones"}</strong></div>
       <h2>${escapeHtml(pass.levelName || pass.passName)}</h2>
       <code>${escapeHtml(pass.code)}</code>
       <dl>
-        <div><dt>Titular</dt><dd>${escapeHtml(pass.holderName || "Pendiente")}</dd></div>
+        <div><dt>Titular</dt><dd>${escapeHtml(holderName)}</dd></div>
         <div><dt>Retiro</dt><dd>${escapeHtml(statusLabel(pass.pickupStatus))}</dd></div>
         <div><dt>Acceso</dt><dd>${escapeHtml(statusLabel(pass.accessStatus))}</dd></div>
+        ${canOperate ? `<div><dt>Entrada HFC</dt><dd>${escapeHtml(statusLabel(pass.entryValidationStatus))}</dd></div>` : ""}
         <div><dt>Formato</dt><dd>${escapeHtml(pass.physicalFormat)}</dd></div>
       </dl>
       <div class="not-entry-inline">${escapeHtml(pass.notEntryLabel || "NO ES VÁLIDO COMO ENTRADA")}</div>
+      <p class="form-note">Cada Pistón está asociado al RUT del titular. La participación por el Honda no exige presencia; los otros premios y beneficios presenciales requieren entrada válida y check-in.</p>
       ${canOperate ? `
         <div class="pass-operator-actions">
           <button class="button secondary" type="button" data-pass-action="pickup" ${pass.pickupStatus === "picked_up" ? "disabled" : ""}>Registrar retiro</button>
-          <button class="button primary" type="button" data-pass-action="checkin" ${pass.pickupStatus !== "picked_up" || pass.accessStatus === "checked_in" ? "disabled" : ""}>Registrar acceso</button>
-          <button class="button ghost-light" type="button" data-pass-action="pickup_and_checkin" ${pass.accessStatus === "checked_in" ? "disabled" : ""}>Retiro + acceso</button>
+          <button class="button secondary" type="button" data-pass-action="verify_entry" ${pass.entryValidationStatus === "valid" ? "disabled" : ""}>Confirmar entrada válida</button>
+          <button class="button primary" type="button" data-pass-action="checkin" ${pass.pickupStatus !== "picked_up" || pass.entryValidationStatus !== "valid" || pass.accessStatus === "checked_in" ? "disabled" : ""}>Registrar acceso</button>
+          <button class="button ghost-light" type="button" data-pass-action="pickup_and_checkin" ${pass.entryValidationStatus !== "valid" || pass.accessStatus === "checked_in" ? "disabled" : ""}>Retiro + acceso</button>
         </div>` : '<p class="form-note">Consulta informativa. Ingresa la clave del equipo HFC para registrar acciones.</p>'}
     `;
     HFC.$$('[data-pass-action]', node).forEach((button) => button.addEventListener("click", () => operate(button.dataset.passAction)));

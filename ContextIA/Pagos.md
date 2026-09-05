@@ -17,6 +17,17 @@ Crear ordenes de ticketera y conectar el checkout con Mercado Pago.
 9. `POST /api/orders/:orderId/profile` completa datos, emite tickets con QR, solicita boleta y envia correo. Si Haulmer no responde, las entradas siguen entregandose y la boleta queda pendiente de reintento.
 10. `POST /api/webhooks/mercadopago` valida firma si `MERCADOPAGO_WEBHOOK_SECRET` esta configurado, consulta el pago y sincroniza la orden.
 
+## Upgrade de experiencia
+
+- Su compra es independiente de la entrada y usa `POST /api/special-passes/orders`.
+- El servidor reconstruye precio y Pistones desde el nivel; el navegador no define montos.
+- Antes de crear la preferencia exige nombre, RUT válido, correo, teléfono, privacidad, aviso de no entrada y bases `upgrade-hfc-2026-v1`.
+- La orden guarda fecha, versión y hash SHA-256 del documento de bases aceptado.
+- La venta exige `SPECIAL_PASS_SALES_ENABLED=true`, configuración persistida `active=true`, bases publicadas con versión/hash exactos, almacenamiento relacional íntegro, correo transaccional real y Mercado Pago productivo con firma de webhook y URL pública. El default es cerrado.
+- Un pago aprobado real debe coincidir con ID de orden, monto total, moneda CLP y preferencia cuando esté disponible. Una discordancia devuelve conflicto y no emite el Pase.
+- El Pase se emite idempotentemente por campaña+orden. Un reembolso o contracargo posterior revoca el Pase y todos sus Pistones.
+- `HFC_ALLOW_DEMO_PAYMENT` solo existe para QA; debe permanecer `false`/ausente en Vercel producción.
+
 ## Archivos clave
 
 - `server/index.js`
@@ -38,6 +49,7 @@ Crear ordenes de ticketera y conectar el checkout con Mercado Pago.
 - `hfc_payments` guarda el estado normalizado del pago; el payload crudo solo se guarda si `MERCADOPAGO_STORE_RAW_PAYLOADS=true`.
 - El carrito vive en `localStorage` y la orden final se persiste antes del pago con correo y terminos aceptados.
 - Los datos completos del asistente quedan despues del pago para reducir friccion y no enfriar la venta.
+- Excepción deliberada: el Upgrade solicita nombre y RUT antes del pago porque cada Pistón debe quedar asociado desde su emisión al titular correcto.
 
 ## Pendientes
 
