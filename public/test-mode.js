@@ -68,8 +68,17 @@
     document.body.appendChild(actions);
   }
 
+  function loadPistonStorefront() {
+    if (document.querySelector("[data-piston-storefront-script]")) return;
+    const script = document.createElement("script");
+    script.src = "/piston-storefront.js";
+    script.dataset.pistonStorefrontScript = "true";
+    document.head.appendChild(script);
+  }
+
   document.addEventListener("DOMContentLoaded", async () => {
     mountHelpButton();
+    loadPistonStorefront();
     try {
       const catalog = await loadCatalog();
       if (!catalog?.integrations?.testMode) return;

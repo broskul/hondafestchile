@@ -1,0 +1,144 @@
+.hfc-piston-storefront {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+.main-nav .hfc-piston-nav {
+  color: #e9b949;
+  border-bottom: 2px solid currentColor;
+  font-weight: 900;
+}
+
+.hfc-piston-actions {
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+}
+
+.hfc-piston-actions .hfc-piston-float {
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 14px;
+  color: #171b20;
+  border: 1px solid #e9b949;
+  border-radius: 6px;
+  background: #e9b949;
+}
+
+.hfc-piston-actions .hfc-piston-float:hover {
+  background: #f2cd73;
+}
+
+.hfc-piston-float strong {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.hfc-piston-float .hfc-piston-symbol {
+  flex: 0 0 28px;
+  background: transparent;
+}
+
+.hfc-piston-symbol img {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.hfc-piston-strip {
+  color: #fff;
+  background: #171b20;
+  border-block: 1px solid #353b40;
+}
+
+.hfc-piston-strip-inner {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  width: min(1168px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0;
+}
+
+.hfc-piston-strip img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+
+.hfc-piston-strip p {
+  margin: 0 0 6px;
+  color: #e9b949;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hfc-piston-strip h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.hfc-piston-strip span,
+.hfc-piston-strip small {
+  display: block;
+  color: #d6dadd;
+  line-height: 1.5;
+}
+
+.hfc-piston-strip small {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.hfc-piston-footer-link {
+  font-weight: 900;
+}
+
+.hfc-piston-float:focus-visible,
+.hfc-piston-nav:focus-visible,
+.hfc-piston-footer-link:focus-visible {
+  outline: 3px solid #00aebb;
+  outline-offset: 4px;
+}
+
+@media (max-width: 760px) {
+  .hfc-piston-strip-inner {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 16px;
+    width: calc(100% - 40px);
+    padding: 24px 0;
+  }
+
+  .hfc-piston-strip img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .hfc-piston-strip .button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .hfc-piston-actions .floating-action--participate {
+    width: 48px;
+    flex: 0 0 48px;
+    padding: 10px;
+  }
+
+  .hfc-piston-actions .floating-action--participate .floating-action-copy {
+    display: none;
+  }
+
+  .hfc-piston-actions .hfc-piston-float {
+    max-width: calc(100vw - 156px);
+    padding: 10px;
+  }
+
+  .hfc-piston-float strong {
+    font-size: 0.82rem;
+  }
+}
