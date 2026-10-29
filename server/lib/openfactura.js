@@ -289,6 +289,7 @@ async function issueBoleta({ order, user, event, ticketType, tickets, items }) {
 module.exports = {
   buildOpenFacturaPayload,
   issueBoleta,
+  automaticInvoiceIssuanceEnabled,
   openFacturaConfigured,
   automaticInvoiceIssuanceEnabled,
   openFacturaRuntimeStatus

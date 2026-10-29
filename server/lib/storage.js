@@ -13,6 +13,7 @@ const initialState = {
   sessions: [],
   orders: [],
   tickets: [],
+  specialPasses: [],
   invoices: [],
   payments: [],
   settings: [],
@@ -27,6 +28,7 @@ const supabaseCollections = {
   sessions: "hfc_sessions",
   orders: "hfc_orders",
   tickets: "hfc_tickets",
+  specialPasses: "hfc_special_passes",
   invoices: "hfc_invoices",
   payments: "hfc_payments",
   settings: "hfc_settings",
@@ -38,6 +40,7 @@ const supabaseCollections = {
 
 let lastSupabaseWarning = null;
 let postgresPool = null;
+let specialPassStorageAvailable = null;
 
 function supabaseConfigured() {
   return postgresConfigured() || supabaseRestConfigured();
@@ -186,14 +189,133 @@ function canUseLocalWriteFallback(error) {
   return isMissingSchemaError(error) || isReachabilityError(error);
 }
 
+function specialPassStorageReady() {
+  if (storageMode() === "json") {
+    return !process.env.VERCEL && process.env.NODE_ENV !== "production";
+  }
+  if (storageMode() === "supabase" && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
+    // The REST adapter cannot prove that the trigger contract is installed and
+    // cannot persist a multi-collection checkout atomically.
+    return false;
+  }
+  // Fail closed until the complete relational Upgrade contract has been
+  // observed. The legacy hfc_special_passes table alone is not enough to
+  // issue auditable Pistons or build draw manifests safely.
+  return specialPassStorageAvailable === true;
+}
+
+async function verifyPostgresSpecialPassSchema(client = null) {
+  const query = client ? client.query.bind(client) : postgresQuery;
+  const result = await query(`
+    select
+      to_regclass('public.hfc_special_passes') is not null as special_passes_table,
+      to_regclass('public.hfc_pistons') is not null as pistons_table,
+      to_regclass('public.hfc_order_acceptances') is not null as acceptances_table,
+      to_regclass('public.hfc_special_prizes') is not null as prizes_table,
+      to_regclass('public.hfc_draw_manifests') is not null as manifests_table,
+      to_regclass('public.hfc_draw_entries') is not null as draw_entries_table,
+      to_regclass('public.hfc_draw_results') is not null as draw_results_table,
+      to_regclass('public.hfc_notification_outbox') is not null as notification_outbox_table,
+      not exists (
+        select 1
+        from (
+          values
+            ('public.hfc_special_passes', 'hfc_special_passes_relationalize_trg'),
+            ('public.hfc_special_passes', 'hfc_special_passes_sync_pistons_trg'),
+            ('public.hfc_order_acceptances', 'hfc_order_acceptances_immutable_trg'),
+            ('public.hfc_pistons', 'hfc_pistons_identity_guard_trg'),
+            ('public.hfc_pistons', 'hfc_pistons_void_results_trg'),
+            ('public.hfc_draw_manifests', 'hfc_draw_manifests_guard_trg'),
+            ('public.hfc_draw_entries', 'hfc_draw_entries_guard_trg'),
+            ('public.hfc_draw_results', 'hfc_draw_results_prepare_trg'),
+            ('public.hfc_draw_results', 'hfc_draw_results_no_delete_trg'),
+            ('public.hfc_draw_results', 'hfc_draw_results_notifications_trg')
+        ) as required(table_name, trigger_name)
+        where not exists (
+          select 1
+          from pg_trigger
+          where tgrelid = to_regclass(required.table_name)
+            and tgname = required.trigger_name
+            and not tgisinternal
+            and tgenabled <> 'D'
+        )
+      ) as critical_triggers
+  `);
+  const contract = result.rows[0] || {};
+  return Object.values(contract).every((value) => value === true);
+}
+
+async function readPostgresStateWithClient(client) {
+  const entries = [];
+  for (const [collection, table] of Object.entries(supabaseCollections)) {
+    try {
+      const result = await client.query(`select payload from public.${table} order by created_at asc`);
+      entries.push([collection, result.rows.map((row) => row.payload).filter(Boolean)]);
+    } catch (error) {
+      if (collection === "specialPasses" && isMissingSchemaError(error)) {
+        specialPassStorageAvailable = false;
+        entries.push([collection, []]);
+        continue;
+      }
+      throw error;
+    }
+  }
+  specialPassStorageAvailable = await verifyPostgresSpecialPassSchema(client);
+  return {
+    ...initialState,
+    ...Object.fromEntries(entries)
+  };
+}
+
 async function readPostgresState() {
+  let client = null;
+  try {
+    client = await getPostgresPool().connect();
+    await client.query("begin isolation level repeatable read read only");
+    const state = await readPostgresStateWithClient(client);
+    await client.query("commit");
+    lastSupabaseWarning = null;
+    return state;
+  } catch (error) {
+    if (client) {
+      try {
+        await client.query("rollback");
+      } catch {
+        // Preserve the original storage failure.
+      }
+    }
+    if (canUseLocalReadFallback(error)) {
+      lastSupabaseWarning = supabaseFallbackWarning(error);
+      console.warn(lastSupabaseWarning);
+      return readJsonState();
+    }
+    throw error;
+  } finally {
+    client?.release();
+  }
+}
+
+async function readSupabaseState() {
   let entries;
 
   try {
     entries = await Promise.all(
       Object.entries(supabaseCollections).map(async ([collection, table]) => {
-        const result = await postgresQuery(`select payload from public.${table} order by created_at asc`);
-        return [collection, result.rows.map((row) => row.payload).filter(Boolean)];
+        try {
+          const rows = await supabaseRequest(table, {
+            query: {
+              select: "payload",
+              order: "created_at.asc"
+            }
+          });
+          return [collection, rows.map((row) => row.payload).filter(Boolean)];
+        } catch (error) {
+          if (collection === "specialPasses" && isMissingSchemaError(error)) {
+            specialPassStorageAvailable = false;
+            return [collection, []];
+          }
+          throw error;
+        }
       })
     );
   } catch (error) {
@@ -205,36 +327,30 @@ async function readPostgresState() {
     throw error;
   }
 
-  lastSupabaseWarning = null;
-
-  return {
-    ...initialState,
-    ...Object.fromEntries(entries)
-  };
-}
-
-async function readSupabaseState() {
-  let entries;
-
+  // PostgREST cannot inspect trigger state. Requiring the relational tables is
+  // still stricter than accepting the legacy pass table on its own; production
+  // uses the direct PostgreSQL connection, where triggers are also verified.
   try {
-    entries = await Promise.all(
-      Object.entries(supabaseCollections).map(async ([collection, table]) => {
-        const rows = await supabaseRequest(table, {
-          query: {
-            select: "payload",
-            order: "created_at.asc"
-          }
-        });
-        return [collection, rows.map((row) => row.payload).filter(Boolean)];
-      })
+    await Promise.all(
+      [
+        "hfc_pistons",
+        "hfc_order_acceptances",
+        "hfc_special_prizes",
+        "hfc_draw_manifests",
+        "hfc_draw_entries",
+        "hfc_draw_results",
+        "hfc_notification_outbox"
+      ].map(
+        (table) => supabaseRequest(table, { query: { select: "id", limit: "1" } })
+      )
     );
+    specialPassStorageAvailable = true;
   } catch (error) {
-    if (canUseLocalReadFallback(error)) {
-      lastSupabaseWarning = supabaseFallbackWarning(error);
-      console.warn(lastSupabaseWarning);
-      return readJsonState();
+    if (isMissingSchemaError(error)) {
+      specialPassStorageAvailable = false;
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   return {
@@ -293,6 +409,17 @@ function supabaseRow(collection, item) {
     };
   }
 
+  if (collection === "specialPasses") {
+    return {
+      ...base,
+      order_id: item.orderId || null,
+      user_id: item.userId || null,
+      code: item.code || null,
+      status: item.status || null,
+      piston_count: Number(item.pistonCount || 0)
+    };
+  }
+
   if (collection === "invoices" || collection === "payments") {
     return { ...base, order_id: item.orderId || null };
   }
@@ -327,6 +454,7 @@ function supabaseRow(collection, item) {
 
 async function writeSupabaseState(state) {
   for (const [collection, table] of Object.entries(supabaseCollections)) {
+    if (collection === "specialPasses" && !specialPassStorageReady()) continue;
     const items = (state[collection] || []).map((item, index) => normalizeItem(collection, item, index));
     state[collection] = items;
 
@@ -355,8 +483,9 @@ async function writeSupabaseState(state) {
   }
 }
 
-async function writePostgresState(state) {
+async function writePostgresStateWithClient(state, client) {
   for (const [collection, table] of Object.entries(supabaseCollections)) {
+    if (collection === "specialPasses" && !specialPassStorageReady()) continue;
     const items = (state[collection] || []).map((item, index) => normalizeItem(collection, item, index));
     state[collection] = items;
 
@@ -365,30 +494,49 @@ async function writePostgresState(state) {
     for (const item of items) {
       const row = supabaseRow(collection, item);
       const columns = Object.keys(row);
-      const placeholders = columns.map((column, index) => (column === "payload" ? `$${index + 1}::jsonb` : `$${index + 1}`));
+      const placeholders = columns.map((column, index) =>
+        column === "payload" ? `$${index + 1}::jsonb` : `$${index + 1}`
+      );
       const updates = columns
         .filter((column) => column !== "id")
         .map((column) => `${column}=excluded.${column}`);
       const values = columns.map((column) => (column === "payload" ? JSON.stringify(row[column]) : row[column]));
 
-      try {
-        await postgresQuery(
-          `insert into public.${table} (${columns.join(",")}) values (${placeholders.join(",")}) on conflict (id) do update set ${updates.join(",")}`,
-          values
-        );
-      } catch (error) {
-        if (canUseLocalWriteFallback(error)) {
-          lastSupabaseWarning = supabaseFallbackWarning(error, true);
-          console.warn(lastSupabaseWarning);
-          await writeJsonState(state);
-          return;
-        }
-        throw error;
-      }
+      await client.query(
+        `insert into public.${table} (${columns.join(",")}) values (${placeholders.join(",")}) on conflict (id) do update set ${updates.join(",")}`,
+        values
+      );
     }
   }
+}
 
-  lastSupabaseWarning = null;
+async function writePostgresState(state) {
+  let client = null;
+  try {
+    client = await getPostgresPool().connect();
+    await client.query("begin");
+    await client.query("select pg_advisory_xact_lock(hashtextextended('hfc_state_write', 0))");
+    await writePostgresStateWithClient(state, client);
+    await client.query("commit");
+    lastSupabaseWarning = null;
+  } catch (error) {
+    if (client) {
+      try {
+        await client.query("rollback");
+      } catch {
+        // Preserve the original storage failure.
+      }
+    }
+    if (canUseLocalWriteFallback(error)) {
+      lastSupabaseWarning = supabaseFallbackWarning(error, true);
+      console.warn(lastSupabaseWarning);
+      await writeJsonState(state);
+      return;
+    }
+    throw error;
+  } finally {
+    client?.release();
+  }
 }
 
 async function ensureStore() {
@@ -433,6 +581,44 @@ async function writeState(state) {
 }
 
 async function updateState(mutator) {
+  if (postgresConfigured()) {
+    let client = null;
+    let state = null;
+    let result;
+    let mutatorCompleted = false;
+    try {
+      client = await getPostgresPool().connect();
+      await client.query("begin");
+      await client.query("select pg_advisory_xact_lock(hashtextextended('hfc_state_write', 0))");
+      state = await readPostgresStateWithClient(client);
+      result = await mutator(state);
+      mutatorCompleted = true;
+      await writePostgresStateWithClient(state, client);
+      await client.query("commit");
+      lastSupabaseWarning = null;
+      return result;
+    } catch (error) {
+      if (client) {
+        try {
+          await client.query("rollback");
+        } catch {
+          // Preserve the original storage failure.
+        }
+      }
+      if (canUseLocalWriteFallback(error)) {
+        lastSupabaseWarning = supabaseFallbackWarning(error, true);
+        console.warn(lastSupabaseWarning);
+        if (!state) state = await readJsonState();
+        if (!mutatorCompleted) result = await mutator(state);
+        await writeJsonState(state);
+        return result;
+      }
+      throw error;
+    } finally {
+      client?.release();
+    }
+  }
+
   const state = await readState();
   const result = await mutator(state);
   await writeState(state);
@@ -483,6 +669,7 @@ module.exports = {
   checkoutStorageReady,
   lastSupabaseWarning: storageWarning,
   readState,
+  specialPassStorageReady,
   storageMode,
   supabaseConfigured,
   updateState,

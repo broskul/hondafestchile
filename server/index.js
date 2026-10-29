@@ -1,7 +1,9 @@
 const crypto = require("crypto");
 const dotenv = require("dotenv");
 dotenv.config();
-dotenv.config({ path: ".env.local", override: true });
+if (!/^(1|true|yes)$/i.test(String(process.env.HFC_SKIP_LOCAL_ENV || ""))) {
+  dotenv.config({ path: ".env.local", override: true });
+}
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -13,6 +15,15 @@ const {
   findEvent: findDefaultEvent,
   findTicketType: findDefaultTicketType
 } = require("./config/catalog");
+const {
+  SPECIAL_PASS_PRIVACY_SHA256,
+  SPECIAL_PASS_RULES_SHA256,
+  SPECIAL_PASS_RULES_VERSION,
+  SPECIAL_PASS_SETTING_ID,
+  findSpecialPassLevel,
+  normalizeSpecialPassConfig,
+  specialPassConfigFromState
+} = require("./config/specialPasses");
 const { findTemplate, mergeTemplates, normalizeTemplate, renderTemplate } = require("./lib/emailTemplates");
 const { mailProviderStatus, sendMail, sendTicketEmail, sendVerificationEmail, smtpConfigured } = require("./lib/mailer");
 const {
@@ -27,9 +38,9 @@ const {
   verifyWebhookSignature
 } = require("./lib/mercadopago");
 const {
+  automaticInvoiceIssuanceEnabled,
   issueBoleta,
   openFacturaConfigured,
-  automaticInvoiceIssuanceEnabled,
   openFacturaRuntimeStatus
 } = require("./lib/openfactura");
 const { cleanRut, formatRut, validateRut } = require("./lib/rut");
@@ -37,6 +48,7 @@ const {
   checkoutStorageReady,
   lastSupabaseWarning,
   readState,
+  specialPassStorageReady,
   storageMode,
   supabaseConfigured,
   updateState,
@@ -90,6 +102,8 @@ const DEFAULT_EVENT_ID = defaultEvents[0]?.id || "honda-fest-chile-2026";
 const TICKET_VAT_RATE = 0.19;
 const TICKET_SERVICE_CHARGE_RATE = 0.08;
 const TICKET_TOTAL_FACTOR = (1 + TICKET_VAT_RATE) * (1 + TICKET_SERVICE_CHARGE_RATE);
+const JAPAN_FEST_2026_EVENT_ID = "japon-fest-chile-2026";
+const JAPAN_FEST_CANCELLATION_REASON = "event_cancelled_refunded";
 const TICKET_ENTRY_TYPES = new Set(["attendee", "pilot", "guest"]);
 const TICKET_ENTRY_TYPE_LABELS = {
   attendee: "Asistente",
@@ -102,11 +116,38 @@ function roundCurrency(value) {
   return Math.max(0, Math.round(Number(value || 0)));
 }
 
-function ticketPricingFromNet(netPrice) {
+function onlineSalesStatus() {
+  return {
+    enabled: true,
+    availableAt: null,
+    availableAtLabel: null,
+    message: "La venta online está habilitada."
+  };
+}
+
+function requireOnlineSalesOpen() {
+  const sales = onlineSalesStatus();
+  if (sales.enabled) return;
+  const error = new Error(sales.message);
+  error.status = 503;
+  error.code = "online_sales_temporarily_paused";
+  throw error;
+}
+
+function normalizedServiceChargeRate(...candidates) {
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value) && value >= 0) return value;
+  }
+  return TICKET_SERVICE_CHARGE_RATE;
+}
+
+function ticketPricingFromNet(netPrice, serviceChargeRate = TICKET_SERVICE_CHARGE_RATE) {
   const net = roundCurrency(netPrice);
+  const chargeRate = normalizedServiceChargeRate(serviceChargeRate);
   const netWithVat = roundCurrency(net * (1 + TICKET_VAT_RATE));
-  const netWithServiceCharge = roundCurrency(net * (1 + TICKET_SERVICE_CHARGE_RATE));
-  const serviceCharge = roundCurrency(netWithVat * TICKET_SERVICE_CHARGE_RATE);
+  const netWithServiceCharge = roundCurrency(net * (1 + chargeRate));
+  const serviceCharge = roundCurrency(netWithVat * chargeRate);
   const total = roundCurrency(netWithVat + serviceCharge);
   return {
     netPrice: net,
@@ -115,7 +156,7 @@ function ticketPricingFromNet(netPrice) {
     serviceCharge,
     total,
     vatRate: TICKET_VAT_RATE,
-    serviceChargeRate: TICKET_SERVICE_CHARGE_RATE
+    serviceChargeRate: chargeRate
   };
 }
 
@@ -153,7 +194,10 @@ function normalizeTicketEntryType(value) {
 }
 
 function defaultTicketPhases(ticket) {
-  const pricing = ticketPricingFromNet(explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(ticket.price));
+  const pricing = ticketPricingFromNet(
+    explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(ticket.price),
+    ticket.serviceChargeRate ?? ticket.pricing?.serviceChargeRate
+  );
   return [
     {
       id: "preventa",
@@ -206,10 +250,7 @@ function defaultTicketingConfig() {
     ticketTypes: defaultTicketTypes.map((ticket) => ({
       ...clone(ticket),
       active: true,
-      phases:
-        Array.isArray(ticket.phases) && ticket.phases.length
-          ? clone(ticket.phases)
-          : defaultTicketPhases(ticket)
+      phases: Array.isArray(ticket.phases) && ticket.phases.length ? clone(ticket.phases) : defaultTicketPhases(ticket)
     }))
   };
 }
@@ -225,7 +266,13 @@ function normalizePhase(phase = {}, ticket = {}, index = 0) {
   const netPrice =
     explicitNetPrice(phase.netPrice ?? phase.basePrice ?? phase.priceNet) ??
     inferNetPriceFromGross(rawPrice);
-  const pricing = ticketPricingFromNet(netPrice);
+  const serviceChargeRate = normalizedServiceChargeRate(
+    phase.serviceChargeRate,
+    phase.pricing?.serviceChargeRate,
+    ticket.serviceChargeRate,
+    ticket.pricing?.serviceChargeRate
+  );
+  const pricing = ticketPricingFromNet(netPrice, serviceChargeRate);
   const quota = phase.quota === "" || phase.quota === null || phase.quota === undefined ? null : Number(phase.quota);
   const perOrderLimit =
     phase.perOrderLimit === "" || phase.perOrderLimit === null || phase.perOrderLimit === undefined
@@ -238,6 +285,7 @@ function normalizePhase(phase = {}, ticket = {}, index = 0) {
     kind,
     price: pricing.total,
     netPrice: pricing.netPrice,
+    serviceChargeRate,
     pricing,
     quota: Number.isFinite(quota) && quota > 0 ? Math.floor(quota) : null,
     startsAt: String(phase.startsAt || phase.startAt || "").trim(),
@@ -255,7 +303,16 @@ function normalizeTicket(ticket = {}) {
     .replace(/[^a-z0-9_-]+/g, "-");
   const base = defaultTicketTypes.find((candidate) => candidate.id === idValue) || {};
   const rawPrice = Math.max(0, Math.round(Number(ticket.price ?? base.price ?? 0)));
-  const pricing = ticketPricingFromNet(explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(rawPrice));
+  const serviceChargeRate = normalizedServiceChargeRate(
+    ticket.serviceChargeRate,
+    ticket.pricing?.serviceChargeRate,
+    base.serviceChargeRate,
+    base.pricing?.serviceChargeRate
+  );
+  const pricing = ticketPricingFromNet(
+    explicitNetPrice(ticket.netPrice) ?? inferNetPriceFromGross(rawPrice),
+    serviceChargeRate
+  );
   const normalized = {
     ...base,
     ...ticket,
@@ -265,6 +322,7 @@ function normalizeTicket(ticket = {}) {
     parkingNote: String(ticket.parkingNote ?? base.parkingNote ?? "").trim(),
     price: pricing.total,
     netPrice: pricing.netPrice,
+    serviceChargeRate,
     pricing,
     entryType: normalizeTicketEntryType(ticket.entryType || ticket.ticketType || ticket.kind || base.entryType),
     entryTypeLabel:
@@ -383,6 +441,72 @@ function ticketingConfig(state) {
 
 function hasTicketingSetting(state) {
   return (state.settings || []).some((candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing");
+}
+
+const HFC_EVENT_DATE_UPDATES = {
+  "hfc-2026-sabado-drag-day": {
+    dateLabel: "Sábado 28 de noviembre de 2026",
+    eventDate: "2026-11-28T09:00:00-03:00",
+    highlight: "Sábado 28 de noviembre"
+  },
+  "hfc-2026-domingo-track-day": {
+    dateLabel: "Domingo 29 de noviembre de 2026",
+    eventDate: "2026-11-29T09:00:00-03:00",
+    highlight: "Domingo 29 de noviembre"
+  }
+};
+
+const HFC_PREVENTA_ENDS_AT = {
+  "hfc-2026-sabado-galeria": "2026-11-28T00:00:00-03:00",
+  "hfc-2026-sabado-parque-cerrado": "2026-11-28T00:00:00-03:00",
+  "hfc-2026-domingo-galeria": "2026-11-29T00:00:00-03:00",
+  "hfc-2026-domingo-parque-cerrado": "2026-11-29T00:00:00-03:00"
+};
+
+function hfcDateCorrection(ticketing) {
+  const changes = [];
+  const events = ticketing.events.map((event) => {
+    const update = HFC_EVENT_DATE_UPDATES[event.id];
+    if (!update) return event;
+    const highlights = Array.isArray(event.highlights)
+      ? event.highlights.map((highlight) =>
+          /^(Sábado|Domingo) \d{1,2} de noviembre$/i.test(highlight) ? update.highlight : highlight
+        )
+      : event.highlights;
+    const corrected = { ...event, dateLabel: update.dateLabel, eventDate: update.eventDate, highlights };
+    if (JSON.stringify(corrected) !== JSON.stringify(event)) changes.push(`event:${event.id}`);
+    return corrected;
+  });
+  const ticketTypes = ticketing.ticketTypes.map((ticket) => {
+    const endsAt = HFC_PREVENTA_ENDS_AT[ticket.id];
+    if (!endsAt) return ticket;
+    const phases = (ticket.phases || []).map((phase) => {
+      if (String(phase.id || phase.kind).toLowerCase() !== "preventa") return phase;
+      return { ...phase, endsAt };
+    });
+    const corrected = { ...ticket, phases };
+    if (JSON.stringify(corrected) !== JSON.stringify(ticket)) changes.push(`ticket:${ticket.id}`);
+    return corrected;
+  });
+  return { ticketing: { ...ticketing, events, ticketTypes }, changes };
+}
+
+function hfcSpecialPassDateCorrection(config) {
+  const corrected = {
+    ...config,
+    eventDate: "2026-11-29",
+    eventDateLabel: "29 de noviembre de 2026",
+    drawDate: "2026-11-29",
+    drawDateLabel: "29 de noviembre de 2026"
+  };
+  return {
+    specialPass: corrected,
+    changed:
+      corrected.eventDate !== config.eventDate ||
+      corrected.eventDateLabel !== config.eventDateLabel ||
+      corrected.drawDate !== config.drawDate ||
+      corrected.drawDateLabel !== config.drawDateLabel
+  };
 }
 
 function upsertSetting(state, setting) {
@@ -534,10 +658,16 @@ function expireStaleCheckoutOrdersInState(state, now = new Date()) {
 
 async function readStateWithCheckoutMaintenance() {
   const state = await readState();
-  const expiredOrders = expireStaleCheckoutOrdersInState(state);
-  if (!expiredOrders) return { state, expiredOrders };
-  await writeState(state);
-  return { state: await readState(), expiredOrders };
+  if (!(state.orders || []).some((order) => orderHoldExpired(order))) {
+    return { state, expiredOrders: 0 };
+  }
+  let maintainedState = state;
+  let expiredOrders = 0;
+  await updateState((currentState) => {
+    expiredOrders = expireStaleCheckoutOrdersInState(currentState);
+    maintainedState = currentState;
+  });
+  return { state: maintainedState, expiredOrders };
 }
 
 function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
@@ -564,6 +694,7 @@ function phaseWithAvailability(state, event, ticket, phase, now = new Date()) {
 
 function activePhaseForTicket(state, eventOrId, ticket, now = new Date()) {
   const event = typeof eventOrId === "string" ? findEvent(state, eventOrId) : eventOrId;
+  if (!onlineSalesStatus(now).enabled) return null;
   if (!event || !ticketAvailableForEvent(ticket, event.id)) return null;
   if (normalizeTicketEntryType(ticket.entryType) === "guest") return null;
 
@@ -599,12 +730,15 @@ function activePhaseForTicket(state, eventOrId, ticket, now = new Date()) {
 
 function catalogForClient(state) {
   const config = ticketingConfig(state);
-  const primaryEventId = config.events[0]?.id || DEFAULT_EVENT_ID;
+  const visibleEvents = config.events.filter((event) => event.visible !== false);
+  const visibleTickets = config.ticketTypes.filter((ticket) => ticket.visible !== false);
+  const primaryEventId = visibleEvents[0]?.id || DEFAULT_EVENT_ID;
   return {
-    events: config.events,
-    ticketTypes: config.ticketTypes.map((ticket) => {
+    sales: onlineSalesStatus(),
+    events: visibleEvents,
+    ticketTypes: visibleTickets.map((ticket) => {
       const availabilityByEvent = Object.fromEntries(
-        config.events.map((event) => {
+        visibleEvents.map((event) => {
           const phase = activePhaseForTicket(state, event, ticket);
           const pricing = phase?.pricing || ticket.pricing || ticketPricingFromNet(phase?.netPrice ?? ticket.netPrice ?? 0);
           return [
@@ -838,6 +972,15 @@ function publicOrder(order) {
   if (!order) return null;
   return {
     id: order.id,
+    kind: order.kind || "ticket",
+    productName: order.productName || null,
+    passLevelId: order.passLevelId || null,
+    pistonCount: Number(order.pistonCount || 0),
+    notEntryAcceptedAt: order.notEntryAcceptedAt || null,
+    specialPassRulesAcceptedAt: order.specialPassRulesAcceptedAt || null,
+    specialPassRulesVersion: order.specialPassRulesVersion || null,
+    specialPassPrivacyAcceptedAt: order.specialPassPrivacyAcceptedAt || null,
+    specialPassPrivacyVersion: order.specialPassPrivacyVersion || null,
     eventId: order.eventId,
     ticketTypeId: order.ticketTypeId,
     items: order.items || [],
@@ -865,6 +1008,15 @@ function publicOrder(order) {
   };
 }
 
+function maskedPersonName(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0)}${"*".repeat(Math.min(Math.max(part.length - 1, 2), 5))}`)
+    .join(" ");
+}
+
 function publicTicket(ticket, req) {
   if (!ticket) return null;
   const verifyUrl = `${baseUrl(req)}/validar?code=${encodeURIComponent(ticket.code)}`;
@@ -890,6 +1042,97 @@ function publicTicket(ticket, req) {
     createdAt: ticket.createdAt,
     verifyUrl,
     qrUrl: `/api/tickets/${encodeURIComponent(ticket.code)}/qr.svg`
+  };
+}
+
+function publicTicketValidation(ticket, req, includePrivate = false) {
+  const result = publicTicket(ticket, req);
+  if (!result || includePrivate) return result;
+  return {
+    id: result.id,
+    code: result.code,
+    eventName: result.eventName,
+    ticketTypeName: result.ticketTypeName,
+    entryType: result.entryType,
+    entryTypeLabel: result.entryTypeLabel,
+    holderName: maskedPersonName(result.holderName),
+    status: result.status,
+    validatedAt: result.validatedAt,
+    verifyUrl: result.verifyUrl
+  };
+}
+
+function publicSpecialPass(pass, req) {
+  if (!pass) return null;
+  const verifyUrl = `${baseUrl(req)}/validar-pase?code=${encodeURIComponent(pass.code)}`;
+  return {
+    id: pass.id,
+    orderId: pass.orderId,
+    userId: pass.userId,
+    campaignId: pass.campaignId,
+    eventId: pass.eventId,
+    eventName: pass.eventName,
+    eventDateLabel: pass.eventDateLabel,
+    code: pass.code,
+    passName: pass.passName,
+    levelId: pass.levelId,
+    levelName: pass.levelName,
+    pistonCount: Number(pass.pistonCount || 0),
+    holderName: pass.holderName,
+    holderRut: pass.holderRut,
+    holderPhone: pass.holderPhone,
+    physicalFormat: pass.physicalFormat,
+    notEntryLabel: pass.notEntryLabel,
+    status: pass.status,
+    pickupStatus: pass.pickupStatus || "pending",
+    pickedUpAt: pass.pickedUpAt || null,
+    accessStatus: pass.accessStatus || "not_checked_in",
+    checkedInAt: pass.checkedInAt || null,
+    drawEntryCodes: pass.drawEntryCodes || [],
+    createdAt: pass.createdAt,
+    updatedAt: pass.updatedAt || null,
+    verifyUrl,
+    qrUrl: `/api/special-passes/${encodeURIComponent(pass.code)}/qr.svg`
+  };
+}
+
+function publicSpecialPassesForOrder(state, orderId, req) {
+  return (state.specialPasses || [])
+    .filter((pass) => pass.orderId === orderId)
+    .map((pass) => publicSpecialPass(pass, req));
+}
+
+function publicSpecialPassValidation(pass, req, includePrivate = false) {
+  const result = publicSpecialPass(pass, req);
+  if (!result) return result;
+  if (includePrivate) {
+    return {
+      ...result,
+      entryValidationStatus: pass.entryValidationStatus || "unverified",
+      entryValidatedAt: pass.entryValidatedAt || null,
+      attendanceStatus: pass.attendanceStatus || "not_present",
+      automobileEligibilityStatus: pass.automobileEligibilityStatus || "eligible",
+      onsiteEligibilityStatus: pass.onsiteEligibilityStatus || "not_eligible"
+    };
+  }
+  return {
+    id: result.id,
+    code: result.code,
+    eventName: result.eventName,
+    eventDateLabel: result.eventDateLabel,
+    passName: result.passName,
+    levelName: result.levelName,
+    pistonCount: result.pistonCount,
+    holderName: maskedPersonName(result.holderName),
+    physicalFormat: result.physicalFormat,
+    notEntryLabel: result.notEntryLabel,
+    status: result.status,
+    pickupStatus: result.pickupStatus,
+    pickedUpAt: result.pickedUpAt,
+    accessStatus: result.accessStatus,
+    checkedInAt: result.checkedInAt,
+    verifyUrl: result.verifyUrl,
+    qrUrl: result.qrUrl
   };
 }
 
@@ -1101,6 +1344,21 @@ function accountUserFromRequest(req, state) {
   return session ? state.users.find((candidate) => candidate.id === session.userId) || null : null;
 }
 
+function authorizeOrderAccess(req, state, order) {
+  if (adminAuthorized(req)) return { type: "admin" };
+  const session = currentSessionFromRequest(req, state, "account");
+  if (session && session.userId === order?.userId) return { type: "account", session };
+  const enrollmentToken = String(
+    req.body?.enrollmentToken || req.query?.enrollmentToken || req.headers["x-enrollment-token"] || ""
+  ).trim();
+  if (enrollmentToken && enrollmentTokenIsActive(order) && safeEqualString(enrollmentToken, order.enrollmentToken)) {
+    return { type: "enrollment" };
+  }
+  const error = new Error("No autorizado para consultar esta orden");
+  error.status = 401;
+  throw error;
+}
+
 function findUserByEmailRut(state, email, rutInput) {
   return state.users.find(
     (candidate) => candidate.email === email && cleanRut(candidate.rut) === cleanRut(rutInput)
@@ -1207,7 +1465,9 @@ function enrollmentTokenIsActive(order) {
     order?.enrollmentToken &&
       !order.enrollmentTokenConsumedAt &&
       order.status === "paid" &&
-      order.profileRequired
+      order.profileRequired &&
+      order.cancellationReason !== JAPAN_FEST_CANCELLATION_REASON &&
+      order.enrollmentTokenStatus !== "revoked"
   );
 }
 
@@ -1216,7 +1476,10 @@ function findOrderByEnrollmentToken(state, token) {
   if (!normalized) return null;
   return (
     state.orders.find(
-      (order) => enrollmentTokenIsActive(order) && safeEqualString(order.enrollmentToken, normalized)
+      (order) =>
+        !orderIncludesJapanFest2026(order, state) &&
+        enrollmentTokenIsActive(order) &&
+        safeEqualString(order.enrollmentToken, normalized)
     ) || null
   );
 }
@@ -1227,11 +1490,17 @@ function publicEnrollmentOrder({ state, order, req, includeLinks = true }) {
   const tickets = order
     ? state.tickets.filter((ticket) => ticket.orderId === order.id).map((ticket) => publicTicket(ticket, req))
     : [];
+  const specialPasses = order
+    ? (state.specialPasses || [])
+        .filter((pass) => pass.orderId === order.id)
+        .map((pass) => publicSpecialPass(pass, req))
+    : [];
 
   return {
     order: publicOrder(order ? { ...order, requiresPilotInfo } : order),
     user: publicUser(user),
     tickets,
+    specialPasses,
     requiresPilotInfo,
     invoice: order ? state.invoices.find((invoice) => invoice.orderId === order.id) || null : null,
     ...(includeLinks ? enrollmentLinks(order, req) : {})
@@ -1282,21 +1551,43 @@ function checkoutIdentityFromBody(body = {}, fallbackUser = null, options = {}) 
   };
 }
 
-function rememberPreviousEmail(user, email) {
-  if (!user.email || user.email === email) return;
-  user.emailAliases = Array.from(new Set([...(user.emailAliases || []), user.email].filter(Boolean)));
-}
-
 function upsertCheckoutUser(state, identity, body = {}, sessionUser = null) {
   const now = new Date().toISOString();
   const rutOwner = findUserByRut(state, identity.rut);
   const emailOwner = findUserByEmail(state, identity.email);
   const contactOwner = findUserByRutContact(state, identity.rut, identity.phone);
-  const existing = sessionUser || rutOwner || emailOwner || contactOwner;
+  const existingIdentity = rutOwner || emailOwner || contactOwner;
+
+  // A RUT, email address or phone number is an identifier, not proof of
+  // account ownership. Anonymous checkout must never adopt an existing user or
+  // mint a session that exposes their prior orders.
+  if (!sessionUser && existingIdentity) {
+    const error = new Error("Ya existe una cuenta con esos datos. Ingresa a Mi Pit Lane antes de continuar la compra.");
+    error.status = 409;
+    error.code = "account_session_required";
+    throw error;
+  }
+
+  const existing = sessionUser;
 
   if (existing) {
+    if (rutOwner && rutOwner.id !== existing.id) {
+      const error = new Error("Ese RUT ya está asociado a otra cuenta");
+      error.status = 409;
+      throw error;
+    }
     if (emailOwner && emailOwner.id !== existing.id) {
       const error = new Error("Ese correo ya esta asociado a otra cuenta. Ingresa con tu RUT y telefono o revisa el correo.");
+      error.status = 409;
+      throw error;
+    }
+    if (existing.email && normalizeEmail(existing.email) !== identity.email) {
+      const error = new Error("El correo del checkout debe coincidir con la cuenta autenticada");
+      error.status = 409;
+      throw error;
+    }
+    if (existing.rut && cleanRut(existing.rut) !== identity.normalizedRut) {
+      const error = new Error("El RUT del checkout debe coincidir con la cuenta autenticada");
       error.status = 409;
       throw error;
     }
@@ -1311,10 +1602,13 @@ function upsertCheckoutUser(state, identity, body = {}, sessionUser = null) {
       error.status = 409;
       throw error;
     }
-    rememberPreviousEmail(existing, identity.email);
     existing.email = identity.email;
     if (identity.rut) existing.rut = identity.rut;
     existing.phone = identity.phone;
+    if (String(body.name || "").trim()) {
+      existing.name = String(body.name).trim();
+      existing.namePending = false;
+    }
     existing.emailVerified = true;
     existing.emailVerificationMode = existing.emailVerificationMode || "checkout_inline";
     existing.termsAcceptedAt = existing.termsAcceptedAt || now;
@@ -1432,6 +1726,9 @@ function buildOrderItems(state, itemsInput) {
 function getOrderItems(order, state = null) {
   if (order.items?.length) {
     return order.items.map((item) => {
+      if (item.productKind === "special_pass" || order.kind === "special_pass") {
+        return { ...item, productKind: "special_pass", entryType: null, entryTypeLabel: null };
+      }
       const ticketType = state && item.ticketTypeId ? findTicketType(state, item.ticketTypeId) : null;
       const entryType = normalizeTicketEntryType(item.entryType || item.ticketEntryType || ticketType?.entryType);
       return {
@@ -1465,6 +1762,157 @@ function getOrderItems(order, state = null) {
       total: order.total
     }
   ];
+}
+
+function isJapanFest2026EventId(eventId) {
+  return String(eventId || "").trim() === JAPAN_FEST_2026_EVENT_ID;
+}
+
+function orderIncludesJapanFest2026(order, state = null) {
+  if (!order) return false;
+  if (isJapanFest2026EventId(order.eventId)) return true;
+  return getOrderItems(order, state).some((item) => isJapanFest2026EventId(item.eventId));
+}
+
+function orderHasCancelledRefundStatus(order) {
+  return Boolean(
+    order &&
+      (order.cancellationReason === JAPAN_FEST_CANCELLATION_REASON ||
+        order.status === "cancelled_refunded" ||
+        order.fulfillmentStatus === "cancelled_refunded")
+  );
+}
+
+function orderIsCancelledOrRefunded(order, state = null) {
+  return orderHasCancelledRefundStatus(order) || orderIncludesJapanFest2026(order, state);
+}
+
+function cancelledJapanFestOrderError() {
+  const error = new Error("La orden corresponde a Japon Fest Chile 2026, un evento cancelado y reembolsado.");
+  error.status = 409;
+  error.code = "event_cancelled_refunded";
+  return error;
+}
+
+function maskEmailForAudit(email = "") {
+  const normalized = normalizeEmail(email);
+  const [local = "", domain = ""] = normalized.split("@");
+  if (!local || !domain) return "";
+  return `${local.slice(0, 2)}${local.length > 2 ? "***" : ""}@${domain}`;
+}
+
+function japanFestCancellationAudit(state) {
+  const orders = (state.orders || []).filter((order) => orderIncludesJapanFest2026(order, state));
+  const orderIds = new Set(orders.map((order) => order.id));
+  const tickets = (state.tickets || []).filter(
+    (ticket) => orderIds.has(ticket.orderId) || isJapanFest2026EventId(ticket.eventId)
+  );
+  const emailLogs = (state.emailLogs || []).filter((entry) => orderIds.has(entry.orderId));
+  const group = (entries, key) =>
+    Object.entries(
+      entries.reduce((summary, entry) => {
+        const value = String(entry[key] || "unknown");
+        summary[value] = (summary[value] || 0) + 1;
+        return summary;
+      }, {})
+    )
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => a.value.localeCompare(b.value));
+
+  return {
+    eventId: JAPAN_FEST_2026_EVENT_ID,
+    orders: orders.length,
+    ordersByStatus: group(orders, "status"),
+    ordersWithProfilePending: orders.filter((order) => order.profileRequired).length,
+    ordersWithActiveEnrollmentToken: orders.filter((order) => enrollmentTokenIsActive(order)).length,
+    tickets: tickets.length,
+    ticketsByStatus: group(tickets, "status"),
+    emailLogs: {
+      total: emailLogs.length,
+      byType: group(emailLogs, "type"),
+      byStatus: group(emailLogs, "status"),
+      recent: emailLogs
+        .slice()
+        .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+        .slice(0, 40)
+        .map((entry) => ({
+          orderId: entry.orderId,
+          type: entry.type || "unknown",
+          status: entry.status || "unknown",
+          sentAt: entry.createdAt || null,
+          recipient: maskEmailForAudit(entry.to)
+        }))
+    }
+  };
+}
+
+function cancelAndRefundJapanFestOrders(state, now = new Date().toISOString()) {
+  const orders = (state.orders || []).filter((order) => orderIncludesJapanFest2026(order, state));
+  const orderIds = new Set(orders.map((order) => order.id));
+  let ordersChanged = 0;
+  let tokensRevoked = 0;
+  let ticketsCancelled = 0;
+
+  for (const order of orders) {
+    const needsCancellation =
+      order.status !== "cancelled_refunded" ||
+      order.fulfillmentStatus !== "cancelled_refunded" ||
+      order.profileRequired ||
+      order.requiresPilotInfo ||
+      order.cancellationReason !== JAPAN_FEST_CANCELLATION_REASON ||
+      order.enrollmentEmailStatus !== "suppressed" ||
+      Boolean(order.enrollmentToken);
+
+    if (!needsCancellation) continue;
+
+    if (order.enrollmentToken) tokensRevoked += 1;
+    order.status = "cancelled_refunded";
+    order.fulfillmentStatus = "cancelled_refunded";
+    order.profileRequired = false;
+    order.requiresPilotInfo = false;
+    order.cancellationReason = JAPAN_FEST_CANCELLATION_REASON;
+    order.cancelledAt = order.cancelledAt || now;
+    order.refundedAt = order.refundedAt || now;
+    order.enrollmentToken = null;
+    order.enrollmentTokenStatus = "revoked";
+    order.enrollmentTokenRevokedAt = order.enrollmentTokenRevokedAt || now;
+    order.enrollmentEmailStatus = "suppressed";
+    order.enrollmentEmailSuppressedAt = order.enrollmentEmailSuppressedAt || now;
+    order.enrollmentEmailSuppressionReason = JAPAN_FEST_CANCELLATION_REASON;
+    order.updatedAt = now;
+    ordersChanged += 1;
+    state.audit.push({
+      id: id("audit"),
+      type: "japan_fest_order_cancelled_refunded",
+      orderId: order.id,
+      eventId: JAPAN_FEST_2026_EVENT_ID,
+      reason: JAPAN_FEST_CANCELLATION_REASON,
+      createdAt: now
+    });
+  }
+
+  for (const ticket of state.tickets || []) {
+    if (!orderIds.has(ticket.orderId) && !isJapanFest2026EventId(ticket.eventId)) continue;
+    if (ticket.status === "cancelled") continue;
+    ticket.status = "cancelled";
+    ticket.cancelledAt = ticket.cancelledAt || now;
+    ticket.cancellationReason = JAPAN_FEST_CANCELLATION_REASON;
+    ticket.updatedAt = now;
+    ticketsCancelled += 1;
+  }
+
+  if (ticketsCancelled) {
+    state.audit.push({
+      id: id("audit"),
+      type: "japan_fest_tickets_cancelled",
+      eventId: JAPAN_FEST_2026_EVENT_ID,
+      count: ticketsCancelled,
+      reason: JAPAN_FEST_CANCELLATION_REASON,
+      createdAt: now
+    });
+  }
+
+  return { ordersFound: orders.length, ordersChanged, tokensRevoked, ticketsCancelled };
 }
 
 function createTickets({ order, user, items }) {
@@ -1503,8 +1951,131 @@ function createTickets({ order, user, items }) {
   return tickets;
 }
 
+function createSpecialPass({ order, user, item, config }) {
+  const now = new Date().toISOString();
+  const pistonCount = Number(item.pistonCount || order.pistonCount || 0);
+  const stableDigest = crypto
+    .createHash("sha256")
+    .update(`${config.campaignId}:${order.id}`)
+    .digest("hex");
+  const code = `HFC-PASE-${new Date().getFullYear()}-${stableDigest.slice(0, 10).toUpperCase()}`;
+  const drawEntryCodes = Array.from({ length: pistonCount }, (_, index) =>
+    `${code}-P${String(index + 1).padStart(2, "0")}`
+  );
+  return {
+    id: `pass_${stableDigest.slice(0, 20)}`,
+    orderId: order.id,
+    lineItemId: item.id,
+    userId: user.id,
+    campaignId: config.campaignId,
+    eventId: config.eventId,
+    eventName: config.eventName,
+    eventDate: config.eventDate,
+    eventDateLabel: config.eventDateLabel,
+    code,
+    passName: config.name,
+    levelId: item.passLevelId,
+    levelName: item.ticketTypeName || item.productName,
+    pistonCount,
+    holderName: user.name,
+    holderRut: user.rut,
+    holderPhone: user.phone,
+    holderEmail: user.email,
+    physicalFormat: config.physicalFormat,
+    notEntryLabel: config.notEntryLabel,
+    status: "valid",
+    pickupStatus: "pending",
+    pickedUpAt: null,
+    accessStatus: "not_checked_in",
+    checkedInAt: null,
+    entryValidationStatus: "unverified",
+    attendanceStatus: "not_present",
+    automobileEligibilityStatus: "eligible",
+    onsiteEligibilityStatus: "not_eligible",
+    rulesAcceptedAt: order.specialPassRulesAcceptedAt || null,
+    rulesVersion: order.specialPassRulesVersion || config.rulesVersion,
+    rulesHash: order.specialPassRulesHash || null,
+    privacyAcceptedAt: order.specialPassPrivacyAcceptedAt || null,
+    privacyTermsVersion: order.specialPassPrivacyVersion || DATA_TERMS_VERSION,
+    privacyTermsHash: order.specialPassPrivacyHash || SPECIAL_PASS_PRIVACY_SHA256,
+    notEntryAcceptedAt: order.notEntryAcceptedAt || null,
+    presenceConditionsAcceptedAt: order.specialPassRulesAcceptedAt || null,
+    drawEntryCodes,
+    pistons: drawEntryCodes.map((pistonCode, index) => ({
+      code: pistonCode,
+      ordinal: index + 1,
+      holderRut: user.rut,
+      holderRutNormalized: cleanRut(user.rut),
+      status: "active",
+      automobileEligible: true,
+      onsiteEligible: false,
+      issuedAt: now
+    })),
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
 function envFlag(name) {
   return /^(1|true|yes|si|sí)$/i.test(String(process.env[name] || "").trim());
+}
+
+function specialPassSalesGateEnabled() {
+  return envFlag("SPECIAL_PASS_SALES_ENABLED");
+}
+
+function specialPassRulesDocumentHash() {
+  return SPECIAL_PASS_RULES_SHA256;
+}
+
+function nonProductionDemoFlag(name) {
+  const productionRuntime = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
+  return !productionRuntime && envFlag(name);
+}
+
+function assertMailDelivery(result) {
+  if (result?.delivered === true || nonProductionDemoFlag("HFC_ALLOW_DEMO_EMAIL")) return result;
+  const error = new Error("No hay un proveedor de correo transaccional habilitado");
+  error.status = 503;
+  error.code = "transactional_email_unavailable";
+  throw error;
+}
+
+function specialPassActivation(config) {
+  const storageReady = specialPassStorageReady();
+  const runtimeEnabled = specialPassSalesGateEnabled();
+  const configurationEnabled = config?.active === true;
+  const rulesPublished =
+    config?.rulesPublished === true &&
+    config?.rulesVersion === SPECIAL_PASS_RULES_VERSION &&
+    config?.rulesHash === SPECIAL_PASS_RULES_SHA256;
+  const mailReady = mailProviderStatus().provider !== "demo" || nonProductionDemoFlag("HFC_ALLOW_DEMO_EMAIL");
+  const paymentStatus = mercadoPagoRuntimeStatus();
+  const paymentReady =
+    (paymentStatus.configured &&
+      paymentStatus.sandbox !== true &&
+      paymentStatus.webhookSignatureConfigured === true &&
+      paymentStatus.notificationUrlLooksPublic === true) ||
+    nonProductionDemoFlag("HFC_ALLOW_DEMO_PAYMENT");
+  return {
+    active: Boolean(runtimeEnabled && configurationEnabled && rulesPublished && storageReady && mailReady && paymentReady),
+    runtimeEnabled,
+    configurationEnabled,
+    rulesPublished,
+    storageReady,
+    mailReady,
+    paymentReady
+  };
+}
+
+function requireSpecialPassOrderActivation(state, order) {
+  if (!(order?.kind === "special_pass" || Number(order?.pistonCount || 0) > 0)) return;
+  const activation = specialPassActivation(specialPassConfigFromState(state));
+  if (activation.active) return;
+  const error = new Error("La venta de Pases fue pausada antes de iniciar el pago");
+  error.status = 409;
+  error.code = "special_pass_sales_paused";
+  throw error;
 }
 
 function normalizedPaymentData(paymentData = {}) {
@@ -1519,6 +2090,7 @@ function normalizedPaymentData(paymentData = {}) {
     externalReference: paymentData.externalReference || raw.external_reference || null,
     merchantOrderId: paymentData.merchantOrderId || raw.order?.id || raw.merchant_order_id || null,
     transactionAmount: Number(paymentData.transactionAmount || raw.transaction_amount || 0),
+    currency: String(paymentData.currency || raw.currency_id || "").trim().toUpperCase() || null,
     paidAt: paymentData.paidAt || raw.date_approved || null,
     raw: paymentData.raw || null
   };
@@ -1555,7 +2127,7 @@ function upsertPaymentRecord(state, order, paymentData) {
     externalReference: payment.externalReference || order.id,
     merchantOrderId: payment.merchantOrderId,
     amount: payment.transactionAmount || order.total,
-    currency: "CLP",
+    currency: payment.currency || "CLP",
     paidAt: payment.paidAt,
     createdAt: existing?.createdAt || now,
     updatedAt: now
@@ -1585,9 +2157,103 @@ function orderPaymentSummary(paymentRecord, fallback = {}) {
     statusDetail: paymentRecord.statusDetail,
     paymentType: paymentRecord.paymentType,
     preferenceId: paymentRecord.preferenceId,
+    externalReference: paymentRecord.externalReference || fallback.externalReference || null,
+    amount: Number(paymentRecord.amount || fallback.amount || 0),
+    currency: paymentRecord.currency || fallback.currency || "CLP",
     paidAt: paymentRecord.paidAt || fallback.paidAt || null,
     updatedAt: paymentRecord.updatedAt
   };
+}
+
+function assertPaymentMatchesOrder(order, paymentData = {}, { allowPersistedPayment = false } = {}) {
+  const payment = normalizedPaymentData(paymentData);
+  if (String(payment.provider || "").toLowerCase() === "demo") return;
+  const matchesPersistedPayment =
+    allowPersistedPayment &&
+    order.status === "paid" &&
+    payment.paymentId &&
+    order.payment?.paymentId &&
+    String(payment.paymentId) === String(order.payment.paymentId) &&
+    String(payment.provider || "") === String(order.payment.provider || "");
+  if (matchesPersistedPayment) return;
+
+  if (!payment.externalReference || String(payment.externalReference) !== String(order.id)) {
+    const error = new Error("La referencia del pago no corresponde a la orden");
+    error.status = 409;
+    throw error;
+  }
+
+  if (!Number.isFinite(payment.transactionAmount) || Math.round(payment.transactionAmount) !== Math.round(order.total)) {
+    const error = new Error("El monto confirmado por el medio de pago no coincide con la orden");
+    error.status = 409;
+    throw error;
+  }
+
+  if (payment.currency && payment.currency !== "CLP") {
+    const error = new Error("La moneda confirmada por el medio de pago no corresponde a CLP");
+    error.status = 409;
+    throw error;
+  }
+
+  if (order.preferenceId && payment.preferenceId && String(order.preferenceId) !== String(payment.preferenceId)) {
+    const error = new Error("La preferencia de pago no corresponde a la orden");
+    error.status = 409;
+    throw error;
+  }
+}
+
+function approvedPaymentRecordsForOrder(state, order) {
+  return (state.payments || [])
+    .filter((payment) => payment.orderId === order.id && String(payment.status || "").toLowerCase() === "approved")
+    .sort((a, b) => String(a.paidAt || a.createdAt || "").localeCompare(String(b.paidAt || b.createdAt || "")));
+}
+
+function canonicalApprovedPayment(state, order) {
+  const approved = approvedPaymentRecordsForOrder(state, order);
+  if (!approved.length) return null;
+  return (
+    approved.find(
+      (payment) =>
+        order.payment?.paymentId &&
+        String(payment.paymentId || "") === String(order.payment.paymentId) &&
+        String(payment.provider || "") === String(order.payment.provider || "")
+    ) || approved[0]
+  );
+}
+
+function revokeSpecialPassesForOrder(state, order, paymentStatus) {
+  const now = new Date().toISOString();
+  let revoked = 0;
+  for (const pass of state.specialPasses || []) {
+    if (pass.orderId !== order.id || pass.status !== "valid") continue;
+    pass.status = "revoked";
+    pass.revokedAt = pass.revokedAt || now;
+    pass.revokedReason = `payment_${paymentStatus}`;
+    pass.automobileEligibilityStatus = "revoked";
+    pass.onsiteEligibilityStatus = "revoked";
+    pass.pistons = (pass.pistons || []).map((piston) => ({
+      ...piston,
+      status: "voided",
+      voidedAt: piston.voidedAt || now,
+      voidedReason: `payment_${paymentStatus}`,
+      automobileEligible: false,
+      onsiteEligible: false
+    }));
+    pass.updatedAt = now;
+    revoked += 1;
+  }
+  if (revoked) {
+    order.fulfillmentStatus = "revoked";
+    state.audit.push({
+      id: id("audit"),
+      type: "special_pass_pistons_revoked",
+      orderId: order.id,
+      paymentStatus,
+      revokedPasses: revoked,
+      createdAt: now
+    });
+  }
+  return revoked;
 }
 
 function orderStatusForPaymentStatus(status) {
@@ -1631,8 +2297,8 @@ function retryCheckoutUrl(order, req = null) {
 function supportWhatsappUrl(order = null) {
   const eventName = orderEventName(order);
   const message = order?.id
-    ? `Hola, necesito ayuda con mi compra ${eventName}. Orden ${order.id}.`
-    : `Hola, necesito ayuda con mi compra ${eventName}.`;
+    ? `Hola, necesito ayuda con mi compra o entrada ${eventName}. Orden ${order.id}.`
+    : `Hola, necesito ayuda con mi compra o entrada ${eventName}.`;
   return `https://wa.me/56972934950?text=${encodeURIComponent(message)}`;
 }
 
@@ -1652,6 +2318,7 @@ function paymentDataFromMercadoPago(payment) {
     externalReference: payment.external_reference,
     merchantOrderId: payment.order?.id || payment.merchant_order_id,
     transactionAmount: payment.transaction_amount,
+    currency: payment.currency_id,
     paidAt: payment.date_approved,
     raw: payment
   };
@@ -1707,11 +2374,36 @@ async function updateOrderPaymentStatus(orderId, paymentData = {}) {
       throw error;
     }
 
+    if (orderIsCancelledOrRefunded(order, state)) {
+      state.audit.push({
+        id: id("audit"),
+        type: "payment_status_ignored_for_cancelled_event",
+        orderId: order.id,
+        eventId: JAPAN_FEST_2026_EVENT_ID,
+        status: paymentData.status || null,
+        createdAt: new Date().toISOString()
+      });
+      result = { order, payment: order.payment || null, ignored: true };
+      return;
+    }
+
+    assertPaymentMatchesOrder(order, paymentData, { allowPersistedPayment: true });
     const paymentRecord = upsertPaymentRecord(state, order, paymentData);
-    if (order.status !== "paid") {
+    const normalizedPaymentStatus = String(paymentRecord.status || "").toLowerCase();
+    const isReversal = ["refunded", "charged_back"].includes(normalizedPaymentStatus);
+    const remainingApprovedPayment = canonicalApprovedPayment(state, order);
+    const reversesPaidOrder = order.status === "paid" && isReversal && !remainingApprovedPayment;
+    if (isReversal && remainingApprovedPayment) {
+      order.status = "paid";
+      order.payment = orderPaymentSummary(remainingApprovedPayment, order.payment);
+      order.updatedAt = new Date().toISOString();
+    } else if (order.status !== "paid" || reversesPaidOrder) {
       order.status = orderStatusForPaymentStatus(paymentRecord.status);
       order.payment = orderPaymentSummary(paymentRecord, order.payment);
       order.updatedAt = new Date().toISOString();
+    }
+    if (reversesPaidOrder && (order.kind === "special_pass" || Number(order.pistonCount || 0) > 0)) {
+      revokeSpecialPassesForOrder(state, order, normalizedPaymentStatus);
     }
 
     state.audit.push({
@@ -1730,48 +2422,114 @@ async function updateOrderPaymentStatus(orderId, paymentData = {}) {
 }
 
 async function completeOrderPayment(orderId, paymentData = {}) {
-  let state = await readState();
-  const order = state.orders.find((candidate) => candidate.id === orderId);
-  if (!order) {
-    const error = new Error("Orden no encontrada");
-    error.status = 404;
-    throw error;
-  }
-
-  const user = state.users.find((candidate) => candidate.id === order.userId);
-  const items = getOrderItems(order, state);
-  const firstItem = items[0];
-  const event = firstItem ? findEvent(state, firstItem.eventId) : null;
-  const ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
-  if (!user || !items.length) {
-    const error = new Error("Orden incompleta");
-    error.status = 409;
-    throw error;
-  }
-
-  let tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
-  let invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+  let state;
+  let order;
+  let user;
+  let items;
+  let firstItem;
+  let event;
+  let isSpecialPassOrder;
+  let passConfig;
+  let ticketType;
+  let tickets;
+  let specialPasses;
+  let invoice;
+  let profileReady = false;
+  let shouldIssueInvoice = false;
   let invoiceError = null;
-  const paymentRecord = upsertPaymentRecord(state, order, {
-    ...paymentData,
-    status: paymentData.status || "approved"
+
+  // Payment status, fulfillment and Pistón issuance are one serialized
+  // read-modify-write transaction in PostgreSQL. Duplicate webhooks therefore
+  // cannot write a stale whole-state snapshot over another paid order.
+  await updateState((currentState) => {
+    state = currentState;
+    order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+
+    user = state.users.find((candidate) => candidate.id === order.userId);
+    items = getOrderItems(order, state);
+    firstItem = items[0];
+    event = firstItem ? findEvent(state, firstItem.eventId) : null;
+    isSpecialPassOrder = order.kind === "special_pass" || firstItem?.productKind === "special_pass";
+    passConfig = specialPassConfigFromState(state);
+    ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
+    if (!user || !items.length) {
+      const error = new Error("Orden incompleta");
+      error.status = 409;
+      throw error;
+    }
+    if (orderIsCancelledOrRefunded(order, state)) throw cancelledJapanFestOrderError();
+
+    assertPaymentMatchesOrder(order, {
+      ...paymentData,
+      status: paymentData.status || "approved"
+    }, { allowPersistedPayment: true });
+
+    tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
+    specialPasses = (state.specialPasses || []).filter((pass) => pass.orderId === order.id);
+    invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
+    const paymentRecord = upsertPaymentRecord(state, order, {
+      ...paymentData,
+      status: paymentData.status || "approved"
+    });
+    const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
+    profileReady = userProfileCompleteForItems(user, items, state);
+
+    if (!profileReady) {
+      ensureEnrollmentToken(order);
+      order.status = "paid";
+      order.payment = orderPaymentSummary(paymentRecord, {
+        paidAt: new Date().toISOString()
+      });
+      order.profileRequired = true;
+      order.requiresPilotInfo = requiresPilotInfo;
+      order.fulfillmentStatus = "profile_pending";
+      order.invoiceStatus = "profile_pending";
+      order.enrollmentEmailStatus = order.enrollmentEmailSentAt ? "sent" : "pending";
+      order.updatedAt = new Date().toISOString();
+      return;
+    }
+
+    if (order.status !== "paid") {
+      order.status = "paid";
+      order.payment = orderPaymentSummary(paymentRecord, {
+        paidAt: new Date().toISOString()
+      });
+      order.invoiceStatus = "pending";
+    } else {
+      const canonicalPayment = canonicalApprovedPayment(state, order) || paymentRecord;
+      order.payment = orderPaymentSummary(canonicalPayment, order.payment);
+    }
+    order.profileRequired = false;
+    order.requiresPilotInfo = requiresPilotInfo;
+    order.fulfillmentStatus = "fulfilled";
+
+    if (isSpecialPassOrder) {
+      if (!specialPasses.length) {
+        specialPasses = [createSpecialPass({ order, user, item: firstItem, config: passConfig })];
+        state.specialPasses.push(...specialPasses);
+      }
+    } else if (!tickets.length) {
+      tickets = createTickets({ order, user, items });
+      state.tickets.push(...tickets);
+    }
+    if (!invoice && automaticInvoiceIssuanceEnabled()) {
+      const issueStartedAt = Date.parse(order.invoiceIssueStartedAt || "");
+      const issueClaimIsStale = !Number.isFinite(issueStartedAt) || Date.now() - issueStartedAt > 10 * 60 * 1000;
+      if (order.invoiceStatus !== "issuing" || issueClaimIsStale) {
+        order.invoiceStatus = "issuing";
+        order.invoiceIssueStartedAt = new Date().toISOString();
+        shouldIssueInvoice = true;
+      }
+    }
+    order.updatedAt = new Date().toISOString();
   });
-  const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
-  const profileReady = userProfileCompleteForItems(user, items, state);
 
   if (!profileReady) {
-    ensureEnrollmentToken(order);
-    order.status = "paid";
-    order.payment = orderPaymentSummary(paymentRecord, {
-      paidAt: new Date().toISOString()
-    });
-    order.profileRequired = true;
-    order.requiresPilotInfo = requiresPilotInfo;
-    order.fulfillmentStatus = "profile_pending";
-    order.invoiceStatus = "profile_pending";
-    order.enrollmentEmailStatus = order.enrollmentEmailSentAt ? "sent" : "pending";
-    order.updatedAt = new Date().toISOString();
-    await writeState(state);
     const emailResult = order.enrollmentEmailSentAt
       ? { ok: true, skipped: true, ...enrollmentLinks(order, configuredBaseUrl()) }
       : await sendEnrollmentInvitationEmail({ orderId: order.id });
@@ -1783,6 +2541,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
       event,
       ticketType,
       tickets: [],
+      specialPasses: [],
       invoice: null,
       profileRequired: true,
       enrollmentEmail: emailResult,
@@ -1790,108 +2549,95 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     };
   }
 
-  if (order.status !== "paid") {
-    order.status = "paid";
-    order.payment = orderPaymentSummary(paymentRecord, {
-      paidAt: new Date().toISOString()
-    });
-    order.profileRequired = false;
-    order.requiresPilotInfo = requiresPilotInfo;
-    order.fulfillmentStatus = "fulfilled";
-
-    if (!tickets.length) {
-      tickets = createTickets({ order, user, items });
-      state.tickets.push(...tickets);
-    }
-
-    order.invoiceStatus = "pending";
-    order.updatedAt = new Date().toISOString();
-    await writeState(state);
-  } else {
-    if (!tickets.length) {
-      tickets = createTickets({ order, user, items });
-      state.tickets.push(...tickets);
-    }
-    order.payment = orderPaymentSummary(paymentRecord, order.payment);
-    order.profileRequired = false;
-    order.requiresPilotInfo = requiresPilotInfo;
-    order.fulfillmentStatus = "fulfilled";
-    order.updatedAt = new Date().toISOString();
-    await writeState(state);
-  }
-
-  if (!invoice && automaticInvoiceIssuanceEnabled()) {
+  if (shouldIssueInvoice) {
     try {
       invoice = await issueBoleta({ order, user, event, ticketType, tickets, items });
-      state = await readState();
-      const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
-      state.invoices.push(invoice);
-      if (freshOrder) {
-        freshOrder.invoiceStatus = "issued";
-        freshOrder.updatedAt = new Date().toISOString();
-      }
-      await writeState(state);
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+        const existingInvoice = nextState.invoices.find((candidate) => candidate.orderId === order.id);
+        if (!existingInvoice) nextState.invoices.push(invoice);
+        else invoice = existingInvoice;
+        if (freshOrder) {
+          freshOrder.invoiceStatus = "issued";
+          freshOrder.invoiceIssueStartedAt = null;
+          freshOrder.updatedAt = new Date().toISOString();
+        }
+      });
     } catch (error) {
       invoiceError = error.message;
-      state = await readState();
-      const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
+      await updateState((nextState) => {
+        const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+        if (freshOrder) {
+          freshOrder.invoiceStatus = "failed";
+          freshOrder.invoiceIssueStartedAt = null;
+          freshOrder.invoiceError = invoiceError;
+          freshOrder.updatedAt = new Date().toISOString();
+        }
+        nextState.audit.push({
+          id: id("audit"),
+          type: "invoice_issue_failed",
+          orderId: order.id,
+          error: invoiceError,
+          createdAt: new Date().toISOString()
+        });
+      });
+    }
+  } else if (!invoice && !automaticInvoiceIssuanceEnabled()) {
+    const queueReason = "Emision automatica de DTE desactivada";
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      const changed =
+        freshOrder &&
+        (freshOrder.invoiceStatus !== "pending" || freshOrder.invoicePendingReason !== "automatic_issue_disabled");
       if (freshOrder) {
-        freshOrder.invoiceStatus = "failed";
-        freshOrder.invoiceError = invoiceError;
+        freshOrder.invoiceStatus = "pending";
+        freshOrder.invoiceIssueStartedAt = null;
+        freshOrder.invoiceError = null;
+        freshOrder.invoicePendingReason = "automatic_issue_disabled";
         freshOrder.updatedAt = new Date().toISOString();
       }
-      state.audit.push({
-        id: id("audit"),
-        type: "invoice_issue_failed",
-        orderId: order.id,
-        error: invoiceError,
-        createdAt: new Date().toISOString()
-      });
-      await writeState(state);
-    }
-  } else if (!invoice) {
-    state = await readState();
-    const freshOrder = state.orders.find((candidate) => candidate.id === order.id);
-    const queueReason = "Emision automatica de DTE desactivada";
-    const queuedAlready =
-      freshOrder?.invoiceStatus === "pending" &&
-      freshOrder?.invoicePendingReason === "automatic_issue_disabled";
-
-    if (freshOrder) {
-      freshOrder.invoiceStatus = "pending";
-      freshOrder.invoiceError = null;
-      freshOrder.invoicePendingReason = "automatic_issue_disabled";
-      freshOrder.updatedAt = new Date().toISOString();
-    }
-
-    if (!queuedAlready) {
-      state.audit.push({
-        id: id("audit"),
-        type: "invoice_queued",
-        orderId: order.id,
-        reason: queueReason,
-        createdAt: new Date().toISOString()
-      });
-    }
-    await writeState(state);
+      if (changed) {
+        nextState.audit.push({
+          id: id("audit"),
+          type: "invoice_queued",
+          orderId: order.id,
+          reason: queueReason,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
   }
 
   state = await readState();
   const finalOrder = state.orders.find((candidate) => candidate.id === order.id) || order;
   if (!finalOrder.ticketEmailSentAt) {
-    await sendTicketEmail({
-      user,
-      order: finalOrder,
-      event,
-      ticketType,
-      tickets,
-      invoice,
-      template: findTemplate(state.emailTemplates, "payment"),
-      baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : ""
+    if (isSpecialPassOrder) {
+      await sendSpecialPassIssuedEmail({
+        user,
+        order: finalOrder,
+        pass: specialPasses[0],
+        invoice,
+        config: passConfig,
+        req: null
+      });
+    } else {
+      await sendTicketEmail({
+        user,
+        order: finalOrder,
+        event,
+        ticketType,
+        tickets,
+        invoice,
+        template: findTemplate(state.emailTemplates, "payment"),
+        baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : ""
+      });
+    }
+    await updateState((nextState) => {
+      const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
+      if (!freshOrder) return;
+      freshOrder.ticketEmailSentAt = new Date().toISOString();
+      freshOrder.updatedAt = freshOrder.ticketEmailSentAt;
     });
-    finalOrder.ticketEmailSentAt = new Date().toISOString();
-    finalOrder.updatedAt = finalOrder.ticketEmailSentAt;
-    await writeState(state);
   }
   state = await readState();
   return {
@@ -1900,6 +2646,7 @@ async function completeOrderPayment(orderId, paymentData = {}) {
     event,
     ticketType,
     tickets,
+    specialPasses,
     invoice,
     invoiceError
   };
@@ -1920,10 +2667,11 @@ async function resendOrderEmail(orderId, { emailTo = "" } = {}) {
   const event = firstItem ? findEvent(state, firstItem.eventId) : null;
   const ticketType = firstItem ? findTicketType(state, firstItem.ticketTypeId) : null;
   const tickets = state.tickets.filter((ticket) => ticket.orderId === order.id);
+  const specialPasses = (state.specialPasses || []).filter((pass) => pass.orderId === order.id);
   const invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
 
-  if (!user || !tickets.length) {
-    const error = new Error("La orden aun no tiene tickets emitidos");
+  if (!user || (!tickets.length && !specialPasses.length)) {
+    const error = new Error("La orden aún no tiene productos emitidos");
     error.status = 409;
     throw error;
   }
@@ -1935,17 +2683,28 @@ async function resendOrderEmail(orderId, { emailTo = "" } = {}) {
     throw error;
   }
 
-  await sendTicketEmail({
-    user,
-    order,
-    event,
-    ticketType,
-    tickets,
-    invoice,
-    template: findTemplate(state.emailTemplates, "payment"),
-    baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : "",
-    to: recipientEmail || undefined
-  });
+  if (specialPasses.length) {
+    await sendSpecialPassIssuedEmail({
+      user,
+      order,
+      pass: specialPasses[0],
+      invoice,
+      config: specialPassConfigFromState(state),
+      to: recipientEmail || undefined
+    });
+  } else {
+    await sendTicketEmail({
+      user,
+      order,
+      event,
+      ticketType,
+      tickets,
+      invoice,
+      template: findTemplate(state.emailTemplates, "payment"),
+      baseUrl: process.env.PUBLIC_BASE_URL ? process.env.PUBLIC_BASE_URL.replace(/\/$/, "") : "",
+      to: recipientEmail || undefined
+    });
+  }
 
   await updateState((nextState) => {
     const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
@@ -1964,7 +2723,7 @@ async function resendOrderEmail(orderId, { emailTo = "" } = {}) {
     });
   });
 
-  return { order, user, tickets, invoice };
+  return { order, user, tickets, specialPasses, invoice };
 }
 
 function existingProfileMissingFields(user, items = [], state = null) {
@@ -1991,6 +2750,9 @@ async function completeOrderProfileFromExistingData(orderId) {
       const error = new Error("Orden no encontrada");
       error.status = 404;
       throw error;
+    }
+    if (orderIsCancelledOrRefunded(order, state)) {
+      throw cancelledJapanFestOrderError();
     }
     if (order.status !== "paid" || !order.profileRequired) {
       const error = new Error("La orden no esta pendiente de perfil");
@@ -2063,6 +2825,9 @@ async function reissueOrderDte({
     const error = new Error("Orden no encontrada");
     error.status = 404;
     throw error;
+  }
+  if (orderIsCancelledOrRefunded(order, state)) {
+    throw cancelledJapanFestOrderError();
   }
 
   if (order.status !== "paid") {
@@ -2312,33 +3077,35 @@ function enrollmentTemplateForEmail(template) {
 }
 
 async function sendEnrollmentInvitationEmail({ orderId, req = null, force = false }) {
-  let state = await readState();
-  let order = state.orders.find((candidate) => candidate.id === orderId);
-  if (!order) {
-    const error = new Error("Orden no encontrada");
-    error.status = 404;
-    throw error;
+  let skippedOrder = null;
+  await updateState((state) => {
+    const order = state.orders.find((candidate) => candidate.id === orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    if (orderIsCancelledOrRefunded(order, state)) throw cancelledJapanFestOrderError();
+    if (!state.users.some((candidate) => candidate.id === order.userId)) {
+      const error = new Error("Usuario no encontrado para enviar enrolamiento");
+      error.status = 409;
+      throw error;
+    }
+    ensureEnrollmentToken(order);
+    if (!force && order.enrollmentEmailSentAt) skippedOrder = { ...order };
+  });
+  if (skippedOrder) {
+    return { ok: true, skipped: true, ...enrollmentLinks(skippedOrder, configuredBaseUrl(req)) };
   }
 
+  const state = await readState();
+  const order = state.orders.find((candidate) => candidate.id === orderId);
   const user = state.users.find((candidate) => candidate.id === order.userId);
   const items = getOrderItems(order, state);
   const firstItem = items[0];
   const event = firstItem ? findEvent(state, firstItem.eventId) : null;
-
-  if (!user) {
-    const error = new Error("Usuario no encontrado para enviar enrolamiento");
-    error.status = 409;
-    throw error;
-  }
-
-  ensureEnrollmentToken(order);
-  if (!force && order.enrollmentEmailSentAt) {
-    return { ok: true, skipped: true, ...enrollmentLinks(order, configuredBaseUrl(req)) };
-  }
-
-  await writeState(state);
-  state = await readState();
-  order = state.orders.find((candidate) => candidate.id === orderId) || order;
+  const isSpecialPassOrder = order.kind === "special_pass" || firstItem?.productKind === "special_pass";
+  const passConfig = specialPassConfigFromState(state);
 
   const base = configuredBaseUrl(req);
   const links = enrollmentLinks(order, base);
@@ -2360,7 +3127,17 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
     enrollment_qr_url: links.enrollmentQrUrl,
     qr_url: links.enrollmentQrUrl
   };
-  const template = enrollmentTemplateForEmail(findTemplate(state.emailTemplates, "enrollment_invitation"));
+  if (isSpecialPassOrder) {
+    variables.pass_name = firstItem?.ticketTypeName || passConfig.name;
+    variables.piston_count = Number(firstItem?.pistonCount || order.pistonCount || 0);
+    variables.piston_label = variables.piston_count === 1 ? "Pistón" : "Pistones";
+    variables.not_entry_label = passConfig.notEntryLabel;
+    variables.pickup_event_day = passConfig.pickup.eventDay;
+    variables.pickup_pre_event = passConfig.pickup.preEvent;
+  }
+  const template = isSpecialPassOrder
+    ? normalizeTemplate(findTemplate(state.emailTemplates, "special_pass_enrollment"))
+    : enrollmentTemplateForEmail(findTemplate(state.emailTemplates, "enrollment_invitation"));
   const rendered = renderTemplate(template, variables);
   if (!rendered.text.includes(links.enrollmentUrl)) {
     rendered.text = `${rendered.text}\nAbrir formulario: ${links.enrollmentUrl}`.trim();
@@ -2377,12 +3154,12 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
   }
 
   try {
-    const result = await sendMail({
+    const result = assertMailDelivery(await sendMail({
       to: user.email,
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html
-    });
+    }));
 
     await updateState((nextState) => {
       const freshOrder = nextState.orders.find((candidate) => candidate.id === order.id);
@@ -2393,7 +3170,7 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
         freshOrder.updatedAt = freshOrder.enrollmentEmailSentAt;
       }
       logEmailResult(nextState, {
-        type: "enrollment_invitation",
+        type: isSpecialPassOrder ? "special_pass_enrollment" : "enrollment_invitation",
         templateId: template.id,
         to: user.email,
         userId: user.id,
@@ -2414,7 +3191,7 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
         freshOrder.updatedAt = new Date().toISOString();
       }
       logEmailResult(nextState, {
-        type: "enrollment_invitation",
+        type: isSpecialPassOrder ? "special_pass_enrollment" : "enrollment_invitation",
         templateId: template.id,
         to: user.email,
         userId: user.id,
@@ -2429,12 +3206,61 @@ async function sendEnrollmentInvitationEmail({ orderId, req = null, force = fals
   }
 }
 
+async function sendSpecialPassIssuedEmail({ user, order, pass, invoice, config, req = null, to = "" }) {
+  if (!user || !order || !pass) {
+    const error = new Error("El Pase aun no está listo para enviar");
+    error.status = 409;
+    throw error;
+  }
+  const state = await readState();
+  const base = configuredBaseUrl(req);
+  const passQrUrl = `${base}/api/special-passes/${encodeURIComponent(pass.code)}/qr.svg`;
+  const passVerifyUrl = `${base}/validar-pase?code=${encodeURIComponent(pass.code)}`;
+  const pistonCount = Number(pass.pistonCount || 0);
+  const template = normalizeTemplate(findTemplate(state.emailTemplates, "special_pass_issued"));
+  const rendered = renderTemplate(template, {
+    name: user.name || nameFromEmail(user.email),
+    email: user.email,
+    event_name: config.eventName,
+    event_date: config.eventDateLabel,
+    order_id: order.id,
+    pass_name: pass.levelName || config.name,
+    pass_code: pass.code,
+    pass_qr_url: passQrUrl,
+    pass_verify_url: passVerifyUrl,
+    piston_count: pistonCount,
+    piston_label: pistonCount === 1 ? "Pistón" : "Pistones",
+    not_entry_label: config.notEntryLabel,
+    pickup_event_day: config.pickup.eventDay,
+    pickup_pre_event: config.pickup.preEvent,
+    invoice_label: invoice?.folio || invoice?.providerId || "en proceso"
+  });
+  const recipient = normalizeEmail(to) || user.email;
+  const result = assertMailDelivery(
+    await sendMail({ to: recipient, subject: rendered.subject, text: rendered.text, html: rendered.html })
+  );
+  await updateState((nextState) => {
+    logEmailResult(nextState, {
+      type: "special_pass_issued",
+      templateId: template.id,
+      to: recipient,
+      userId: user.id,
+      orderId: order.id,
+      specialPassId: pass.id,
+      status: "sent",
+      mode: result.mode,
+      subject: rendered.subject
+    });
+  });
+  return result;
+}
+
 function profilePendingReminderHours() {
   return envPositiveNumber("PROFILE_PENDING_REMINDER_HOURS", 24);
 }
 
-function profilePendingReminderDue(order, now = new Date()) {
-  if (order?.status !== "paid" || !order.profileRequired) return false;
+function profilePendingReminderDue(state, order, now = new Date()) {
+  if (order?.status !== "paid" || !order.profileRequired || orderIsCancelledOrRefunded(order, state)) return false;
   const lastSent = orderReferenceDate(order, ["enrollmentEmailSentAt", "enrollmentReminderSentAt"]);
   return !lastSent || minutesSince(lastSent, now) >= profilePendingReminderHours() * 60;
 }
@@ -2443,7 +3269,7 @@ async function sendDueProfilePendingEnrollmentReminders({ req = null } = {}) {
   const state = await readState();
   const now = new Date();
   const candidates = (state.orders || [])
-    .filter((order) => profilePendingReminderDue(order, now))
+    .filter((order) => profilePendingReminderDue(state, order, now))
     .slice(0, envPositiveNumber("PROFILE_PENDING_REMINDER_BATCH", 5));
   const results = [];
 
@@ -2521,7 +3347,7 @@ async function sendPaymentRetryEmail({ orderId, req = null, reason = "", force =
     rendered.html = `${rendered.html}
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#121212;margin-top:18px">
         <p><a href="${htmlEscape(retryUrl)}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Intentar nuevamente</a></p>
-        <p><a href="${htmlEscape(whatsappUrl)}" style="color:#1b5e20;font-weight:bold;text-decoration:none">Necesito ayuda por WhatsApp</a></p>
+        <p><a href="${htmlEscape(whatsappUrl)}" style="color:#1b5e20;font-weight:bold;text-decoration:none">Ayuda compra/entrada por WhatsApp</a></p>
       </div>`;
   }
 
@@ -2618,6 +3444,170 @@ app.get("/api/catalog", async (req, res, next) => {
           ? "Sitio en modo prueba: no estas comprando entradas reales. Usa solo tarjetas de prueba."
           : ""
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/special-passes/catalog", async (req, res, next) => {
+  try {
+    const state = await readState();
+    const config = specialPassConfigFromState(state);
+    const sales = onlineSalesStatus();
+    const activation = specialPassActivation(config);
+    const purchasable = sales.enabled && activation.active;
+    const mercadoPagoDetails = mercadoPagoRuntimeStatus(req);
+    res.json({
+      ok: true,
+      specialPass: {
+        ...config,
+        active: purchasable,
+        unavailableMessage: purchasable
+          ? ""
+          : sales.enabled
+            ? "Los Pases estarán disponibles próximamente. Por ahora puedes conocer sus niveles y beneficios."
+            : sales.message
+      },
+      sales,
+      integrations: {
+        paymentMode: paymentModeForClient(),
+        mercadoPagoPublicKey: mercadoPagoInternalCheckoutEnabled() ? mercadoPagoPublicKey() : null,
+        checkoutStorageReady: checkoutStorageReady(),
+        testMode: Boolean(mercadoPagoDetails.sandbox),
+        testModeMessage: mercadoPagoDetails.sandbox
+          ? "Sitio en modo prueba: el Pase y el pago son de demostración."
+          : "",
+        activationReady: purchasable
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/special-passes/orders", async (req, res, next) => {
+  try {
+    requireOnlineSalesOpen();
+    await requireCheckoutStorage();
+    if (req.body.termsAccepted !== true) {
+      const error = new Error("Debes aceptar expresamente el uso de datos para el Upgrade y sus sorteos");
+      error.status = 400;
+      throw error;
+    }
+    if (!req.body.notEntryAccepted) {
+      const error = new Error("Debes confirmar que el Pase no es válido como entrada");
+      error.status = 400;
+      throw error;
+    }
+    if (!req.body.rulesAccepted) {
+      const error = new Error("Debes aceptar las bases del Upgrade y sus sorteos");
+      error.status = 400;
+      throw error;
+    }
+
+    const { state: initialState } = await readStateWithCheckoutMaintenance();
+    const config = specialPassConfigFromState(initialState);
+    const activation = specialPassActivation(config);
+    if (!activation.storageReady) {
+      const error = new Error("Los Pases estarán disponibles próximamente");
+      error.status = 503;
+      throw error;
+    }
+    if (!activation.active) {
+      const error = new Error("La venta de Pases no está disponible");
+      error.status = 409;
+      throw error;
+    }
+    if (String(req.body.rulesVersion || "") !== config.rulesVersion) {
+      const error = new Error("Las bases fueron actualizadas. Revísalas y vuelve a aceptarlas antes de pagar");
+      error.status = 409;
+      throw error;
+    }
+    const level = findSpecialPassLevel(config, requireString(req.body, "levelId", "Nivel del pase"));
+    if (!level) {
+      const error = new Error("El Pase seleccionado no está disponible");
+      error.status = 400;
+      throw error;
+    }
+
+    const sessionUser = accountUserFromRequest(req, initialState);
+    requireString(req.body, "name", "Nombre del titular");
+    const identity = checkoutIdentityFromBody(req.body, sessionUser, { rutOptional: false });
+    const user = await updateState((state) => {
+      const freshSessionUser = sessionUser
+        ? state.users.find((candidate) => candidate.id === sessionUser.id) || null
+        : null;
+      return upsertCheckoutUser(state, identity, req.body, freshSessionUser);
+    });
+
+    const state = await readState();
+    const freshUser = state.users.find((candidate) => candidate.id === user.id);
+    const items = [
+      {
+        id: id("passline"),
+        productKind: "special_pass",
+        eventId: config.eventId,
+        eventName: config.eventName,
+        ticketTypeId: null,
+        ticketTypeName: level.name,
+        productName: level.name,
+        description: `${config.physicalFormat}. ${level.pistons} ${level.pistons === 1 ? "Pistón" : "Pistones"}. ${config.notEntryLabel}.`,
+        passLevelId: level.id,
+        pistonCount: level.pistons,
+        quantity: 1,
+        unitPrice: level.price,
+        total: level.price
+      }
+    ];
+    const acceptedAt = new Date().toISOString();
+    const rulesAcceptance = {
+      acceptedAt,
+      version: config.rulesVersion,
+      hash: specialPassRulesDocumentHash(),
+      url: "/bases-sorteo"
+    };
+    const { order, preference } = await createOrderFromItems({
+      req,
+      user: freshUser,
+      items,
+      state,
+      kind: "special_pass",
+      returnPath: "/pases-especiales",
+      acceptedAt,
+      specialPassAcceptance: rulesAcceptance
+    });
+    const accountSession = createAccountSessionRecord(freshUser);
+    await updateState((nextState) => {
+      nextState.sessions.push(accountSession);
+      nextState.audit.push({
+        id: id("audit"),
+        type: "special_pass_not_entry_notice_accepted",
+        orderId: order.id,
+        userId: freshUser.id,
+        levelId: level.id,
+        pistonCount: level.pistons,
+        createdAt: acceptedAt
+      });
+      nextState.audit.push({
+        id: id("audit"),
+        type: "special_pass_rules_accepted",
+        orderId: order.id,
+        userId: freshUser.id,
+        rulesVersion: rulesAcceptance.version,
+        rulesHash: rulesAcceptance.hash,
+        createdAt: acceptedAt
+      });
+    });
+
+    res.status(201).json({
+      ok: true,
+      order: publicOrder(order),
+      user: publicUser(freshUser),
+      accountToken: accountSession.token,
+      checkoutUrl: preference.checkoutUrl,
+      paymentMode: preference.mode,
+      mercadoPagoPublicKey: mercadoPagoInternalCheckoutEnabled() ? mercadoPagoPublicKey() : null
     });
   } catch (error) {
     next(error);
@@ -2874,23 +3864,24 @@ app.get("/api/auth/verify", async (req, res, next) => {
 app.post("/api/auth/resend-verification", async (req, res, next) => {
   try {
     const email = normalizeEmail(requireString(req.body, "email", "Correo"));
-    const state = await readState();
-    const user = state.users.find((candidate) => candidate.email === email);
-
-    if (!user) {
-      const error = new Error("No encontramos ese registro");
-      error.status = 404;
-      throw error;
-    }
+    let user;
+    await updateState((state) => {
+      user = state.users.find((candidate) => candidate.email === email);
+      if (!user) {
+        const error = new Error("No encontramos ese registro");
+        error.status = 404;
+        throw error;
+      }
+      if (user.emailVerified) return;
+      user.verificationToken = id("verify");
+      user.verificationSentAt = new Date().toISOString();
+      user.updatedAt = user.verificationSentAt;
+    });
 
     if (user.emailVerified) {
       res.json({ ok: true, user: publicUser(user), alreadyVerified: true });
       return;
     }
-
-    user.verificationToken = id("verify");
-    user.verificationSentAt = new Date().toISOString();
-    await writeState(state);
 
     const verificationUrl = `${baseUrl(req)}/api/auth/verify?token=${user.verificationToken}`;
     const mailResult = await sendVerificationEmail({ user, verificationUrl });
@@ -2905,17 +3896,39 @@ app.post("/api/auth/resend-verification", async (req, res, next) => {
   }
 });
 
-async function createOrderFromItems({ req, user, items, state }) {
+async function createOrderFromItems({
+  req,
+  user,
+  items,
+  state,
+  kind = "ticket",
+  returnPath = "/carrito",
+  acceptedAt = null,
+  specialPassAcceptance = null
+}) {
   const now = new Date().toISOString();
   const total = items.reduce((sum, item) => sum + item.total, 0);
   const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const firstItem = items[0];
   const event = findEvent(state, firstItem.eventId);
   const ticketType = findTicketType(state, firstItem.ticketTypeId);
-  const requiresPilotInfo = orderItemsRequirePilotInfo(items, state);
+  const requiresPilotInfo = kind === "ticket" && orderItemsRequirePilotInfo(items, state);
 
   const order = {
     id: id("order"),
+    kind,
+    productName: firstItem.ticketTypeName,
+    passLevelId: firstItem.passLevelId || null,
+    pistonCount: Number(firstItem.pistonCount || 0),
+    returnPath,
+    notEntryAcceptedAt: kind === "special_pass" ? acceptedAt || now : null,
+    specialPassRulesAcceptedAt: kind === "special_pass" ? specialPassAcceptance?.acceptedAt || null : null,
+    specialPassRulesVersion: kind === "special_pass" ? specialPassAcceptance?.version || null : null,
+    specialPassRulesHash: kind === "special_pass" ? specialPassAcceptance?.hash || null : null,
+    specialPassRulesUrl: kind === "special_pass" ? specialPassAcceptance?.url || null : null,
+    specialPassPrivacyAcceptedAt: kind === "special_pass" ? acceptedAt || null : null,
+    specialPassPrivacyVersion: kind === "special_pass" ? DATA_TERMS_VERSION : null,
+    specialPassPrivacyHash: kind === "special_pass" ? SPECIAL_PASS_PRIVACY_SHA256 : null,
     userId: user.id,
     eventId: firstItem.eventId,
     ticketTypeId: firstItem.ticketTypeId,
@@ -2965,6 +3978,7 @@ async function createOrderFromItems({ req, user, items, state }) {
 
 app.post("/api/orders", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
     const eventId = requireString(req.body, "eventId", "Evento");
     const ticketTypeId = requireString(req.body, "ticketTypeId", "Entrada");
     const quantity = Number(req.body.quantity || 1);
@@ -3007,6 +4021,7 @@ app.post("/api/orders", async (req, res, next) => {
 
 app.post("/api/orders/from-cart", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
     await requireCheckoutStorage();
 
     const { state: initialState } = await readStateWithCheckoutMaintenance();
@@ -3051,14 +4066,16 @@ app.get("/api/orders/:orderId", async (req, res, next) => {
     const tickets = state.tickets
       .filter((ticket) => ticket.orderId === req.params.orderId)
       .map((ticket) => publicTicket(ticket, req));
+    const specialPasses = publicSpecialPassesForOrder(state, req.params.orderId, req);
     const invoice = state.invoices.find((candidate) => candidate.orderId === req.params.orderId);
 
     if (!order) {
       res.status(404).json({ ok: false, message: "Orden no encontrada" });
       return;
     }
+    authorizeOrderAccess(req, state, order);
 
-    res.json({ ok: true, order: publicOrder(order), user: publicUser(user), tickets, invoice });
+    res.json({ ok: true, order: publicOrder(order), user: publicUser(user), tickets, specialPasses, invoice });
   } catch (error) {
     next(error);
   }
@@ -3085,6 +4102,7 @@ app.post("/api/orders/:orderId/checkout-return", async (req, res, next) => {
       res.status(404).json({ ok: false, message: "Orden no encontrada" });
       return;
     }
+    authorizeOrderAccess(req, state, order);
 
     if (order.status !== "paid" && checkoutReturnIsFailed(normalizedStatus)) {
       await updateOrderPaymentStatus(order.id, {
@@ -3119,6 +4137,7 @@ app.post("/api/orders/:orderId/checkout-return", async (req, res, next) => {
     const tickets = state.tickets
       .filter((ticket) => ticket.orderId === req.params.orderId)
       .map((ticket) => publicTicket(ticket, req));
+    const specialPasses = publicSpecialPassesForOrder(state, req.params.orderId, req);
     const invoice = state.invoices.find((candidate) => candidate.orderId === req.params.orderId) || null;
 
     res.json({
@@ -3126,6 +4145,7 @@ app.post("/api/orders/:orderId/checkout-return", async (req, res, next) => {
       order: publicOrder(order),
       user: publicUser(user),
       tickets,
+      specialPasses,
       invoice,
       retryUrl: retryCheckoutUrl(order, req),
       whatsappUrl: supportWhatsappUrl(order),
@@ -3148,6 +4168,15 @@ app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
       throw error;
     }
 
+    const accessState = await readState();
+    const accessOrder = accessState.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!accessOrder) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    authorizeOrderAccess(req, accessState, accessOrder);
+
     const payment = await getPayment(paymentId);
     if (String(payment.external_reference || "") !== String(req.params.orderId)) {
       const error = new Error("El pago no corresponde a esta orden");
@@ -3169,6 +4198,7 @@ app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
     const tickets = state.tickets
       .filter((ticket) => ticket.orderId === req.params.orderId)
       .map((ticket) => publicTicket(ticket, req));
+    const specialPasses = publicSpecialPassesForOrder(state, req.params.orderId, req);
     const invoice = state.invoices.find((candidate) => candidate.orderId === req.params.orderId) || null;
 
     res.json({
@@ -3176,6 +4206,7 @@ app.post("/api/orders/:orderId/sync-payment", async (req, res, next) => {
       order: publicOrder(order),
       user: publicUser(user),
       tickets,
+      specialPasses,
       invoice,
       payment: {
         id: payment.id,
@@ -3208,28 +4239,35 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       error.status = 404;
       throw error;
     }
+    authorizeOrderAccess(req, state, order);
 
     if (order.status === "paid") {
       const tickets = state.tickets
         .filter((ticket) => ticket.orderId === order.id)
         .map((ticket) => publicTicket(ticket, req));
+      const specialPasses = publicSpecialPassesForOrder(state, order.id, req);
       const invoice = state.invoices.find((candidate) => candidate.orderId === order.id);
       res.json({
         ok: true,
         order: publicOrder(order),
         user: publicUser(user),
         tickets,
+        specialPasses,
         invoice,
         ...(order.profileRequired ? enrollmentLinks(order, req) : {})
       });
       return;
     }
 
+    requireSpecialPassOrderActivation(state, order);
+
     if (order.status !== "created" && !String(order.status || "").startsWith("payment_")) {
       const error = new Error("La orden no esta disponible para pago");
       error.status = 409;
       throw error;
     }
+
+    requireOnlineSalesOpen();
 
     const formData = req.body.formData || req.body;
     const payment = await createCardPayment({
@@ -3249,6 +4287,7 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
         order: publicOrder(result.order),
         user: publicUser(result.user),
         tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
+        specialPasses: (result.specialPasses || []).map((pass) => publicSpecialPass(pass, req)),
         invoice: result.invoice,
         payment: {
           id: payment.id,
@@ -3271,6 +4310,7 @@ app.post("/api/orders/:orderId/pay", async (req, res, next) => {
       order: publicOrder(result.order),
       user: publicUser(currentUser),
       tickets: [],
+      specialPasses: [],
       invoice: null,
       payment: {
         id: payment.id,
@@ -3413,6 +4453,14 @@ async function completeEnrollmentProfile(req, orderId) {
         ticket.holderClub = entryType === "pilot" ? user.club : "";
         ticket.updatedAt = now;
       });
+    (state.specialPasses || [])
+      .filter((pass) => pass.orderId === order.id)
+      .forEach((pass) => {
+        pass.holderName = user.name;
+        pass.holderRut = user.rut;
+        pass.holderPhone = user.phone;
+        pass.updatedAt = now;
+      });
 
     // Preserve the secure link until fulfillment has completed. A DTE provider
     // outage must never strand a paid buyer after they submit their profile.
@@ -3488,6 +4536,7 @@ app.post("/api/orders/:orderId/profile", async (req, res, next) => {
       order: publicOrder(result.order),
       user: publicUser(result.user),
       tickets: (result.tickets || []).map((ticket) => publicTicket(ticket, req)),
+      specialPasses: (result.specialPasses || []).map((pass) => publicSpecialPass(pass, req)),
       invoice: result.invoice,
       profileCompleted: true
     });
@@ -3505,6 +4554,7 @@ function accountOrdersForUser(state, user, req) {
       tickets: state.tickets
         .filter((ticket) => ticket.orderId === order.id)
         .map((ticket) => publicTicket(ticket, req)),
+      specialPasses: publicSpecialPassesForOrder(state, order.id, req),
       invoice: state.invoices.find((invoice) => invoice.orderId === order.id) || null,
       ...(order.profileRequired ? enrollmentLinks(order, req) : {})
     }));
@@ -3518,7 +4568,7 @@ function createAccountSessionRecord(user) {
     type: "account",
     userId: user.id,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 90).toISOString()
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30).toISOString()
   };
 }
 
@@ -3533,31 +4583,77 @@ app.post("/api/account/access", async (req, res, next) => {
       throw error;
     }
 
-    const state = await readState();
+    let state = await readState();
     const user = findUserByRutContact(state, rutInput, contact);
     if (!user) {
-      const error = new Error("No encontramos una cuenta con ese RUT y correo/telefono");
-      error.status = 404;
-      throw error;
+      res.status(202).json({
+        ok: true,
+        message: "Si los datos coinciden, recibirás un enlace de acceso en el correo registrado."
+      });
+      return;
     }
 
+    const lastSentAt = Date.parse(user.accountAccessEmailSentAt || "");
+    if (Number.isFinite(lastSentAt) && Date.now() - lastSentAt < 60 * 1000) {
+      res.status(202).json({
+        ok: true,
+        message: "Si los datos coinciden, recibirás un enlace de acceso en el correo registrado."
+      });
+      return;
+    }
     const session = createAccountSessionRecord(user);
     await updateState((nextState) => {
       nextState.sessions.push(session);
+      const freshUser = nextState.users.find((candidate) => candidate.id === user.id);
+      if (freshUser) freshUser.accountAccessEmailSentAt = session.createdAt;
       nextState.audit.push({
         id: id("audit"),
-        type: "account_session_started",
+        type: "account_access_link_requested",
         userId: user.id,
         createdAt: session.createdAt
       });
     });
 
-    res.json({
+    const accessUrl = `${baseUrl(req)}/mi-pit-lane#access_token=${encodeURIComponent(session.token)}`;
+    try {
+      const delivery = assertMailDelivery(
+        await sendMail({
+          to: user.email,
+          subject: "Tu enlace seguro para Mi Pit Lane",
+          text: `Hola ${user.name || ""}. Abre este enlace para ver tus compras Honda Fest: ${accessUrl}\nEl enlace es personal y no debes compartirlo.`,
+          html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#17191f"><h1 style="font-size:22px">Acceso a Mi Pit Lane</h1><p>Hola ${htmlEscape(user.name || "")}.</p><p>Usa el siguiente botón para ver tus compras, entradas y Pases:</p><p><a href="${htmlEscape(accessUrl)}" style="display:inline-block;background:#d71920;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Abrir Mi Pit Lane</a></p><p style="font-size:13px;color:#6b7280">Este enlace es personal. No lo compartas.</p></div>`
+        })
+      );
+      await updateState((nextState) => {
+        logEmailResult(nextState, {
+          type: "account_access_link",
+          to: user.email,
+          userId: user.id,
+          status: "sent",
+          mode: delivery.mode,
+          subject: "Tu enlace seguro para Mi Pit Lane"
+        });
+      });
+    } catch (error) {
+      await updateState((nextState) => {
+        nextState.sessions = nextState.sessions.filter((candidate) => candidate.id !== session.id);
+        const freshUser = nextState.users.find((candidate) => candidate.id === user.id);
+        if (freshUser?.accountAccessEmailSentAt === session.createdAt) freshUser.accountAccessEmailSentAt = null;
+        logEmailResult(nextState, {
+          type: "account_access_link",
+          to: user.email,
+          userId: user.id,
+          status: "failed",
+          error: error.message,
+          subject: "Tu enlace seguro para Mi Pit Lane"
+        });
+      });
+      throw error;
+    }
+
+    res.status(202).json({
       ok: true,
-      user: publicUser(user),
-      token: session.token,
-      expiresAt: session.expiresAt,
-      orders: accountOrdersForUser(state, user, req)
+      message: "Si los datos coinciden, recibirás un enlace de acceso en el correo registrado."
     });
   } catch (error) {
     next(error);
@@ -3586,21 +4682,11 @@ app.get("/api/account/pit-lane", async (req, res, next) => {
 
 app.get("/api/users/purchases", async (req, res, next) => {
   try {
-    const email = normalizeEmail(requireString(req.query, "email", "Correo"));
-    const rutInput = requireString(req.query, "rut", "RUT");
-    const phone = String(req.query.phone || "").trim();
-
-    if (!validateRut(rutInput)) {
-      const error = new Error("El RUT no es valido");
-      error.status = 400;
-      throw error;
-    }
-
     const state = await readState();
-    const user = findUserByEmailRut(state, email, rutInput) || (phone ? findUserByRutContact(state, rutInput, phone) : null);
+    const user = accountUserFromRequest(req, state);
     if (!user) {
-      const error = new Error("No encontramos compras para ese correo y RUT");
-      error.status = 404;
+      const error = new Error("Sesion requerida");
+      error.status = 401;
       throw error;
     }
 
@@ -3660,28 +4746,32 @@ app.get("/api/enrollment/portal/orders", async (req, res, next) => {
   try {
     let state = await readState();
     requireEnrollmentPortalSession(req, state);
-    let changed = false;
+    const needsTokens = state.orders.some(
+      (order) =>
+        order.status === "paid" &&
+        order.profileRequired &&
+        !orderIsCancelledOrRefunded(order, state) &&
+        !order.enrollmentToken
+    );
 
-    const orders = state.orders
-      .filter((order) => order.status === "paid" && order.profileRequired)
-      .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
-
-    for (const order of orders) {
-      if (!order.enrollmentToken) {
-        ensureEnrollmentToken(order);
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      await writeState(state);
+    if (needsTokens) {
+      await updateState((currentState) => {
+        currentState.orders
+          .filter(
+            (order) =>
+              order.status === "paid" &&
+              order.profileRequired &&
+              !orderIsCancelledOrRefunded(order, currentState)
+          )
+          .forEach((order) => ensureEnrollmentToken(order));
+      });
       state = await readState();
     }
 
     res.json({
       ok: true,
       orders: state.orders
-        .filter((order) => order.status === "paid" && order.profileRequired)
+        .filter((order) => order.status === "paid" && order.profileRequired && !orderIsCancelledOrRefunded(order, state))
         .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
         .map((order) => publicEnrollmentOrder({ state, order, req }))
     });
@@ -3695,7 +4785,7 @@ app.post("/api/enrollment/portal/orders/:orderId/send-link", async (req, res, ne
     const state = await readState();
     requireEnrollmentPortalSession(req, state);
     const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
-    if (!order || order.status !== "paid" || !order.profileRequired) {
+    if (!order || order.status !== "paid" || !order.profileRequired || orderIsCancelledOrRefunded(order, state)) {
       const error = new Error("Orden pendiente de enrolamiento no encontrada");
       error.status = 404;
       throw error;
@@ -3753,6 +4843,7 @@ app.post("/api/enrollment/orders/:orderId/profile", async (req, res, next) => {
       order: publicOrder(result.order),
       user: publicUser(result.user),
       tickets: (result.tickets || []).map((ticket) => publicTicket(ticket, req)),
+      specialPasses: (result.specialPasses || []).map((pass) => publicSpecialPass(pass, req)),
       invoice: result.invoice,
       profileCompleted: true
     });
@@ -3785,12 +4876,19 @@ app.get("/api/tickets/:code/qr.svg", async (req, res, next) => {
 app.post("/api/tickets/validate", async (req, res, next) => {
   try {
     const code = String(req.body.code || req.query.code || "").trim();
-    const action = String(req.body.action || "lookup");
+    const action = String(req.body.action || "lookup").trim().toLowerCase();
     if (!code) {
       const error = new Error("Codigo de ticket requerido");
       error.status = 400;
       throw error;
     }
+    if (!["lookup", "checkin"].includes(action)) {
+      const error = new Error("Acción de validación no reconocida");
+      error.status = 400;
+      throw error;
+    }
+    if (action === "checkin") requireAdmin(req);
+    const canOperate = adminAuthorized(req);
 
     let result;
     await updateState((state) => {
@@ -3826,9 +4924,138 @@ app.post("/api/tickets/validate", async (req, res, next) => {
 
     res.json({
       ok: true,
-      ticket: publicTicket(result.ticket, req),
+      ticket: publicTicketValidation(result.ticket, req, canOperate),
+      order: canOperate ? publicOrder(result.order) : undefined,
+      user: canOperate ? publicUser(result.user) : undefined,
+      canOperate
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/special-passes/:code/qr.svg", async (req, res, next) => {
+  try {
+    const state = await readState();
+    const pass = (state.specialPasses || []).find((candidate) => candidate.code === req.params.code);
+    if (!pass) {
+      res.status(404).type("text/plain").send("Pase no encontrado");
+      return;
+    }
+    const svg = await QRCode.toString(`${baseUrl(req)}/validar-pase?code=${encodeURIComponent(pass.code)}`, {
+      type: "svg",
+      margin: 1,
+      width: 240,
+      color: { dark: "#111111", light: "#ffffff" }
+    });
+    res.type("image/svg+xml").send(svg);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/special-passes/validate", async (req, res, next) => {
+  try {
+    const code = String(req.body.code || req.query.code || "").trim().toUpperCase();
+    const action = String(req.body.action || "lookup").trim().toLowerCase();
+    if (!code) {
+      const error = new Error("Código de Pase requerido");
+      error.status = 400;
+      throw error;
+    }
+    if (!["lookup", "pickup", "verify_entry", "checkin", "pickup_and_checkin"].includes(action)) {
+      const error = new Error("Acción de validación no reconocida");
+      error.status = 400;
+      throw error;
+    }
+
+    if (action === "lookup") {
+      const state = await readState();
+      const pass = (state.specialPasses || []).find((candidate) => String(candidate.code).toUpperCase() === code);
+      if (!pass) {
+        const error = new Error("Pase no encontrado");
+        error.status = 404;
+        throw error;
+      }
+      const order = state.orders.find((candidate) => candidate.id === pass.orderId);
+      const canOperate = adminAuthorized(req);
+      res.json({
+        ok: true,
+        pass: publicSpecialPassValidation(pass, req, canOperate),
+        order: canOperate ? publicOrder(order) : undefined,
+        canOperate
+      });
+      return;
+    }
+
+    requireAdmin(req);
+    let result;
+    await updateState((state) => {
+      const pass = (state.specialPasses || []).find((candidate) => String(candidate.code).toUpperCase() === code);
+      if (!pass) {
+        const error = new Error("Pase no encontrado");
+        error.status = 404;
+        throw error;
+      }
+      if (pass.status !== "valid") {
+        const error = new Error("El Pase no está vigente");
+        error.status = 409;
+        throw error;
+      }
+
+      const now = new Date().toISOString();
+      const changes = [];
+      if (action === "verify_entry" && pass.entryValidationStatus !== "valid") {
+        pass.entryValidationStatus = "valid";
+        pass.entryValidatedAt = now;
+        changes.push("special_pass_entry_verified");
+      }
+      if ((action === "pickup" || action === "pickup_and_checkin") && pass.pickupStatus !== "picked_up") {
+        pass.pickupStatus = "picked_up";
+        pass.pickedUpAt = now;
+        changes.push("special_pass_picked_up");
+      }
+      if ((action === "checkin" || action === "pickup_and_checkin") && pass.entryValidationStatus !== "valid") {
+        const error = new Error("Primero debes verificar una entrada HFC válida para registrar el acceso especial");
+        error.status = 409;
+        throw error;
+      }
+      if (action === "checkin" && pass.pickupStatus !== "picked_up") {
+        const error = new Error("El Pase debe retirarse antes de registrar el acceso");
+        error.status = 409;
+        throw error;
+      }
+      if ((action === "checkin" || action === "pickup_and_checkin") && pass.accessStatus !== "checked_in") {
+        pass.accessStatus = "checked_in";
+        pass.checkedInAt = now;
+        pass.attendanceStatus = "present";
+        pass.onsiteEligibilityStatus = "eligible";
+        pass.pistons = (pass.pistons || []).map((piston) => ({
+          ...piston,
+          onsiteEligible: piston.status === "active",
+          checkedInAt: piston.checkedInAt || now
+        }));
+        changes.push("special_pass_checked_in");
+      }
+      pass.updatedAt = now;
+      changes.forEach((type) => {
+        state.audit.push({ id: id("audit"), type, specialPassId: pass.id, orderId: pass.orderId, createdAt: now });
+      });
+      result = {
+        pass,
+        order: state.orders.find((candidate) => candidate.id === pass.orderId),
+        user: state.users.find((candidate) => candidate.id === pass.userId),
+        changed: changes.length > 0
+      };
+    });
+
+    res.json({
+      ok: true,
+      changed: result.changed,
+      pass: publicSpecialPassValidation(result.pass, req, true),
       order: publicOrder(result.order),
-      user: publicUser(result.user)
+      user: publicUser(result.user),
+      canOperate: true
     });
   } catch (error) {
     next(error);
@@ -3837,6 +5064,21 @@ app.post("/api/tickets/validate", async (req, res, next) => {
 
 app.post("/api/orders/:orderId/simulate-payment", async (req, res, next) => {
   try {
+    requireOnlineSalesOpen();
+    if ((process.env.VERCEL || process.env.NODE_ENV === "production") && !envFlag("HFC_ALLOW_DEMO_PAYMENT")) {
+      const error = new Error("Pago demo no disponible");
+      error.status = 404;
+      throw error;
+    }
+    const state = await readState();
+    const order = state.orders.find((candidate) => candidate.id === req.params.orderId);
+    if (!order) {
+      const error = new Error("Orden no encontrada");
+      error.status = 404;
+      throw error;
+    }
+    authorizeOrderAccess(req, state, order);
+    requireSpecialPassOrderActivation(state, order);
     const result = await completeOrderPayment(req.params.orderId, {
       provider: "demo",
       paymentId: id("payment_demo")
@@ -3846,6 +5088,7 @@ app.post("/api/orders/:orderId/simulate-payment", async (req, res, next) => {
       ok: true,
       order: publicOrder(result.order),
       tickets: result.tickets.map((ticket) => publicTicket(ticket, req)),
+      specialPasses: (result.specialPasses || []).map((pass) => publicSpecialPass(pass, req)),
       invoice: result.invoice,
       ...(result.order.profileRequired ? enrollmentLinks(result.order, req) : {})
     });
@@ -4018,10 +5261,15 @@ async function sendCampaignBatch({ req, state, body }) {
 app.get("/api/backoffice/summary", async (req, res, next) => {
   try {
     requireAdmin(req);
-    const reminderSummary = await sendDueProfilePendingEnrollmentReminders({ req });
     const { state, expiredOrders } = await readStateWithCheckoutMaintenance();
+    const reminderSummary = {
+      sent: 0,
+      failed: 0,
+      pending: state.orders.filter((order) => profilePendingReminderDue(state, order)).length
+    };
     const paidOrders = state.orders.filter((order) => order.status === "paid");
     const revenue = paidOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const currentSpecialPassConfig = specialPassConfigFromState(state);
 
     const orders = state.orders
       .slice()
@@ -4034,6 +5282,7 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
           tickets: state.tickets
             .filter((ticket) => ticket.orderId === order.id)
             .map((ticket) => publicTicket(ticket, req)),
+          specialPasses: publicSpecialPassesForOrder(state, order.id, req),
           invoice: state.invoices.find((invoice) => invoice.orderId === order.id) || null
         };
       });
@@ -4047,16 +5296,28 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         tickets: state.tickets.length,
         guestTickets: state.tickets.filter((ticket) => ticket.salePhaseKind === "guest").length,
         checkedInTickets: state.tickets.filter((ticket) => ticket.status === "checked_in").length,
+        specialPasses: (state.specialPasses || []).length,
+        pickedUpSpecialPasses: (state.specialPasses || []).filter((pass) => pass.pickupStatus === "picked_up").length,
+        checkedInSpecialPasses: (state.specialPasses || []).filter((pass) => pass.accessStatus === "checked_in").length,
+        pistonsIssued: (state.specialPasses || []).reduce((sum, pass) => sum + Number(pass.pistonCount || 0), 0),
+        pistonsActive: (state.specialPasses || []).reduce(
+          (sum, pass) => sum + (pass.pistons || []).filter((piston) => piston.status === "active").length,
+          0
+        ),
         users: state.users.length,
         enrolados: state.users.filter((user) => user.emailVerified).length,
         contacts: (state.contacts || []).length,
         expiredOrders,
-        enrollmentRemindersSent: reminderSummary.sent
+        enrollmentRemindersSent: reminderSummary.sent,
+        enrollmentRemindersPending: reminderSummary.pending
       },
       bi: salesBi(state),
       ticketing: ticketingConfig(state),
+      specialPassConfig: currentSpecialPassConfig,
+      specialPassActivation: specialPassActivation(currentSpecialPassConfig),
       orders,
       tickets: state.tickets.map((ticket) => publicTicket(ticket, req)),
+      specialPasses: (state.specialPasses || []).map((pass) => publicSpecialPass(pass, req)),
       users: state.users.map((user) => publicAdminUser(user, state)),
       contacts: (state.contacts || []).map(publicContact),
       emailTemplates: mergeTemplates(state.emailTemplates || []),
@@ -4071,6 +5332,136 @@ app.get("/api/backoffice/summary", async (req, res, next) => {
         email: mailProviderStatus()
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/backoffice/japon-fest-cancellation/audit", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const state = await readState();
+    res.json({ ok: true, generatedAt: new Date().toISOString(), audit: japanFestCancellationAudit(state) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/japon-fest-cancellation/repair", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const apply = req.body?.apply === true;
+    const before = japanFestCancellationAudit(await readState());
+    if (!apply) {
+      res.json({ ok: true, applied: false, before });
+      return;
+    }
+
+    let repair;
+    await updateState((state) => {
+      repair = cancelAndRefundJapanFestOrders(state);
+    });
+    const after = japanFestCancellationAudit(await readState());
+    res.json({ ok: true, applied: true, repair, before, after });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/backoffice/special-passes/config", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    let saved;
+    await updateState((state) => {
+      const payload = normalizeSpecialPassConfig(req.body.specialPass || req.body);
+      const current = specialPassConfigFromState(state);
+      const increasesExposure =
+        (payload.active && !current.active) ||
+        (payload.rulesPublished && !current.rulesPublished) ||
+        (payload.active && payload.rulesPublished && payload.rulesVersion !== current.rulesVersion);
+      if (increasesExposure && req.body.activationConfirmed !== true) {
+        const error = new Error("La activación requiere confirmación administrativa expresa de bases revisadas");
+        error.status = 400;
+        throw error;
+      }
+      if (payload.rulesPublished && req.body.activationConfirmed === true) {
+        payload.rulesHash = SPECIAL_PASS_RULES_SHA256;
+      }
+      saved = upsertSetting(state, {
+        id: SPECIAL_PASS_SETTING_ID,
+        type: "special_pass",
+        payload
+      });
+      state.audit.push({
+        id: id("audit"),
+        type: "special_pass_config_updated",
+        settingId: saved.id,
+        createdAt: saved.updatedAt
+      });
+    });
+    res.json({ ok: true, specialPass: saved.payload });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/backoffice/special-passes/export.csv", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const state = await readState();
+    const quote = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const header = [
+      "codigo_pase",
+      "codigo_piston",
+      "estado_piston",
+      "elegible_automovil",
+      "elegible_premios_presenciales",
+      "cantidad_pistones",
+      "nivel",
+      "titular",
+      "rut",
+      "correo",
+      "telefono",
+      "orden",
+      "version_bases",
+      "validacion_entrada",
+      "retiro",
+      "acceso"
+    ];
+    const rows = (state.specialPasses || []).flatMap((pass) => {
+      const user = state.users.find((candidate) => candidate.id === pass.userId) || {};
+      const pistons = pass.pistons?.length
+        ? pass.pistons
+        : (pass.drawEntryCodes?.length ? pass.drawEntryCodes : [""]).map((code, index) => ({
+            code,
+            ordinal: index + 1,
+            status: pass.status === "valid" ? "active" : "voided",
+            automobileEligible: pass.status === "valid",
+            onsiteEligible: pass.status === "valid" && pass.accessStatus === "checked_in"
+          }));
+      return pistons.map((piston) => [
+        pass.code,
+        piston.code,
+        piston.status,
+        piston.automobileEligible ? "si" : "no",
+        piston.onsiteEligible ? "si" : "no",
+        pass.pistonCount,
+        pass.levelName,
+        pass.holderName,
+        pass.holderRut,
+        user.email,
+        pass.holderPhone || user.phone,
+        pass.orderId,
+        pass.rulesVersion || "",
+        pass.entryValidationStatus || "unverified",
+        pass.pickupStatus || "pending",
+        pass.accessStatus || "not_checked_in"
+      ]);
+    });
+    const csv = `\ufeff${[header, ...rows].map((row) => row.map(quote).join(";")).join("\r\n")}`;
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="pases-especiales-pistones-hfc-2026.csv"');
+    res.send(csv);
   } catch (error) {
     next(error);
   }
@@ -4095,6 +5486,61 @@ app.put("/api/backoffice/ticketing", async (req, res, next) => {
       });
     });
     res.json({ ok: true, ticketing: saved.payload });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/backoffice/hfc-event-dates", async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const apply = req.body?.apply === true;
+    let result;
+    const correct = (state) => {
+      const ticketingSetting = (state.settings || []).find(
+        (candidate) => candidate.id === TICKETING_SETTING_ID || candidate.type === "ticketing"
+      );
+      const specialPassSetting = (state.settings || []).find(
+        (candidate) => candidate.id === SPECIAL_PASS_SETTING_ID || candidate.type === "special_pass"
+      );
+      const ticketingCorrection = hfcDateCorrection(ticketingConfig(state));
+      const specialPassCorrection = hfcSpecialPassDateCorrection(specialPassConfigFromState(state));
+      return { ticketingSetting, specialPassSetting, ticketingCorrection, specialPassCorrection };
+    };
+
+    if (!apply) {
+      result = correct(await readState());
+    } else {
+      await updateState((state) => {
+        result = correct(state);
+        const now = new Date().toISOString();
+        if (result.ticketingSetting && result.ticketingCorrection.changes.length) {
+          upsertSetting(state, {
+            id: result.ticketingSetting.id,
+            type: "ticketing",
+            payload: result.ticketingCorrection.ticketing
+          });
+          state.audit.push({ id: id("audit"), type: "hfc_event_dates_corrected", createdAt: now });
+        }
+        if (result.specialPassSetting && result.specialPassCorrection.changed) {
+          upsertSetting(state, {
+            id: result.specialPassSetting.id,
+            type: "special_pass",
+            payload: result.specialPassCorrection.specialPass
+          });
+          state.audit.push({ id: id("audit"), type: "hfc_special_pass_dates_corrected", createdAt: now });
+        }
+      });
+    }
+
+    res.json({
+      ok: true,
+      applied: apply,
+      ticketingSettingFound: Boolean(result.ticketingSetting),
+      ticketingChanges: result.ticketingCorrection.changes,
+      specialPassSettingFound: Boolean(result.specialPassSetting),
+      specialPassChanged: result.specialPassCorrection.changed
+    });
   } catch (error) {
     next(error);
   }
@@ -4419,9 +5865,18 @@ app.post("/api/backoffice/users/:userId/resend-verification", async (req, res, n
 app.post("/api/backoffice/email/send", async (req, res, next) => {
   try {
     requireAdmin(req);
-    let results = [];
-    await updateState(async (state) => {
-      results = await sendCampaignBatch({ req, state, body: req.body });
+    // Network I/O must not run while the PostgreSQL state transaction holds
+    // the global write lock. Collect logs in a snapshot, send outside the
+    // transaction, then append only the resulting audit records atomically.
+    const campaignState = await readState();
+    const previousLogCount = (campaignState.emailLogs || []).length;
+    const results = await sendCampaignBatch({ req, state: campaignState, body: req.body });
+    const campaignLogs = (campaignState.emailLogs || []).slice(previousLogCount);
+    await updateState((state) => {
+      const knownIds = new Set((state.emailLogs || []).map((entry) => entry.id));
+      campaignLogs.forEach((entry) => {
+        if (!knownIds.has(entry.id)) state.emailLogs.push(entry);
+      });
     });
     res.json({
       ok: true,
@@ -4661,6 +6116,7 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
       externalReference: payment.external_reference,
       merchantOrderId: payment.order?.id || payment.merchant_order_id,
       transactionAmount: payment.transaction_amount,
+      currency: payment.currency_id,
       paidAt: payment.date_approved,
       raw: payment
     };
@@ -4685,11 +6141,14 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
 
 const pageRoutes = {
   "/ticketera": "ticketera.html",
+  "/pases-especiales": "pases-especiales.html",
+  "/bases-sorteo": "bases-sorteo.html",
   "/carrito": "carrito.html",
   "/mi-pit-lane": "mi-pit-lane.html",
   "/mis-compras": "mis-compras.html",
   "/terminos-datos-personales": "terminos-datos-personales.html",
   "/validar": "validar.html",
+  "/validar-pase": "validar-pase.html",
   "/enrolamiento": "enrolamiento.html",
   "/backoffice-hfc": "backoffice.html"
 };
@@ -4705,7 +6164,7 @@ app.get("*", (req, res) => {
 });
 
 app.use((error, req, res, next) => {
-  console.error(error);
+  if ((error.status || 500) >= 500 && error.code !== "online_sales_temporarily_paused") console.error(error);
   res.status(error.status || 500).json({
     ok: false,
     message: error.message || "Error interno"

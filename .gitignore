@@ -7,6 +7,7 @@ npm-debug.log*
 
 .vercel
 .codex-temp/
+.playwright-cli/
 
 # Carpetas locales de fotos y recursos pesados
 HFC Recursos 2026/

@@ -4,21 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ticketera | Honda Fest Chile</title>
-    <meta name="description" content="Entradas oficiales para Honda Fest Chile 2026." />
+    <meta name="description" content="Ticketera de Honda Fest Chile y Japon Fest Chile." />
     <link rel="stylesheet" href="/styles.css" />
     <script defer src="/test-mode.js"></script>
     <script defer src="/shared.js"></script>
     <script defer src="/ticketera.js"></script>
   </head>
-  <body>
+  <body class="racing-site ticketera-page">
     <header class="site-header">
       <a class="brand" href="/">
-        <span class="brand-mark">HFC</span>
+        <span class="brand-mark"><img src="/logo-hfc.avif" alt="" width="72" height="48" /></span>
         <span><strong>Honda Fest Chile</strong><small>Ticketera</small></span>
       </a>
       <nav class="main-nav" aria-label="Ticketera">
         <a href="/">Inicio</a>
         <a href="/carrito">Carrito</a>
+        <a href="/pases-especiales">Pases</a>
         <a href="/mi-pit-lane">Mi Pit Lane</a>
         <a href="/validar">Validar</a>
       </nav>
@@ -26,20 +27,43 @@
     </header>
 
     <main>
-      <section class="page-hero compact-hero">
-        <div>
-          <p class="section-kicker">Ticketera oficial</p>
-          <h1>Elige tu entrada y arma tu carrito.</h1>
-          <p>Compra tu entrada para Honda Fest Chile de noviembre de 2026 y completa tus datos de asistente despues del pago.</p>
+      <section class="ticketera-editorial-hero">
+        <img
+          class="ticketera-editorial-hero-media"
+          src="/assets/racing/hfc-hero-poster-1920.webp"
+          alt="Autos Honda en pista durante Honda Fest Chile"
+          width="1920"
+          height="1080"
+        />
+        <div class="ticketera-editorial-hero-overlay"></div>
+        <div class="ticketera-editorial-hero-content">
+          <p class="eyebrow"><span>Fecha doble</span> 28-29 NOV · 2026</p>
+          <h1>Elige tu <span>jornada.</span></h1>
+          <p>La entrada se vende por día: vive la potencia del Drag Day el sábado o el Track Day en pista el domingo.</p>
+          <div class="ticketera-hero-days" aria-label="Fechas del evento">
+            <span><small>Sábado 28</small><strong>Drag Day</strong></span>
+            <span><small>Domingo 29</small><strong>Track Day</strong></span>
+          </div>
         </div>
       </section>
 
-      <section class="section split-section ticketera-shop-section">
+      <section class="ticket-sales-hold" id="ticketSalesHold" hidden aria-live="polite">
+        <div class="ticket-sales-hold-inner">
+          <div>
+            <p class="section-kicker">Honda Fest Chile 2026</p>
+            <h2>Pronto: liberación de entradas.</h2>
+            <p>La venta online se habilitará el viernes 4 de septiembre a las 12:00. La cuenta regresiva ya está en marcha.</p>
+          </div>
+          <div class="ticket-sales-countdown" data-sales-countdown aria-label="Tiempo restante para habilitar la venta"></div>
+        </div>
+      </section>
+
+      <section class="section ticketera-shop-section">
         <div>
           <div class="section-heading inline-heading">
             <p class="section-kicker">Entradas</p>
-            <h2>Productos disponibles</h2>
-            <p>Ingresa correo, RUT y telefono para asociar tu compra. Los datos del asistente se completan con un enlace seguro despues del pago.</p>
+            <h2>Elige tu jornada antes de comprar.</h2>
+            <p>Selecciona una entrada por cada día al que quieras asistir. Verás el detalle neto, IVA, cargo y total antes de agregarla al carrito.</p>
           </div>
           <div class="product-grid" id="productGrid" aria-live="polite"></div>
         </div>

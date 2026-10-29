@@ -1,8 +1,5 @@
 (() => {
   const CART_KEY = "hfc_cart";
-  const PISTONS_WHATSAPP_URL = `https://wa.me/56972934950?text=${encodeURIComponent(
-    "Hola, quiero conocer los Pistones y las experiencias especiales de Honda Fest Chile 2026."
-  )}`;
   const BUYER_KEY = "hfc_buyer";
   const ACCOUNT_TOKEN_KEY = "hfc_account_token";
   const ACCOUNT_USER_KEY = "hfc_account_user";
@@ -293,11 +290,29 @@
 
   function applyCheckoutMode(root, catalog) {
     const internalCheckout = catalog?.integrations?.paymentMode === "mercadopago_api";
+    const salesPaused = catalog?.sales?.enabled === false;
     $$("[data-checkout-form]", root).forEach((form) => {
       const wrapper = $("[data-rut-wrapper]", form);
-      if (!wrapper || !form.rut) return;
-      wrapper.hidden = internalCheckout;
-      form.rut.required = !internalCheckout;
+      if (wrapper && form.rut) {
+        wrapper.hidden = internalCheckout;
+        form.rut.required = !internalCheckout;
+      }
+      const submit = $('button[type="submit"]', form);
+      if (submit) {
+        submit.disabled = salesPaused;
+        submit.textContent = salesPaused ? "Venta temporalmente pausada" : "Pagar ahora";
+      }
+      let notice = $("[data-sales-hold-notice]", form);
+      if (salesPaused && !notice) {
+        notice = document.createElement("p");
+        notice.className = "checkout-sales-hold-notice";
+        notice.dataset.salesHoldNotice = "";
+        submit?.before(notice);
+      }
+      if (notice) {
+        notice.textContent = catalog.sales?.message || "La venta online está temporalmente pausada.";
+        notice.hidden = !salesPaused;
+      }
     });
   }
 
@@ -353,7 +368,7 @@
       }
 
       const availability = ticketAvailability(ticket, event.id);
-      if (!availability.available) {
+      if (!availability.available && catalog?.sales?.enabled !== false) {
         removedCount += item.quantity;
         changed = true;
         return;
@@ -431,23 +446,39 @@
 
   async function renderCart(container, options = {}) {
     if (!container) return;
-    const { details, removedCount } = await cleanCart();
+    const catalog = await getCatalog();
+    const { details, removedCount } = cleanCartWithCatalog(catalog);
     const netSubtotal = details.reduce((sum, item) => sum + item.netSubtotal, 0);
     const vatAmount = details.reduce((sum, item) => sum + item.vatAmount, 0);
     const subtotal = details.reduce((sum, item) => sum + item.subtotal, 0);
     const serviceCharge = details.reduce((sum, item) => sum + item.serviceCharge, 0);
     const total = details.reduce((sum, item) => sum + item.total, 0);
+    const serviceChargeRates = Array.from(
+      new Set(
+        details
+          .map((item) => Number(item.pricing?.serviceChargeRate))
+          .filter((rate) => Number.isFinite(rate) && rate >= 0)
+      )
+    );
+    const serviceChargeLabel =
+      serviceChargeRates.length === 1
+        ? `Cargo (${Math.round(serviceChargeRates[0] * 100)}%)`
+        : "Cargo de servicio";
     const cleanupNotice = removedCount
       ? `<div class="status-box">Actualizamos tu carrito porque una entrada ya no esta disponible.</div>`
       : "";
+    const salesHoldNotice = catalog?.sales?.enabled === false
+      ? `<div class="cart-sales-hold">${escapeHtml(catalog.sales.message)}</div>`
+      : "";
 
     if (!details.length) {
-      container.innerHTML = `${cleanupNotice}<div class="empty-state">Tu carrito esta vacio.</div>`;
+      container.innerHTML = `${cleanupNotice}${salesHoldNotice}<div class="empty-state">Tu carrito esta vacio.</div>`;
       return;
     }
 
     container.innerHTML = `
       ${cleanupNotice}
+      ${salesHoldNotice}
       <div class="cart-lines">
         ${details
           .map(
@@ -458,11 +489,15 @@
                   <span>${item.eventName}</span>
                   <small>${formatCurrency(item.pricing.netPrice)} neto c/u · IVA ${formatCurrency(item.pricing.netWithVat - item.pricing.netPrice)}</small>
                 </div>
-                <label>
-                  Cant.
-                  <input class="cart-qty" type="number" min="1" max="${item.maxQuantity}" value="${item.quantity}"
-                    data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" />
-                </label>
+                <div class="cart-quantity-control" aria-label="Cantidad de ${escapeHtml(item.ticketTypeName)}">
+                  <button class="icon-button" type="button" data-cart-quantity-step="-1"
+                    data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" data-quantity="${item.quantity}"
+                    aria-label="Disminuir cantidad de ${escapeHtml(item.ticketTypeName)}" ${item.quantity <= 1 ? "disabled" : ""}>−</button>
+                  <strong aria-live="polite">${item.quantity}</strong>
+                  <button class="icon-button" type="button" data-cart-quantity-step="1"
+                    data-event-id="${item.eventId}" data-ticket-type-id="${item.ticketTypeId}" data-quantity="${item.quantity}" data-max-quantity="${item.maxQuantity}"
+                    aria-label="Aumentar cantidad de ${escapeHtml(item.ticketTypeName)}" ${item.quantity >= item.maxQuantity ? "disabled" : ""}>+</button>
+                </div>
                 <strong>${formatCurrency(item.subtotal)}</strong>
                 <button class="icon-button" type="button" data-cart-remove data-event-id="${item.eventId}"
                   data-ticket-type-id="${item.ticketTypeId}" aria-label="Quitar">x</button>
@@ -485,7 +520,7 @@
           <strong>${formatCurrency(subtotal)}</strong>
         </div>
         <div>
-          <span>Cargo (8%)</span>
+          <span>${serviceChargeLabel}</span>
           <strong>${formatCurrency(serviceCharge)}</strong>
         </div>
         <div class="cart-total">
@@ -495,18 +530,24 @@
       </div>
       <section class="cart-pistons-upgrade" aria-label="Mejora tu experiencia">
         <div>
-          <p>Mejora tu experiencia</p>
-          <h3>Suma Pistones. Gana premios.</h3>
-          <span>Cada Pistón suma una oportunidad. Eleva tu entrada con refrigerios, experiencias y beneficios especiales.</span>
+          <p>Upgrade de experiencia</p>
+          <h3>Accede a beneficios exclusivos.</h3>
+          <span>Elige un Pase de 1 a 9 Pistones y participa por el sorteo de un Honda. Se compra por separado y no reemplaza tu entrada.</span>
         </div>
-        <a class="button upgrade-button" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">Mejorar mi experiencia</a>
+        <a class="button upgrade-button" href="/pases-especiales#niveles">Comprar Pistones</a>
       </section>
       ${options.full ? "" : `<a class="button secondary full" href="/carrito">Abrir carrito completo</a>`}
     `;
 
-    $$(".cart-qty", container).forEach((input) => {
-      input.addEventListener("change", async () => {
-        updateQuantity(input.dataset.eventId, input.dataset.ticketTypeId, input.value);
+    $$('[data-cart-quantity-step]', container).forEach((button) => {
+      button.addEventListener("click", async () => {
+        const current = Number(button.dataset.quantity || 1);
+        const maxQuantity = Number(button.dataset.maxQuantity || Number.MAX_SAFE_INTEGER);
+        const next = Math.min(
+          maxQuantity,
+          Math.max(1, current + Number(button.dataset.cartQuantityStep || 0))
+        );
+        updateQuantity(button.dataset.eventId, button.dataset.ticketTypeId, next);
         await renderAllCarts();
       });
     });
@@ -539,6 +580,10 @@
 
   async function checkoutCart(form, statusElement) {
     const catalog = await getCatalog();
+    if (catalog.sales?.enabled === false) {
+      setStatus(statusElement, catalog.sales.message || "La venta online está temporalmente pausada.");
+      return;
+    }
     const cart = cleanCartWithCatalog(catalog);
     const items = cart.items;
 
@@ -709,29 +754,35 @@
     }
 
     if (order.status === "paid" && order.profileRequired) {
-      clearCart();
-      await renderAllCarts();
+      if (order.kind !== "special_pass") {
+        clearCart();
+        await renderAllCarts();
+      }
       const enrollmentAction = data.enrollmentUrl
         ? `<div class="status-actions"><a class="button primary" href="${escapeHtml(data.enrollmentUrl)}">Completar datos</a></div>`
         : "";
       setStatus(
         statusElement,
-        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el boton y QR para completar los datos de enrolamiento.
+        `<strong>Pago confirmado.</strong><br />Te enviamos un correo con el botón y QR para completar los datos de ${order.kind === "special_pass" ? "tu Pase" : "enrolamiento"}.
         ${enrollmentAction}`
       );
       return;
     }
 
     if (order.status === "paid") {
-      clearCart();
-      await renderAllCarts();
+      if (order.kind !== "special_pass") {
+        clearCart();
+        await renderAllCarts();
+      }
       const tickets = data.tickets || [];
+      const specialPasses = data.specialPasses || [];
+      const issuedCodes = order.kind === "special_pass" ? specialPasses : tickets;
       setStatus(
         statusElement,
-        `<strong>Compra confirmada.</strong><br />${tickets
-          .map((ticket) => `<code>${ticket.code}</code>`)
+        `<strong>${order.kind === "special_pass" ? "Pase confirmado" : "Compra confirmada"}.</strong><br />${issuedCodes
+          .map((item) => `<code>${item.code}</code>`)
           .join(" ")}
-        <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver mis entradas</a></div>`
+        <div class="status-actions"><a class="button secondary" href="/mi-pit-lane">Ver ${order.kind === "special_pass" ? "mi pase" : "mis entradas"}</a></div>`
       );
       return;
     }
@@ -740,14 +791,14 @@
     const supportEventName = orderEventNameForSupport(order);
     const whatsappUrl =
       data.whatsappUrl ||
-      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra ${supportEventName}. Orden ${order.id}.`)}`;
+      `https://wa.me/56972934950?text=${encodeURIComponent(`Hola, necesito ayuda con mi compra o entrada ${supportEventName}. Orden ${order.id}.`)}`;
     if (order.status === "payment_failed") {
       setStatus(
         statusElement,
-        `<strong>Compra no finalizada.</strong><br />Te enviamos un correo para que puedas intentar nuevamente o hablarnos por WhatsApp.
+        `<strong>Compra no finalizada.</strong><br />Te enviamos un correo para que puedas intentar nuevamente. Si tienes problemas con el pago, orden, QR o entrada, escribe a soporte de ticketera.
         <div class="status-actions">
           <a class="button primary" href="${escapeHtml(retryUrl)}">Intentar nuevamente</a>
-          <a class="button secondary" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
+          <a class="button secondary" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Ayuda compra</a>
         </div>`,
         true
       );
@@ -756,10 +807,10 @@
 
     setStatus(
       statusElement,
-      `<strong>Estamos comprobando la transaccion.</strong><br />Apenas Mercado Pago confirme el pago, te enviaremos el correo de confirmacion. Si cancelaste o no pudiste pagar, puedes intentarlo nuevamente o hablarnos por WhatsApp.
+      `<strong>Estamos comprobando la transaccion.</strong><br />Apenas Mercado Pago confirme el pago, te enviaremos el correo de confirmacion. Si cancelaste o no pudiste pagar, puedes intentarlo nuevamente o escribir a soporte de ticketera.
       <div class="status-actions">
         <a class="button secondary" href="${escapeHtml(retryUrl)}">Intentar nuevamente</a>
-        <a class="button ghost-light" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Necesito ayuda</a>
+        <a class="button ghost-light" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noreferrer">Ayuda compra</a>
       </div>`
     );
   }
@@ -924,6 +975,8 @@
     openCartDrawer,
     prefillBuyerForms,
     renderAllCarts,
+    renderInternalPayment,
+    renderOrderResult,
     saveAccountSession,
     setStatus,
     toast

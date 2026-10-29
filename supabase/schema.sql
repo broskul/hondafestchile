@@ -39,6 +39,18 @@ create table if not exists public.hfc_tickets (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.hfc_special_passes (
+  id text primary key,
+  order_id text unique,
+  user_id text,
+  code text unique,
+  status text,
+  piston_count integer not null default 0,
+  payload jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.hfc_invoices (
   id text primary key,
   order_id text,
@@ -101,6 +113,7 @@ alter table public.hfc_users enable row level security;
 alter table public.hfc_sessions enable row level security;
 alter table public.hfc_orders enable row level security;
 alter table public.hfc_tickets enable row level security;
+alter table public.hfc_special_passes enable row level security;
 alter table public.hfc_invoices enable row level security;
 alter table public.hfc_payments enable row level security;
 alter table public.hfc_settings enable row level security;
@@ -112,6 +125,9 @@ alter table public.hfc_audit enable row level security;
 create index if not exists hfc_orders_user_status_idx on public.hfc_orders(user_id, status);
 create index if not exists hfc_tickets_code_idx on public.hfc_tickets(code);
 create index if not exists hfc_tickets_order_idx on public.hfc_tickets(order_id);
+create index if not exists hfc_special_passes_code_idx on public.hfc_special_passes(code);
+create index if not exists hfc_special_passes_order_idx on public.hfc_special_passes(order_id);
+create index if not exists hfc_special_passes_user_idx on public.hfc_special_passes(user_id);
 create index if not exists hfc_settings_type_idx on public.hfc_settings(type);
 create index if not exists hfc_contacts_email_idx on public.hfc_contacts(email);
 create index if not exists hfc_contacts_corrected_email_idx on public.hfc_contacts(corrected_email);

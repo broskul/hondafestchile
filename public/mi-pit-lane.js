@@ -22,7 +22,7 @@
 
   function ordersForTab() {
     if (activeTab === "pending") return account.orders.filter((order) => order.profileRequired);
-    if (activeTab === "current") return account.orders.filter((order) => !order.profileRequired && (order.tickets || []).length);
+    if (activeTab === "current") return account.orders.filter((order) => !order.profileRequired && ((order.tickets || []).length || (order.specialPasses || []).length));
     return account.orders;
   }
 
@@ -33,9 +33,10 @@
       return;
     }
     node.hidden = false;
+    const contact = [account.user.rut, account.user.email, account.user.phone].filter(Boolean).join(" · ");
     node.innerHTML = `
       <strong>${escapeHtml(account.user.name || "Asistente Honda Fest")}</strong>
-      <span>${escapeHtml(account.user.rut || "")} · ${escapeHtml(account.user.email || "")}</span>
+      <span>${escapeHtml(contact)}</span>
     `;
   }
 
@@ -44,6 +45,8 @@
       ? `<a class="button primary" href="${escapeHtml(order.enrollmentUrl)}">Enrolar pendiente</a>`
       : "";
     const tickets = order.tickets || [];
+    const specialPasses = order.specialPasses || [];
+    const issuedItems = order.kind === "special_pass" ? specialPasses : tickets;
     return `
       <article class="purchase-card">
         <header>
@@ -59,17 +62,17 @@
             .map((item) => `<li>${escapeHtml(item.quantity)} x ${escapeHtml(item.ticketTypeName)} · ${escapeHtml(item.eventName)}</li>`)
             .join("")}
         </ul>
-        ${tickets.length
+        ${issuedItems.length
           ? `<div class="ticket-grid">
-              ${tickets
+              ${issuedItems
                 .map(
-                  (ticket) => `
+                  (item) => `
                     <div class="ticket-pass">
-                      <img src="${escapeHtml(ticket.qrUrl)}" alt="QR ticket ${escapeHtml(ticket.code)}" />
-                      <strong>${escapeHtml(ticket.ticketTypeName || "Entrada")}</strong>
-                      <span>${escapeHtml(ticket.eventName || "")}</span>
-                      <code>${escapeHtml(ticket.code)}</code>
-                      <small>${escapeHtml(ticket.status || "")}</small>
+                      <img src="${escapeHtml(item.qrUrl)}" alt="QR ${escapeHtml(item.code)}" />
+                      <strong>${escapeHtml(item.levelName || item.ticketTypeName || "Entrada")}</strong>
+                      <span>${escapeHtml(item.eventName || "")}</span>
+                      <code>${escapeHtml(item.code)}</code>
+                      ${order.kind === "special_pass" ? `<b>${escapeHtml(item.pistonCount)} ${Number(item.pistonCount) === 1 ? "Pistón" : "Pistones"} asociados a tu RUT</b><small>Retiro: ${escapeHtml(item.pickupStatus)} · Check-in: ${escapeHtml(item.accessStatus)}</small><small>El Honda no exige presencia; otros premios y beneficios presenciales sí requieren entrada válida y check-in.</small><em>NO ES VÁLIDO COMO ENTRADA</em>` : `<small>${escapeHtml(item.status || "")}</small>`}
                     </div>
                   `
                 )
@@ -79,7 +82,7 @@
         <div class="status-actions">
           ${pendingAction}
           ${order.invoice?.pdfUrl ? `<a class="button secondary" href="${escapeHtml(order.invoice.pdfUrl)}">Ver boleta</a>` : ""}
-          ${tickets[0]?.code ? `<a class="button secondary" href="/validar?code=${encodeURIComponent(tickets[0].code)}">Probar QR</a>` : ""}
+          ${issuedItems[0]?.code ? `<a class="button secondary" href="${order.kind === "special_pass" ? "/validar-pase" : "/validar"}?code=${encodeURIComponent(issuedItems[0].code)}">Probar QR</a>` : ""}
         </div>
       </article>
     `;
@@ -116,6 +119,12 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    const accessParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const accessToken = accessParams.get("access_token");
+    if (accessToken) {
+      HFC.saveAccountSession({ token: accessToken });
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+    }
     const stored = HFC.getAccountUser();
     if (stored) {
       account.user = stored;
@@ -136,7 +145,7 @@
       const status = HFC.$("#pitLaneStatus");
       const submit = form.querySelector("button[type='submit']");
       submit.disabled = true;
-      HFC.setStatus(status, "Buscando tu cuenta...");
+      HFC.setStatus(status, "Preparando tu acceso seguro...");
       try {
         const data = await HFC.api("/api/account/access", {
           method: "POST",
@@ -145,8 +154,7 @@
             contact: form.contact.value
           })
         });
-        HFC.setStatus(status, `Listo, ${escapeHtml(data.user.name || "bienvenido")}.`);
-        setAccount(data);
+        HFC.setStatus(status, escapeHtml(data.message || "Revisa el correo registrado para abrir Mi Pit Lane."));
       } catch (error) {
         HFC.setStatus(status, error.message, true);
       } finally {

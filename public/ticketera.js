@@ -1,13 +1,3 @@
-const PARTICIPATION_WHATSAPP_URL =
-  window.HFC_CONTACT_LINKS?.participationUrl ||
-  `https://wa.me/56975766596?text=${encodeURIComponent(
-    "Hola Pablo, quiero participar en Honda Fest Chile como piloto, foodtruck o stand."
-  )}`;
-
-const PISTONS_WHATSAPP_URL = `https://wa.me/56972934950?text=${encodeURIComponent(
-  "Hola, quiero conocer los Pistones y las experiencias especiales de Honda Fest Chile 2026."
-)}`;
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -17,136 +7,204 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function isManagedParticipationTicket(ticket) {
+function isPublicTicket(ticket) {
   const label = `${ticket.id || ""} ${ticket.name || ""}`.toLowerCase();
   return (
-    ticket.entryType === "pilot" ||
-    label.includes("piloto") ||
-    label.includes("pilot") ||
-    label.includes("stand") ||
-    label.includes("foodtruck") ||
-    label.includes("food truck")
+    ticket.entryType !== "guest" &&
+    ticket.entryType !== "pilot" &&
+    !label.includes("piloto") &&
+    !label.includes("pilot") &&
+    !label.includes("stand") &&
+    !label.includes("foodtruck") &&
+    !label.includes("food truck")
   );
 }
 
-function renderTicketPrice(pricing) {
-  const vatAmount = Math.max(0, Number(pricing.netWithVat || 0) - Number(pricing.netPrice || 0));
+function eventPurchaseDetails(event) {
+  const detailsByEventId = {
+    "hfc-2026-sabado-drag-day": {
+      day: "Sábado 28",
+      sequence: "Día 01",
+      date: "28 NOV",
+      meaning: "Aceleración en recta, potencia y duelos durante toda la jornada.",
+      exclusivity: "Entrada válida solo para el sábado 28."
+    },
+    "hfc-2026-domingo-track-day": {
+      day: "Domingo 29",
+      sequence: "Día 02",
+      date: "29 NOV",
+      meaning: "Autos en pista, curvas, tandas y manejo vuelta a vuelta.",
+      exclusivity: "Entrada válida solo para el domingo 29."
+    }
+  };
+  return (
+    detailsByEventId[event.id] || {
+      day: event.dateLabel || "jornada seleccionada",
+      sequence: "Jornada",
+      date: event.dateLabel || "",
+      meaning: event.summary || "Revisa los detalles de esta jornada antes de comprar.",
+      exclusivity: `Esta entrada es válida exclusivamente para ${event.dateLabel || "la jornada seleccionada"}.`
+    }
+  );
+}
+
+function renderPriceBreakdown(pricing) {
+  const netPrice = Number(pricing.netPrice || 0);
+  const netWithVat = Number(pricing.netWithVat || 0);
+  const vatAmount = Math.max(0, netWithVat - netPrice);
+  const serviceRate = Math.round(Number(pricing.serviceChargeRate || 0) * 100);
+
   return `
-    <div class="ticket-display-price" aria-label="Desglose del precio de la entrada">
+    <dl class="ticket-price-breakdown" aria-label="Detalle de precio">
       <div class="ticket-price-net">
-        <span>Precio neto</span>
-        <strong>${HFC.formatCurrency(pricing.netPrice)}</strong>
+        <dt>Valor neto</dt>
+        <dd>${HFC.formatCurrency(netPrice)}</dd>
       </div>
-      <div class="ticket-price-vat">
-        <span>IVA (19%)</span>
-        <strong>${HFC.formatCurrency(vatAmount)}</strong>
+      <div>
+        <dt>IVA (19%)</dt>
+        <dd>${HFC.formatCurrency(vatAmount)}</dd>
+      </div>
+      <div>
+        <dt>Cargo de servicio (${serviceRate}%)</dt>
+        <dd>${HFC.formatCurrency(pricing.serviceCharge)}</dd>
       </div>
       <div class="ticket-price-total">
-        <span>Total con IVA</span>
-        <strong>${HFC.formatCurrency(pricing.netWithVat)}</strong>
+        <dt>Total online</dt>
+        <dd>${HFC.formatCurrency(pricing.total)}</dd>
       </div>
-      <small>Cargo de servicio de 8% calculado en el carrito</small>
-    </div>
+    </dl>
   `;
 }
 
-function renderTicketCard(ticket, event) {
+let salesCountdownTimer = null;
+
+function countdownPart(value, label) {
+  return `<span><strong>${String(Math.max(0, value)).padStart(2, "0")}</strong><small>${label}</small></span>`;
+}
+
+function mountSalesHold(sales) {
+  const notice = HFC.$("#ticketSalesHold");
+  const countdown = HFC.$("[data-sales-countdown]", notice);
+  if (!notice || !countdown) return;
+
+  if (!sales || sales.enabled) {
+    notice.hidden = true;
+    if (salesCountdownTimer) window.clearInterval(salesCountdownTimer);
+    salesCountdownTimer = null;
+    return;
+  }
+
+  const target = new Date(sales.availableAt).getTime();
+  const updateCountdown = () => {
+    const remaining = target - Date.now();
+    if (remaining <= 0) {
+      window.clearInterval(salesCountdownTimer);
+      salesCountdownTimer = null;
+      countdown.innerHTML = "<strong>Activando venta...</strong>";
+      window.setTimeout(() => window.location.reload(), 750);
+      return;
+    }
+    const seconds = Math.floor(remaining / 1000);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    countdown.innerHTML = [
+      countdownPart(days, "días"),
+      countdownPart(hours, "horas"),
+      countdownPart(minutes, "min"),
+      countdownPart(remainingSeconds, "seg")
+    ].join("");
+  };
+
+  notice.hidden = false;
+  if (salesCountdownTimer) window.clearInterval(salesCountdownTimer);
+  updateCountdown();
+  salesCountdownTimer = window.setInterval(updateCountdown, 1000);
+}
+
+function renderTicketCard(ticket, event, sales) {
   const availability = HFC.ticketAvailability(ticket, event.id);
   const pricing = HFC.priceBreakdownFromAvailability(availability);
+  const details = eventPurchaseDetails(event);
+  const ticketVariant = ticket.id.includes("parque-cerrado") ? "paddock" : "gallery";
+  const ticketName = escapeHtml(ticket.name);
+  const purchaseAvailable = Boolean(availability.available && sales?.enabled !== false);
+  const availabilityLabel = purchaseAvailable
+    ? availability.salePhaseName
+    : sales?.enabled === false
+      ? "Venta temporalmente pausada"
+      : "Venta no disponible";
+
   return `
-    <article class="product-card">
+    <article class="product-card ticket-product-card ticket-product-card--${ticketVariant}">
       <div>
-        <h4>${ticket.name}</h4>
-        <p>${ticket.description}</p>
-        <small>${availability.available ? availability.salePhaseName : "Venta no disponible"}</small>
+        <p class="ticket-phase">${escapeHtml(availabilityLabel)}</p>
+        <h3>${ticketName}</h3>
+        <p>${escapeHtml(ticket.description)}</p>
       </div>
-      ${renderTicketPrice(pricing)}
+      ${renderPriceBreakdown(pricing)}
       ${ticket.parkingNote ? `<p class="parking-reference">${escapeHtml(ticket.parkingNote)}</p>` : ""}
-      <label>
-        Cantidad
-        <input type="number" min="1" max="${availability.maxQuantity}" value="1" ${availability.available ? "" : "disabled"}
-          data-qty="${event.id}-${ticket.id}" />
-      </label>
-      <button class="button primary full" type="button" data-add-ticket ${availability.available ? "" : "disabled"}
+      <div class="ticket-quantity">
+        <span>Cantidad</span>
+        <div class="quantity-stepper">
+          <button type="button" class="quantity-step" data-quantity-step="-1" aria-label="Disminuir cantidad de ${ticketName}" ${purchaseAvailable ? "" : "disabled"}>−</button>
+          <input type="number" min="1" max="${availability.maxQuantity}" value="1" inputmode="numeric" aria-label="Cantidad de ${ticketName}" ${purchaseAvailable ? "" : "disabled"}
+            data-qty="${event.id}-${ticket.id}" />
+          <button type="button" class="quantity-step" data-quantity-step="1" aria-label="Aumentar cantidad de ${ticketName}" ${purchaseAvailable ? "" : "disabled"}>+</button>
+        </div>
+      </div>
+      <button class="button primary full" type="button" data-add-ticket ${purchaseAvailable ? "" : "disabled"}
         data-event-id="${event.id}" data-ticket-type-id="${ticket.id}">
-        ${availability.available ? "Agregar al carrito" : "No disponible"}
+        ${purchaseAvailable ? `Agregar entrada del ${details.day}` : sales?.enabled === false ? "Venta en pausa" : "No disponible"}
       </button>
     </article>
   `;
 }
 
-function renderParticipationTicketCard() {
-  return `
-    <article class="product-card participation-ticket-card">
-      <div>
-        <small class="ticket-participation-eyebrow">Coordinacion directa</small>
-        <h4>Pilotos, Foodtrucks y Stands</h4>
-        <p>Pista, puestos de comida y stands se coordinan por WhatsApp con Pablo.</p>
-      </div>
-      <div class="ticket-display-price ticket-display-price--contact">
-        <span>Gestion</span>
-        <strong>WhatsApp</strong>
-      </div>
-      <a class="button secondary full" href="${PARTICIPATION_WHATSAPP_URL}" target="_blank" rel="noreferrer">
-        Quiero participar
-      </a>
-    </article>
-  `;
+function renderTicketCards(tickets, event, sales) {
+  return tickets.map((ticket) => renderTicketCard(ticket, event, sales)).join("");
 }
 
-function renderPistonsUpgradeCard() {
-  return `
-    <article class="product-card pistons-upgrade-card">
-      <div>
-        <small class="ticket-participation-eyebrow">Mejora tu experiencia</small>
-        <h4>Suma Pistones. Gana premios.</h4>
-        <p>Cada Pistón suma una oportunidad. Mejora tu entrada con refrigerios, experiencias y beneficios especiales.</p>
-      </div>
-      <div class="pistons-upgrade-benefit">
-        <span>Más Pistones</span>
-        <strong>Más oportunidades de ganar</strong>
-      </div>
-      <a class="button upgrade-button full" href="${PISTONS_WHATSAPP_URL}" target="_blank" rel="noreferrer">
-        Mejorar mi experiencia
-      </a>
-    </article>
-  `;
-}
-
-function renderTicketCards(tickets, event) {
-  const cards = tickets.map((ticket) => renderTicketCard(ticket, event));
-  const generalIndex = tickets.findIndex((ticket) => {
-    const label = `${ticket.id || ""} ${ticket.name || ""}`.toLowerCase();
-    return label.includes("general");
-  });
-  const participationIndex = generalIndex >= 0 ? generalIndex + 1 : cards.length;
-  cards.splice(participationIndex, 0, renderParticipationTicketCard());
-  cards.splice(participationIndex + 1, 0, renderPistonsUpgradeCard());
-  return cards.join("");
+function clampQuantityInput(input, delta) {
+  if (!input || input.disabled) return;
+  const min = Number(input.min || 1);
+  const max = Number(input.max || Number.MAX_SAFE_INTEGER);
+  const current = Number(input.value || min);
+  input.value = String(Math.min(max, Math.max(min, current + delta)));
 }
 
 async function renderProducts() {
   const catalog = await HFC.getCatalog();
   const grid = HFC.$("#productGrid");
+  mountSalesHold(catalog.sales);
 
   grid.innerHTML = catalog.events
     .map(
       (event) => {
+        const details = eventPurchaseDetails(event);
         const tickets = catalog.ticketTypes.filter(
           (ticket) =>
-            ticket.entryType !== "guest" &&
-            !isManagedParticipationTicket(ticket) &&
+            isPublicTicket(ticket) &&
             (!Array.isArray(ticket.eventIds) || !ticket.eventIds.length || ticket.eventIds.includes(event.id))
         );
         return `
-          <section class="event-products">
-            <div class="event-products-heading">
-              <p class="section-kicker">${event.eyebrow}</p>
-              <h3>${event.name}</h3>
-              <span>${event.dateLabel}</span>
-            </div>
+          <section class="event-products" id="${escapeHtml(event.id)}">
+            <header class="event-products-heading">
+              <div>
+                <p class="event-sequence">${details.sequence}</p>
+                <h2>${escapeHtml(event.name)}</h2>
+                <p class="event-purchase-meaning">${details.meaning}</p>
+              </div>
+              <div class="event-purchase-date">
+                <span>${details.sequence}</span>
+                <strong>${details.date}</strong>
+                <small>${details.day}</small>
+              </div>
+            </header>
+            <p class="event-single-day-notice">${details.exclusivity} Para vivir el fin de semana completo, agrega una entrada para ambas jornadas.</p>
             <div class="ticket-product-grid">
-              ${renderTicketCards(tickets, event)}
+              ${renderTicketCards(tickets, event, catalog.sales)}
             </div>
           </section>
         `;
@@ -162,6 +220,13 @@ async function renderProducts() {
         ticketTypeId: button.dataset.ticketTypeId,
         quantity: Number(quantityInput.value || 1)
       });
+    });
+  });
+
+  HFC.$$('[data-quantity-step]').forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = HFC.$("input", button.closest(".quantity-stepper"));
+      clampQuantityInput(input, Number(button.dataset.quantityStep || 0));
     });
   });
 }
